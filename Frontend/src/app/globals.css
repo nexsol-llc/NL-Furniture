@@ -1,0 +1,173 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* The floating header overlaps the page. Pad the page's own root element by the
+   header height so its background sits behind the bar and its content clears it.
+   Hero pages pull their first section up with -mt-[var(--header-height)]. */
+.page-content > :first-child {
+  padding-top: var(--header-height);
+}
+
+/* =============================================
+   Global Header Styles
+   ============================================= */
+
+:root {
+  --header-height: 70px;
+  --header-border: #e5e5e5;
+  --text-primary: #222;
+  --text-dark: #000;
+  --icon-color: #333;
+
+  /* Primary theme color — updated at runtime by ThemeProvider (default: teal).
+     Hex vars for inline styles; -rgb channel vars for Tailwind opacity support. */
+  --primary-50: #f0fdfa;   --primary-50-rgb: 240 253 250;
+  --primary-100: #ccfbf1;  --primary-100-rgb: 204 251 241;
+  --primary-200: #99f6e4;  --primary-200-rgb: 153 246 228;
+  --primary-300: #5eead4;  --primary-300-rgb: 94 234 212;
+  --primary-400: #2dd4bf;  --primary-400-rgb: 45 212 191;
+  --primary-500: #14b8a6;  --primary-500-rgb: 20 184 166;
+  --primary-600: #0d9488;  --primary-600-rgb: 13 148 136;
+  --primary-700: #0f766e;  --primary-700-rgb: 15 118 110;
+  --primary-800: #115e59;  --primary-800-rgb: 17 94 89;
+  --primary-900: #134e4a;  --primary-900-rgb: 19 78 74;
+  --primary-950: #042f2e;  --primary-950-rgb: 4 47 46;
+
+  /* Section background colors — updated at runtime by ThemeProvider from
+     /api/site-settings. Two for the furniture pages, two for the coupons pages. */
+  --section-bg-1: #e9ecef;
+  --section-bg-2: #F5E6D7;
+  --coupon-section-bg-1: #f3f4f6;
+  --coupon-section-bg-2: #f5f5f5;
+}
+
+/* Infinite horizontal marquee (brand logos, furniture carousels) */
+@keyframes marquee {
+  0% {
+    transform: translateX(0);
+  }
+  100% {
+    transform: translateX(-33.33%); /* content duplicated 3x for seamless loop */
+  }
+}
+
+.animate-marquee {
+  animation: marquee 35s linear infinite;
+  will-change: transform;
+}
+
+.animate-marquee:hover {
+  animation-play-state: paused;
+}
+
+.hide-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+.hide-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+/* Custom Headings H7-H10 styles — admin-authored sub-headings (see RichTextEditor.tsx),
+   restyled to de-escalate consistently with the h1-h6 type scale in tailwind.config.ts. */
+h7, .h7 {
+  display: block;
+  font-size: 1rem;
+  font-weight: 600;
+  margin-top: 1.25em;
+  margin-bottom: 0.5em;
+  color: #111827; /* gray-900 */
+}
+h8, .h8 {
+  display: block;
+  font-size: 0.875rem;
+  font-weight: 600;
+  margin-top: 1.2em;
+  margin-bottom: 0.5em;
+  color: #374151; /* gray-700 */
+}
+h9, .h9 {
+  display: block;
+  font-size: 0.8rem;
+  font-weight: 600;
+  margin-top: 1.1em;
+  margin-bottom: 0.5em;
+  color: #4b5563; /* gray-600 */
+}
+h10, .h10 {
+  display: block;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-top: 1em;
+  margin-bottom: 0.5em;
+  color: #6b7280; /* gray-500 */
+}
+
+/* =============================================
+   Editor Role Visibility Protection
+   ============================================= */
+.is-editor .text-red-600,
+.is-editor .bg-red-600,
+.is-editor .hover\:bg-red-700,
+.is-editor .bg-rose-50,
+.is-editor .text-rose-600,
+.is-editor button[title="Löschen"],
+.is-editor button[title="Delete"],
+.is-editor button:has(.lucide-trash2),
+.is-editor .lucide-trash2 {
+  display: none !important;
+}
+
+/* ── Shimmer / skeleton loading effect ─────────────────────────────────────── */
+@keyframes shimmer {
+  100% {
+    transform: translateX(100%);
+  }
+}
+
+.skeleton {
+  position: relative;
+  overflow: hidden;
+  background-color: #eceef1;
+}
+
+.skeleton::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  transform: translateX(-100%);
+  background: linear-gradient(
+    90deg,
+    rgba(255, 255, 255, 0) 0,
+    rgba(255, 255, 255, 0.55) 50%,
+    rgba(255, 255, 255, 0) 100%
+  );
+  animation: shimmer 1.5s infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .skeleton::after {
+    animation: none;
+  }
+}
+/* Ticket-style coupon cards: punch two real transparent notches out of the
+   card edges, in line with the dashed divider, so the page background shows
+   through (a true "cut", not a painted dot). Desktop only — mobile stacks
+   into a single column with no divider. The x-position (221px) matches the
+   divider: p-6 (24) + discount column (176) + gap-5 (20) + half the divider. */
+@media (min-width: 640px) {
+  .ticket-card {
+    -webkit-mask-image:
+      radial-gradient(circle 11px at 221px 0%, transparent 0 10.5px, #000 11px),
+      radial-gradient(circle 11px at 221px 100%, transparent 0 10.5px, #000 11px);
+    -webkit-mask-composite: source-in;
+    mask-image:
+      radial-gradient(circle 11px at 221px 0%, transparent 0 10.5px, #000 11px),
+      radial-gradient(circle 11px at 221px 100%, transparent 0 10.5px, #000 11px);
+    mask-composite: intersect;
+  }
+}

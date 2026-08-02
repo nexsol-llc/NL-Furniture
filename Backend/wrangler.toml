@@ -1,0 +1,33 @@
+name = "nl-furniture-api"
+main = "src/index.ts"
+# Pinned: this login can see 3 Cloudflare accounts. Pinning the id makes it
+# impossible for a deploy/d1/r2 command to land on the wrong one.
+account_id = "13542b1d89489091829944b397af5baf"
+compatibility_date = "2024-11-01"
+compatibility_flags = ["nodejs_compat"]
+workers_dev = true
+
+# Serve the Worker on a custom route - update to match your domain
+# routes = [{ pattern = "api.nl-furniture.nl/*", zone_name = "nl-furniture.nl" }]
+
+[[r2_buckets]]
+binding = "IMAGES"
+bucket_name = "nl-furniture-images"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "nl-furniture-db"
+# Created in WEUR (Western Europe) — primary region is fixed at creation time.
+database_id = "aa92d4a2-b6c5-41c7-b918-756c35d26fda"
+
+[vars]
+ENVIRONMENT = "production"
+# TODO: replace once the real domain is decided.
+SITE_URL = "https://www.nl-furniture.nl"
+CORS_ORIGIN = "https://www.nl-furniture.nl"
+
+# Secrets (set via `wrangler secret put <NAME>`):
+#   JWT_SECRET
+#   RESEND_API_KEY
+#   RESEND_FROM
+#   ADMIN_EMAIL

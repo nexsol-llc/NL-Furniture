@@ -1,0 +1,6 @@
+
+# Claude Code local settings
+.claude/settings.local.json
+
+# Contains 21st.dev MCP API key
+.mcp.json

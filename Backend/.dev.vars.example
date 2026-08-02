@@ -1,0 +1,9 @@
+# Copy this file to .dev.vars for local development
+# Never commit .dev.vars to version control
+
+JWT_SECRET=change-this-to-a-long-random-secret-minimum-32-chars
+RESEND_API_KEY=re_xxxxxxxxxxxxxxxxxxxx
+RESEND_FROM=noreply@nl-furniture.nl
+ADMIN_EMAIL=admin@nl-furniture.nl
+SITE_URL=http://localhost:3000
+CORS_ORIGIN=http://localhost:3000
