@@ -5,14 +5,15 @@
 import Link from 'next/link';
 import { useLanguage } from '@/providers/languageContext';
 import { LOCALE_TAG } from "@/lib/languageDefaults";
+import { Reveal } from '../components/motion/Reveal';
 
 export default function WerbekennzeichnungClient() {
   const { t, language } = useLanguage();
   return (
     <main className="min-h-screen bg-white text-gray-900">
       {/* Header / Hero-Bereich - Responsive */}
-      <section className="py-12 sm:py-16 md:py-20 lg:py-24 bg-gray-50 border-b border-gray-200">
-        <div className="max-w-content mx-auto px-4 sm:px-6 md:px-8 lg:px-12 text-center">
+      <section className="py-12 sm:py-16 md:py-20 lg:py-24 bg-gray-50 section-pattern-1 border-b border-gray-200">
+        <Reveal className="max-w-content mx-auto px-4 sm:px-6 md:px-8 lg:px-12 text-center">
           <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl xl:text-6xl font-bold mb-4 sm:mb-5 md:mb-6 tracking-tight px-2">
             {t('werbung.heroTitle')}
           </h1>
@@ -22,11 +23,11 @@ export default function WerbekennzeichnungClient() {
           <p className="mt-4 sm:mt-5 md:mt-6 text-sm sm:text-base md:text-lg text-gray-500">
             {t('werbung.lastUpdated')} {new Date().toLocaleDateString(LOCALE_TAG[language])}
           </p>
-        </div>
+        </Reveal>
       </section>
 
       {/* Hauptinhalt - Responsive Typografie */}
-      <section className="py-12 sm:py-16 md:py-20 lg:py-24">
+      <section className="section-pattern-2 py-12 sm:py-16 md:py-20 lg:py-24">
         <div className="max-w-[1100px] mx-auto px-4 sm:px-6 md:px-8 lg:px-12">
           <p className="text-base sm:text-lg md:text-xl leading-relaxed text-gray-700 mb-8 sm:mb-10 md:mb-12">
             <strong className="break-words">nl-furniture.nl</strong> {t('werbung.intro')}
@@ -79,7 +80,7 @@ export default function WerbekennzeichnungClient() {
       </section>
 
       {/* CTA / Zurück - Responsive */}
-      <section className="py-12 sm:py-16 md:py-20 bg-gray-50 border-t border-gray-200">
+      <section className="py-12 sm:py-16 md:py-20 bg-gray-50 section-pattern-1 border-t border-gray-200">
         <div className="max-w-content mx-auto px-4 sm:px-6 md:px-8 lg:px-12 text-center">
           <Link
             href="/"

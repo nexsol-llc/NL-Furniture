@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { Swiper, SwiperSlide } from 'swiper/react';
 import { Pagination, Autoplay, FreeMode } from 'swiper/modules';
 import 'swiper/css';
@@ -8,18 +8,22 @@ import 'swiper/css/pagination';
 import 'swiper/css/free-mode';
 import 'swiper/css/autoplay';
 import InfiniteSlider from './components/InfiniteSlider';
+import CardFanCarousel, { CardItem } from './components/ui/card-fan-carousel';
 import HomeHero from './components/HomeHero';
 import Image from 'next/image';
 import Link from 'next/link';
-import FashionCard from './components/FashionCard';
+import CardStack from './components/ui/card-stack';
 import CategoryGroupGrid from './components/CategoryGroupGrid';
+import IndoorOutdoorToggle from './components/IndoorOutdoorToggle';
 import FAQSection, { FAQItem } from './components/FAQSection';
 import NewsletterForm from './components/NewsletterForm';
 import OfferProductCard from './components/OfferProductCard';
 import PlaceholderImage from './components/PlaceholderImage';
 import Button from './components/Button';
+import { Tilt } from './components/motion/Tilt';
+import { Reveal, RevealGroup, RevealItem } from './components/motion/Reveal';
 import { normalizeLink } from '@/lib/productFormat';
-import { fetchFurniturePageSettings, fetchFurnitureAussenPageSettings } from '@/lib/categoryCatalog';
+import { fetchFurniturePageSettings, fetchFurnitureAussenPageSettings, fetchCatalogList } from '@/lib/categoryCatalog';
 import { useLanguage } from '@/providers/languageContext';
 
 interface MagazineArticle {
@@ -83,12 +87,6 @@ export default function HomePage() {
   // Holds { pageTitle, pageSubtitle, longContent, faqs, seoTitle, seoDescription, seoKeywords }.
   const [homeSeo, setHomeSeo] = useState<any>(null);
 
-  // Two admin-configured background colors, alternated across the main sections.
-  const [sectionBg, setSectionBg] = useState<{ bg1: string; bg2: string }>({
-    bg1: "#e9ecef",
-    bg2: "#F5E6D7",
-  });
-
   useEffect(() => {
     fetch(`/api/hero?t=${Date.now()}`, { cache: "no-store" })
       .then((res) => res.ok ? res.json() : [])
@@ -131,9 +129,19 @@ export default function HomePage() {
       fetch(`/api/parent-categories?t=${Date.now()}`, { cache: "no-store" }).then((res) => (res.ok ? res.json() : [])),
       fetchFurniturePageSettings(),
       fetchFurnitureAussenPageSettings(),
+      fetchCatalogList(),
     ])
-      .then(([data, furnitureSettings, furnitureAussenSettings]: [any, any, any]) => {
+      .then(([data, furnitureSettings, furnitureAussenSettings, catalog]: [any, any, any, any]) => {
         const list = Array.isArray(data) ? data : [];
+
+        // How many Category Catalog entries are assigned to each parent — shown
+        // as the caption under a tile's name.
+        const catalogCounts = new Map<string, number>();
+        for (const entry of Array.isArray(catalog) ? catalog : []) {
+          const parentId = entry?.parentCategoryId;
+          if (parentId) catalogCounts.set(parentId, (catalogCounts.get(parentId) ?? 0) + 1);
+        }
+
         // Only Featured parent categories show here, in their drag-configured
         // order (the API already returns them sorted by sort_order).
         const pick = (type: "indoor" | "outdoor") =>
@@ -143,6 +151,7 @@ export default function HomePage() {
               name: p.name || p.slug,
               slug: p.slug,
               image: p.image || null,
+              count: catalogCounts.get(p._id) ?? 0,
             }));
 
         // The Möbel tile only appears once the admin has configured a slug
@@ -169,19 +178,6 @@ export default function HomePage() {
         }
       })
       .catch((err) => console.error("Error fetching categories:", err));
-
-    // Fetch the two alternating section background colors.
-    fetch("/api/site-settings")
-      .then((res) => (res.ok ? res.json() : null))
-      .then((d) => {
-        if (d) {
-          setSectionBg({
-            bg1: d.section_bg_1 || "#e9ecef",
-            bg2: d.section_bg_2 || "#F5E6D7",
-          });
-        }
-      })
-      .catch((err) => console.error("Error fetching site settings:", err));
 
     // Fetch section settings (titles/slugs)
     fetch("/api/section-settings")
@@ -219,6 +215,25 @@ export default function HomePage() {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [homeIndoorCats, homeOutdoorCats]);
+
+  // Tiles for the Parent Category grid, with the catalog count translated into
+  // a caption. Memoized so a re-render doesn't restart the reveal animation.
+  const homeCatTiles = useMemo(
+    () =>
+      (homeCatTab === "indoor" ? homeIndoorCats : homeOutdoorCats).map((c: any) => ({
+        ...c,
+        caption:
+          typeof c.count === "number" && c.count > 0
+            ? t(
+                c.count === 1
+                  ? "categoryGroupGrid.categoriesCountSingular"
+                  : "categoryGroupGrid.categoriesCount",
+                { count: c.count }
+              )
+            : undefined,
+      })),
+    [homeCatTab, homeIndoorCats, homeOutdoorCats, t]
+  );
 
   // Indoor/Outdoor section is fully backend-driven (managed in admin → Indoor/Outdoor).
   const hasDbIndoorCats = dynamicIndoorCats.length > 0;
@@ -266,6 +281,16 @@ export default function HomePage() {
 
   const displayProducts = dynamicProducts;
 
+  // Gadgets as fan-carousel cards. Memoized: a new array identity on every
+  // render would restart the carousel's entry animation.
+  const gadgetCards: CardItem[] = useMemo(
+    () =>
+      gadgets
+        .filter((g) => g.image)
+        .map((g) => ({ imgUrl: g.image, alt: g.title, linkUrl: g.link })),
+    [gadgets]
+  );
+
   if (loading) return <div className="h-[500px] bg-gray-100 animate-pulse" />;
 
   return (
@@ -278,17 +303,18 @@ export default function HomePage() {
     Few brands => a compact centered card that hugs its logos; many brands =>
     a full-width auto-playing carousel. */}
 {featuredBrands.length > 0 && (
-<section className="relative z-30 bg-[var(--section-bg-2)] flow-root">
+<section className="relative z-30 section-bg-2 flow-root">
   <div className="max-w-content mx-auto px-4 flex justify-center -mt-12 md:-mt-16">
     {featuredBrands.length <= 6 ? (
       // Compact card that shrinks to fit its logos
-      <div className="bg-white rounded-[26px] shadow-[0_24px_60px_-16px_rgba(0,0,0,0.3)] ring-1 ring-gray-100 px-6 sm:px-8 py-5 flex flex-wrap items-center justify-center gap-3 sm:gap-4">
+      <RevealGroup className="bg-white rounded-[26px] shadow-[0_24px_60px_-16px_rgba(0,0,0,0.3)] ring-1 ring-gray-100 px-6 sm:px-8 py-5 flex flex-wrap items-center justify-center gap-3 sm:gap-4">
         {featuredBrands.map((b: any) => (
+          <RevealItem key={b._id}>
+          <Tilt rotationFactor={8}>
           <a
-            key={b._id}
             href={b.website ? normalizeLink(b.website) : `/merken/${b.slug}`}
             {...(b.website ? { target: "_blank", rel: "noopener noreferrer" } : {})}
-            className="group relative bg-white rounded-xl ring-1 ring-gray-200/80 shadow-soft hover:shadow-soft-lg hover:ring-primary-300 hover:-translate-y-1.5 transition-all duration-300 flex items-center justify-center w-[130px] sm:w-[160px] h-[64px] sm:h-[76px] px-5 overflow-hidden"
+            className="group relative bg-white rounded-xl ring-1 ring-gray-200/80 shadow-soft hover:shadow-depth-3 hover:ring-primary-300 hover:-translate-y-1.5 transition-all duration-300 flex items-center justify-center w-[130px] sm:w-[160px] h-[64px] sm:h-[76px] px-5 overflow-hidden"
           >
             <Image
               src={b.logo}
@@ -298,8 +324,10 @@ export default function HomePage() {
               className="object-cover rounded-xl transition duration-300"
             />
           </a>
+          </Tilt>
+          </RevealItem>
         ))}
-      </div>
+      </RevealGroup>
     ) : (
       // Full-width auto-scrolling marquee for many brands. A pure CSS marquee
       // (see `.animate-marquee` in globals.css) avoids Swiper's fragile `loop`
@@ -312,7 +340,7 @@ export default function HomePage() {
               key={`${b._id}-${i}`}
               href={b.website ? normalizeLink(b.website) : `/merken/${b.slug}`}
               {...(b.website ? { target: "_blank", rel: "noopener noreferrer" } : {})}
-              className="group relative flex-shrink-0 mx-2 bg-white rounded-xl ring-1 ring-gray-200/80 shadow-soft hover:shadow-soft-lg hover:ring-primary-300 hover:-translate-y-1.5 transition-all duration-300 flex items-center justify-center w-[150px] sm:w-[180px] h-[64px] sm:h-[76px] px-5 overflow-hidden"
+              className="group relative flex-shrink-0 mx-2 bg-white rounded-xl ring-1 ring-gray-200/80 shadow-soft hover:shadow-depth-3 hover:ring-primary-300 hover:-translate-y-1.5 transition-all duration-300 flex items-center justify-center w-[150px] sm:w-[180px] h-[64px] sm:h-[76px] px-5 overflow-hidden"
             >
               <Image
                 src={b.logo}
@@ -333,76 +361,46 @@ export default function HomePage() {
     switcher. Only renders when at least one parent category exists. */}
 {(homeIndoorCats.length > 0 || homeOutdoorCats.length > 0) && (
   <CategoryGroupGrid
-    title={homeCatTab === "indoor" ? t('categoryTabsSection.indoorLabel') : t('categoryTabsSection.outdoorLabel')}
-    subtitle={homeCatTab === "indoor" ? t('home.indoorTileSubtitle') : t('home.outdoorTileSubtitle')}
-    categories={homeCatTab === "indoor" ? homeIndoorCats : homeOutdoorCats}
+    variant="photo"
+    title={t('categoryGroupGrid.heading')}
+    subtitle={t('categoryGroupGrid.subheading')}
+    categories={homeCatTiles}
     hrefBase={homeCatTab === "indoor" ? "/binnen" : "/buiten"}
     moreCategoriesHref="/categorie"
     headerExtra={
-      <div className="flex w-full max-w-[340px] bg-white/70 rounded-2xl p-1 shadow-soft">
-        <button
-          onClick={() => setHomeCatTab("indoor")}
-          disabled={homeIndoorCats.length === 0}
-          className={`flex-1 text-center py-3 rounded-2xl font-semibold text-sm transition-all disabled:opacity-40 disabled:cursor-not-allowed
-            ${homeCatTab === "indoor" ? "bg-primary-600 text-white shadow-soft" : "text-gray-600 hover:bg-white/70"}`}
-        >
-          {t('categoryTabsSection.indoorLabel')}
-        </button>
-        <button
-          onClick={() => setHomeCatTab("outdoor")}
-          disabled={homeOutdoorCats.length === 0}
-          className={`flex-1 text-center py-3 rounded-2xl font-semibold text-sm transition-all disabled:opacity-40 disabled:cursor-not-allowed
-            ${homeCatTab === "outdoor" ? "bg-primary-600 text-white shadow-soft" : "text-gray-600 hover:bg-white/70"}`}
-        >
-          {t('categoryTabsSection.outdoorLabel')}
-        </button>
-      </div>
+      <IndoorOutdoorToggle
+        value={homeCatTab}
+        onChange={setHomeCatTab}
+        indoorLabel={t('categoryTabsSection.indoorLabel')}
+        outdoorLabel={t('categoryTabsSection.outdoorLabel')}
+        indoorDisabled={homeIndoorCats.length === 0}
+        outdoorDisabled={homeOutdoorCats.length === 0}
+      />
     }
   />
 )}
 {/* ================= INDOOR / OUTDOOR SECTION (admin-managed) ================= */}
 {hasAnyDynamicCats && (
-<section className="py-16 md:py-24" style={{ backgroundColor: sectionBg.bg1 }}>
+<section className="section-bg-1 py-16 md:py-24">
   <div className="max-w-content mx-auto px-4">
 
     {/* ================= HEADING ================= */}
-    <div className="text-center mb-6">
-      <h2 className="text-h2 text-gray-900">
+    <Reveal className="text-center mb-6">
+      <h2 className="text-h2 font-display text-gray-900">
         {t('home.indoorOutdoorHeading')}
       </h2>
-    </div>
+    </Reveal>
 
     {/* ================= MAIN TOGGLE BUTTONS ================= */}
     <div className="flex justify-center mb-8 px-4">
-      <div className="flex w-full max-w-[340px] bg-gray-100 rounded-2xl p-1 shadow-soft">
-
-        <button
-          onClick={() => setActiveTab("indoor")}
-          disabled={!hasDbIndoorCats}
-          className={`flex-1 text-center py-3 rounded-2xl font-semibold text-sm transition-all disabled:opacity-40 disabled:cursor-not-allowed
-            ${
-              activeTab === "indoor"
-                ? "bg-primary-600 text-white shadow-soft"
-                : "text-gray-600 hover:bg-white/70"
-            }`}
-        >
-          {t('home.indoorFurnitureLabel')}
-        </button>
-
-        <button
-          onClick={() => setActiveTab("outdoor")}
-          disabled={!hasDbOutdoorCats}
-          className={`flex-1 text-center py-3 rounded-2xl font-semibold text-sm transition-all disabled:opacity-40 disabled:cursor-not-allowed
-            ${
-              activeTab === "outdoor"
-                ? "bg-primary-600 text-white shadow-soft"
-                : "text-gray-600 hover:bg-white/70"
-            }`}
-        >
-          {t('home.outdoorFurnitureLabel')}
-        </button>
-
-      </div>
+      <IndoorOutdoorToggle
+        value={activeTab}
+        onChange={setActiveTab}
+        indoorLabel={t('home.indoorFurnitureLabel')}
+        outdoorLabel={t('home.outdoorFurnitureLabel')}
+        indoorDisabled={!hasDbIndoorCats}
+        outdoorDisabled={!hasDbOutdoorCats}
+      />
     </div>
 
     {/* ================= CATEGORY SWIPER BUTTONS ================= */}
@@ -484,17 +482,17 @@ export default function HomePage() {
 )}
 {/* Only render when sponsors exist in the API — no hardcoded fallback */}
 {sponsors.length > 0 && (
-<section className="py-16 md:py-24" style={{ backgroundColor: sectionBg.bg2 }}>
+<section className="section-bg-2 py-16 md:py-24">
   <div className="max-w-content mx-auto px-4">
 
-    <div className="flex flex-col items-center mb-10">
-      <h2 className="text-h2 text-gray-900">
+    <Reveal className="flex flex-col items-center mb-10">
+      <h2 className="text-h2 font-display text-gray-900">
         {sectionSettings.sponsors?.title || t('home.sponsorsDefaultTitle')}
       </h2>
       <p className="text-gray-500 mt-2 text-center">
         {sectionSettings.sponsors?.slug || t('home.sponsorsDefaultSubtitle')}
       </p>
-    </div>
+    </Reveal>
 
     {/* 2-up carousel, 16:7 cards, seamless auto-loop */}
     <InfiniteSlider items={sponsors} perView={{ base: 1, sm: 2, lg: 2 }} aspect="16 / 7" />
@@ -503,21 +501,21 @@ export default function HomePage() {
 </section>
 )}
 {/* Only render when gadgets exist in the API — no hardcoded fallback */}
-{gadgets.length > 0 && (
-<section className="py-16 md:py-24" style={{ backgroundColor: sectionBg.bg1 }}>
+{gadgetCards.length > 0 && (
+<section className="section-bg-1 py-12 md:py-16 overflow-hidden">
   <div className="max-w-content mx-auto px-4">
 
-    <div className="flex flex-col items-center mb-10">
-      <h2 className="text-h2 text-gray-900">
+    <Reveal className="flex flex-col items-center mb-4 md:mb-6">
+      <h2 className="text-h2 font-display text-gray-900">
         {sectionSettings.gadgets?.title || t('home.gadgetsDefaultTitle')}
       </h2>
       <p className="text-gray-500 mt-2 text-center">
         {sectionSettings.gadgets?.slug || t('home.gadgetsDefaultSubtitle')}
       </p>
-    </div>
+    </Reveal>
 
-    {/* 4-up carousel on desktop, 3:4 portrait cards, seamless auto-loop */}
-    <InfiniteSlider items={gadgets} perView={{ base: 2, sm: 3, lg: 4 }} aspect="3 / 4" />
+    {/* Fanned "hand of cards" — up to 7 on screen, arrows/swipe cycle the rest */}
+    <CardFanCarousel cards={gadgetCards} />
 
   </div>
 </section>
@@ -526,13 +524,13 @@ export default function HomePage() {
 {/* ================= INFLUENCER LOOKS SECTION ================= */}
 {/* Only render when a look has been configured via the admin/API — no hardcoded fallback */}
 {homeInfluencer?.mainImage && (
-<section className="py-16 md:py-24" style={{ backgroundColor: sectionBg.bg2 }}>
+<section className="section-bg-2 py-16 md:py-24">
 
   <div className="max-w-content mx-auto px-4">
 
     {/* Centered Heading */}
     <div className="text-center mb-8">
-      <h2 className="text-h3 text-gray-900">
+      <h2 className="text-h3 font-display text-gray-900">
         {t('home.influencerLooksHeading')}
       </h2>
       <p className="text-gray-500 text-sm mt-1">
@@ -649,47 +647,39 @@ export default function HomePage() {
   </div>
 </section>
 )}
-     <section className="py-16 md:py-24">
+     <section className="section-pattern-1 py-16 md:py-24">
   <div className="max-w-content mx-auto px-4">
 
     {/* Heading */}
-    <div className="flex flex-col items-center mb-10">
-      <h2 className="text-h2 text-gray-900">
+    <Reveal className="flex flex-col items-center mb-10">
+      <h2 className="text-h2 font-display text-gray-900">
         {t('home.magazineHeading')}
       </h2>
       <p className="text-gray-500 mt-2 text-center">
         {t('home.magazineSubtitle')}
       </p>
-    </div>
+    </Reveal>
 
-    <Swiper
-      modules={[Pagination, FreeMode]}
-      slidesPerView="auto"
-      spaceBetween={36}
-      freeMode={true}
-      pagination={{
-        clickable: true,
-        dynamicBullets: true,
-      }}
-      className="!pb-10"
-    >
-      {Array.isArray(blogs) && blogs.length > 0 ? blogs.map((blog) => (
-        <SwiperSlide key={blog._id} style={{ width: "auto" }}>
-          <FashionCard 
-            id={blog._id}
-            title={blog.title}
-            author={blog.author}
-            image={blog.thumbnail || blog.heroImage}
-          />
-        </SwiperSlide>
-      )) : (
-        <SwiperSlide>
-          <div className="flex items-center justify-center h-40 text-gray-400 text-sm">
-            {t('home.noMagazinePosts')}
-          </div>
-        </SwiperSlide>
-      )}
-    </Swiper>
+    {/* Draggable card deck — the article title sits in each card's bottom-left corner. */}
+    <CardStack
+      items={(Array.isArray(blogs) ? blogs : []).map((blog) => ({
+        id: blog._id,
+        title: blog.title,
+        subtitle: blog.subHeading,
+        category: blog.category,
+        image: blog.thumbnail || blog.heroImage,
+        href: `/blog/${blog._id}`,
+      }))}
+      emptyLabel={t('home.noMagazinePosts')}
+    />
+
+    {Array.isArray(blogs) && blogs.length > 0 && (
+      <div className="text-center mt-8">
+        <Button as="a" href="/magazine" variant="ghost" size="md">
+          {t('common.viewAll')}
+        </Button>
+      </div>
+    )}
 
   </div>
 </section>
@@ -697,7 +687,7 @@ export default function HomePage() {
 {/* ================= LONG CONTENT SECTION ================= */}
 {/* Rich-text body — admin-managed via Settings → Furniture SEO Content (official-home). */}
 {homeSeo?.longContent?.trim() && (
-  <section className="bg-white py-10 border-t">
+  <section className="bg-white section-pattern-2 py-10 border-t">
     <div className="max-w-content mx-auto px-4">
       <div className="bg-[var(--section-bg-1)] rounded-3xl p-6 md:p-8 shadow-soft">
         <div
@@ -714,10 +704,10 @@ export default function HomePage() {
   faqs={(Array.isArray(homeSeo?.faqs) && homeSeo.faqs.length > 0 ? homeSeo.faqs : faqItems) as FAQItem[]}
   title={homeSeo?.pageTitle?.trim() || t('faqSection.defaultTitle')}
   subtitle={homeSeo?.pageSubtitle?.trim() || t('home.faqDefaultSubtitle')}
-  sectionClassName="bg-[var(--section-bg-1)] pt-14 md:pt-20 border-t border-gray-100"
+  sectionClassName="section-bg-2 pt-14 md:pt-20 border-t border-gray-100"
 />
-<div className="bg-[var(--section-bg-1)] text-center pt-2 pb-14 md:pb-20">
-  <p className="text-xs text-gray-500">
+<div className="section-bg-2 text-center pt-2 pb-14 md:pb-20">
+  <p className="text-xs text-gray-500 pt-4">
     {t('home.faqFooterText')}{" "}
     <Link href="/contact" className="underline hover:text-black">
       {t('home.faqFooterLink')}
@@ -735,7 +725,7 @@ export default function HomePage() {
   const formSubtitle = nl.formSubtitle ?? t('newsletterSection.formSubtitle');
   const disclaimer = nl.disclaimer ?? t('newsletterSection.disclaimer');
   return (
-<section className="bg-white py-6 border-t">   {/* ← py-12 ko py-6 kiya */}
+<section className="bg-white section-pattern-2 py-6 border-t">   {/* ← py-12 ko py-6 kiya */}
   <div className="max-w-content mx-auto px-4">
 
     <div className="bg-[var(--section-bg-1)] rounded-2xl overflow-hidden shadow-soft">
@@ -754,7 +744,7 @@ export default function HomePage() {
 
           <div className="absolute bottom-6 left-6 text-white">
             {overlayTitle && (
-              <h3 className="text-h4 md:text-h3">
+              <h3 className="text-h4 md:text-h3 font-display">
                 {overlayTitle}
               </h3>
             )}
@@ -769,7 +759,7 @@ export default function HomePage() {
         {/* FORM */}
         <div className="p-8 md:p-12 flex flex-col justify-center">
           {formTitle && (
-            <h3 className="text-h3 text-gray-900 mb-3">
+            <h3 className="text-h3 font-display text-gray-900 mb-3">
               {formTitle}
             </h3>
           )}

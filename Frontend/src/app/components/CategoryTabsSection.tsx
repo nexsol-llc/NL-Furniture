@@ -1,7 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import CategoryCardsGrid from "./CategoryCardsGrid";
+import CategoryPhotoCardsGrid from "./CategoryPhotoCardsGrid";
+import IndoorOutdoorToggle, { type IndoorOutdoorValue } from "./IndoorOutdoorToggle";
 import type { HomeCategoryItem } from "@/lib/homeCategoryGroups";
 import { useLanguage } from "@/providers/languageContext";
 
@@ -10,59 +11,57 @@ type CategoryTabsSectionProps = {
   outdoor: HomeCategoryItem[];
 };
 
-// Single section that switches between the Innenbereich (indoor) and
-// Außenbereich (outdoor) category grids via a tab toggle. Tiles link to
-// /binnen/[slug] or /buiten/[slug] to match whichever tab is active.
+// Single section that switches between the indoor and outdoor category grids
+// via the pill toggle. Tiles link to /binnen/[slug] or /buiten/[slug] to match
+// whichever tab is active.
 export default function CategoryTabsSection({
   indoor,
   outdoor,
 }: CategoryTabsSectionProps) {
   const { t } = useLanguage();
-  const tabs = [
-    {
-      key: "innen",
-      label: t('categoryTabsSection.indoorLabel'),
-      subtitle: t('categoryTabsSection.indoorSubtitle'),
-      items: indoor,
-    },
-    {
-      key: "aussen",
-      label: t('categoryTabsSection.outdoorLabel'),
-      subtitle: t('categoryTabsSection.outdoorSubtitle'),
-      items: outdoor,
-    },
-  ].filter((tab) => tab.items.length > 0);
+  const [active, setActive] = useState<IndoorOutdoorValue>(
+    indoor.length > 0 ? "indoor" : "outdoor"
+  );
 
-  const [active, setActive] = useState(tabs[0]?.key ?? "innen");
+  if (indoor.length === 0 && outdoor.length === 0) return null;
 
-  if (tabs.length === 0) return null;
-
-  const current = tabs.find((tab) => tab.key === active) ?? tabs[0];
+  // Guard against a tab that lost its categories after the fetch resolved.
+  const current: IndoorOutdoorValue =
+    (active === "indoor" ? indoor : outdoor).length > 0
+      ? active
+      : active === "indoor"
+        ? "outdoor"
+        : "indoor";
 
   return (
-    <section className="py-8">
+    <section className="section-pattern-1 py-8">
       <div className="max-w-content mx-auto px-4">
-        <div className="flex flex-col items-center mb-6 text-center">
-          {/* Tab switcher */}
-          <div className="inline-flex bg-white rounded-full p-1 shadow-soft border border-gray-100">
-            {tabs.map((tab) => (
-              <button
-                key={tab.key}
-                onClick={() => setActive(tab.key)}
-                className={`px-5 sm:px-6 py-2 rounded-full text-sm font-semibold transition-all duration-200 ${
-                  active === tab.key
-                    ? "bg-primary-600 text-white shadow-soft-sm"
-                    : "text-gray-600 hover:text-gray-900"
-                }`}
-              >
-                {tab.label}
-              </button>
-            ))}
+        <div className="mb-6 text-center">
+          <h2 className="text-h2 font-display text-gray-900">
+            {t("categoryGroupGrid.heading")}
+          </h2>
+          <p className="text-sm text-gray-500 mt-1">
+            {current === "indoor"
+              ? t("categoryTabsSection.indoorSubtitle")
+              : t("categoryTabsSection.outdoorSubtitle")}
+          </p>
+
+          <div className="mt-5 flex justify-center">
+            <IndoorOutdoorToggle
+              value={current}
+              onChange={setActive}
+              indoorLabel={t("categoryTabsSection.indoorLabel")}
+              outdoorLabel={t("categoryTabsSection.outdoorLabel")}
+              indoorDisabled={indoor.length === 0}
+              outdoorDisabled={outdoor.length === 0}
+            />
           </div>
-          <p className="text-sm text-gray-500 mt-3">{current.subtitle}</p>
         </div>
 
-        <CategoryCardsGrid categories={current.items} hrefBase={`/${current.key}`} />
+        <CategoryPhotoCardsGrid
+          categories={current === "indoor" ? indoor : outdoor}
+          hrefBase={current === "indoor" ? "/binnen" : "/buiten"}
+        />
       </div>
     </section>
   );

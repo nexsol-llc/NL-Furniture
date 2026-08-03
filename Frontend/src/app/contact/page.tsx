@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import { Reveal } from '../components/motion/Reveal';
 import { useLanguage } from '@/providers/languageContext';
 
 export default function KontaktPage() {
@@ -8,9 +9,9 @@ export default function KontaktPage() {
   return (
     <main className="min-h-screen bg-white text-gray-900">
       {/* Hero Section */}
-      <section className="relative py-20 sm:py-32 bg-gray-50 overflow-hidden">
+      <section className="relative py-20 sm:py-32 bg-gray-50 section-pattern-1 overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-r from-gray-900/20 to-transparent" />
-        <div className="relative max-w-content mx-auto px-6 sm:px-12 text-center">
+        <Reveal className="relative max-w-content mx-auto px-6 sm:px-12 text-center">
           <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-extrabold mb-8 tracking-tight">
             {t('kontakt.heroTitle')}
           </h1>
@@ -20,11 +21,11 @@ export default function KontaktPage() {
           <p className="text-lg sm:text-xl text-gray-700 max-w-3xl mx-auto mb-12">
             {t('kontakt.heroText')}
           </p>
-        </div>
+        </Reveal>
       </section>
 
       {/* Kontakt-Infos + Form Grid */}
-      <section className="py-16 sm:py-24">
+      <section className="section-pattern-2 py-16 sm:py-24">
         <div className="max-w-content mx-auto px-6 sm:px-12">
           <div className="grid md:grid-cols-2 gap-12 lg:gap-16">
             {/* Left: Kontakt-Details */}

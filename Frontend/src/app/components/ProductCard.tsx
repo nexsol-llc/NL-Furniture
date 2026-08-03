@@ -9,6 +9,7 @@ import { useRouter } from "next/navigation";
 import toast from "react-hot-toast";
 import { getUser, userFetch, type UserPayload } from "@/lib/userAuth";
 import { useLanguage } from "@/providers/languageContext";
+import { Tilt } from "./motion/Tilt";
 
 const formatPrice = (priceStr: string | null | undefined): string => {
   if (!priceStr) return "0,00 €";
@@ -101,7 +102,8 @@ export default function ProductCard({
   };
 
   return (
-    <div className="group relative flex h-full flex-col max-w-[280px] bg-white hover:bg-white overflow-hidden transition-all duration-300 hover:shadow-soft-lg hover:-translate-y-0.5 rounded-xl border border-gray-200/80 shadow-soft">
+    <Tilt rotationFactor={5} className="h-full max-w-[280px]">
+    <div className="group relative flex h-full flex-col bg-white hover:bg-white overflow-hidden transition-all duration-300 hover:shadow-depth-3 hover:-translate-y-1 hover:ring-2 hover:ring-primary-400/50 rounded-2xl border border-gray-200/80 shadow-soft">
       {/* Product Image Container */}
       <div className="relative aspect-square overflow-hidden bg-gray-50">
         <Link href={`/product/${slug || id}`} className="relative block h-full w-full">
@@ -117,7 +119,7 @@ export default function ProductCard({
         {/* Favorite Button */}
         <button
           onClick={toggleWishlist}
-          className="absolute right-3 top-3 z-10 rounded-full bg-white/80 p-2 shadow-soft-sm backdrop-blur-sm transition-all hover:bg-white"
+          className="absolute right-3 top-3 z-10 rounded-full glass-panel p-2 shadow-soft-sm transition-all hover:bg-white/80"
         >
           <Heart
             size={18}
@@ -127,7 +129,7 @@ export default function ProductCard({
 
         {/* Discount Badge */}
         {discount && (
-          <div className="absolute left-0 top-4 z-10 bg-primary-500 px-3 py-1 text-[11px] font-bold text-white uppercase tracking-wider">
+          <div className="absolute left-0 top-4 z-10 bg-primary-500/85 backdrop-blur-md border border-white/30 px-3 py-1 text-[11px] font-bold text-white uppercase tracking-wider">
             -{discount}
           </div>
         )}
@@ -170,5 +172,6 @@ export default function ProductCard({
         </div>
       </div>
     </div>
+    </Tilt>
   );
 }

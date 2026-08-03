@@ -446,7 +446,7 @@ export default function FurnitureListingPage({
   const gridProducts = featuredProducts.length > 0 ? products.filter((p) => !p.is_sponsored) : products;
 
   return (
-    <div className="min-h-screen bg-[var(--section-bg-1)] font-sans">
+    <div className="min-h-screen section-bg-1 font-sans">
       {/* Header */}
       <div className="bg-white border-b border-gray-150 py-4">
         <div className="mx-auto max-w-content px-4 sm:px-6 lg:px-8">
@@ -570,7 +570,7 @@ export default function FurnitureListingPage({
         <div className="flex flex-col lg:flex-row gap-8">
           {/* Desktop Sidebar */}
           <aside className="hidden w-64 flex-shrink-0 lg:block h-full max-h-[calc(100vh-160px)] overflow-y-auto sticky top-24 pr-2 scrollbar-thin scrollbar-thumb-gray-200">
-            <div className="bg-white p-6 rounded-2xl border border-gray-200/80 shadow-soft space-y-6 h-full">
+            <div className="glass-panel p-6 rounded-2xl shadow-depth-2 space-y-6 h-full">
               <div className="border-b border-gray-100 pb-5">
                 <h3 className="text-[13px] font-black text-gray-900 uppercase tracking-wider mb-4 flex items-center justify-between">
                   {t('listingPage.sortHeading')}

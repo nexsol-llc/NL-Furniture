@@ -16,6 +16,7 @@ import {
 } from "lucide-react";
 import ProductCard from "@/app/components/ProductCard";
 import TopsellerCarousel from "@/app/components/TopsellerCarousel";
+import { Reveal } from "@/app/components/motion/Reveal";
 import { useLanguage } from "@/providers/languageContext";
 
 // Raw product shape returned by /api/brands/:slug/products
@@ -341,7 +342,7 @@ export default function BrandProductsPage() {
             </div>
 
             {/* Info */}
-            <div className="flex-1">
+            <Reveal className="flex-1">
               <h1 className="text-2xl md:text-3xl font-bold text-gray-900 capitalize">
                 {safeBrand?.name}
               </h1>
@@ -368,7 +369,7 @@ export default function BrandProductsPage() {
                   </span>
                 )}
               </div>
-            </div>
+            </Reveal>
           </div>
 
           {/* Mobile filter pills */}

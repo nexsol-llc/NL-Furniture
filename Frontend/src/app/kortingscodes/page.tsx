@@ -4,7 +4,9 @@ import Image from "next/image";
 import useSWR from "swr";
 import PromoSlider from "./components/PromoSlider";
 import CategoryGroupGrid from "../components/CategoryGroupGrid";
+import IndoorOutdoorToggle from "../components/IndoorOutdoorToggle";
 import NewsletterSection from "../components/NewsletterSection";
+import { Reveal, RevealGroup, RevealItem } from "../components/motion/Reveal";
 import type { HomeCategoryItem } from "@/lib/homeCategoryGroups";
 import { useLanguage } from "@/providers/languageContext";
 
@@ -111,13 +113,6 @@ export default function CouponsHome() {
   };
   const { data: settingsData } = useSWR<Settings>("/api/coupon-home-settings", fetcher);
   const { data: productsData } = useSWR<HomeProduct[]>("/api/coupon-home-products", fetcher);
-  // Admin-configured section background colors for the coupons page (theme admin).
-  const { data: siteSettings } = useSWR<{ coupon_section_bg_1?: string; coupon_section_bg_2?: string }>(
-    "/api/site-settings",
-    fetcher,
-  );
-  const couponBg1 = siteSettings?.coupon_section_bg_1 || "#f3f4f6";
-  const couponBg2 = siteSettings?.coupon_section_bg_2 || "#f5f5f5";
 
   const [openFaqIndex, setOpenFaqIndex] = useState<number | null>(null);
   const toggleFaq = (i: number) => setOpenFaqIndex(openFaqIndex === i ? null : i);
@@ -128,6 +123,23 @@ export default function CouponsHome() {
   // Parent Categories, split by type, drive this page's Innenbereich/
   // Außenbereich grid (same source as the furniture home page).
   const { data: parentCategoriesData } = useSWR<any[]>("/api/parent-categories", fetcher);
+  // How many Category Catalog entries hang off each parent — shown as the
+  // caption under a tile's name.
+  const { data: catalogData } = useSWR<any[]>("/api/category-catalog", fetcher);
+  const catalogCounts = new Map<string, number>();
+  for (const entry of Array.isArray(catalogData) ? catalogData : []) {
+    const parentId = (entry as any)?.parentCategoryId;
+    if (parentId) catalogCounts.set(parentId, (catalogCounts.get(parentId) ?? 0) + 1);
+  }
+  const tileCaption = (count: number): string | undefined =>
+    count > 0
+      ? t(
+          count === 1
+            ? "categoryGroupGrid.categoriesCountSingular"
+            : "categoryGroupGrid.categoriesCount",
+          { count }
+        )
+      : undefined;
   // Only Featured parent categories show here, in their drag-configured order
   // (the API already returns them sorted by sort_order).
   const pickParentCats = (type: "indoor" | "outdoor"): HomeCategoryItem[] =>
@@ -137,6 +149,7 @@ export default function CouponsHome() {
         name: p.name || p.slug,
         slug: p.slug,
         image: p.image || null,
+        caption: tileCaption(catalogCounts.get(p._id) ?? 0),
       }));
   const homeIndoorCats = pickParentCats("indoor");
   const homeOutdoorCats = pickParentCats("outdoor");
@@ -167,12 +180,13 @@ export default function CouponsHome() {
 
       {/* BEST COUPONS */}
       {s.bestCoupons.length > 0 && (
-        <section className="py-12" style={{ backgroundColor: couponBg1 }}>
+        <section className="coupon-section-bg-1 py-12">
           <div className="max-w-7xl mx-auto px-4">
-            <h2 className="text-2xl md:text-3xl font-bold mb-8">{s.bestCouponsHeading}</h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 items-stretch">
+            <Reveal><h2 className="text-2xl md:text-3xl font-bold mb-8">{s.bestCouponsHeading}</h2></Reveal>
+            <RevealGroup className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 items-stretch">
               {s.bestCoupons.map((card, i) => (
-                <div key={i} className="bg-white rounded-2xl shadow-soft hover:shadow-soft-lg transition p-5 flex items-center justify-between h-full">
+                <RevealItem key={i}>
+                <div className="bg-white rounded-2xl shadow-soft hover:shadow-depth-3 transition p-5 flex items-center justify-between h-full">
                   <div className="flex flex-col justify-between h-full w-[60%]">
                     <div>
                       <h3 className="font-semibold text-sm mb-2">{card.title}</h3>
@@ -190,15 +204,16 @@ export default function CouponsHome() {
                     {card.image && <Image src={card.image} alt={card.title} fill className="object-cover" />}
                   </div>
                 </div>
+                </RevealItem>
               ))}
-            </div>
+            </RevealGroup>
           </div>
         </section>
       )}
 
       {/* CASHBACK STORES */}
       {s.cashbackStores.length > 0 && (
-        <section className="py-10 border-t border-gray-200" style={{ backgroundColor: couponBg2 }}>
+        <section className="coupon-section-bg-2 py-10 border-t border-gray-200">
           <div className="max-w-7xl mx-auto px-4">
             <div className="flex justify-between items-center mb-8">
               <div>
@@ -242,7 +257,7 @@ export default function CouponsHome() {
 
       {/* FURNITURE INFLUENCER / DESIGNER SECTION (admin-managed) */}
       {ds.enabled && (
-        <section className="w-full bg-white py-6 sm:py-8 md:py-10">
+        <section className="w-full bg-white coupon-section-pattern-1 py-6 sm:py-8 md:py-10">
           <div className="mx-auto max-w-7xl px-3 sm:px-4 md:px-6 lg:px-8">
             <div className="flex flex-col md:flex-row overflow-hidden rounded-lg sm:rounded-xl border border-gray-200">
               <div className="relative flex w-full md:w-2/3 min-h-[200px] sm:min-h-[250px] md:min-h-[300px] lg:min-h-[350px]" style={{ backgroundColor: ds.bgColor || "#d97706" }}>
@@ -277,7 +292,7 @@ export default function CouponsHome() {
 
       {/* MÖBEL MEGA ANGEBOTE (deals) */}
       {deals.length > 0 && (
-        <section className="py-6 sm:py-8 md:py-10 lg:py-12 bg-white">
+        <section className="py-6 sm:py-8 md:py-10 lg:py-12 bg-white coupon-section-pattern-2">
           <div className="max-w-7xl mx-auto px-3 sm:px-4 md:px-6 lg:px-8">
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 sm:mb-5 md:mb-6 lg:mb-8">
               <h2 className="text-lg sm:text-xl md:text-2xl lg:text-3xl font-bold text-gray-900">{s.dealsHeading || t('gutscheineHome.defaultDealsHeading')}</h2>
@@ -325,7 +340,7 @@ export default function CouponsHome() {
         const groupProducts = products.filter((p) => p.section === group.key).sort(byOrder);
         if (groupProducts.length === 0) return null;
         return (
-          <section key={group.key} className="bg-white py-8">
+          <section key={group.key} className="bg-white coupon-section-pattern-1 py-8">
             <div className="max-w-7xl mx-auto px-4 relative">
               <div className="flex items-center justify-between mb-6">
                 <div className="flex items-center gap-3">
@@ -373,37 +388,29 @@ export default function CouponsHome() {
       {/* CATEGORY GRID with Innenbereich/Außenbereich toggle (admin-managed, matches the furniture home page) */}
       {(homeIndoorCats.length > 0 || homeOutdoorCats.length > 0) && (
         <CategoryGroupGrid
-          title={catTab === "indoor" ? t('categoryTabsSection.indoorLabel') : t('categoryTabsSection.outdoorLabel')}
-          subtitle={catTab === "indoor" ? t('home.indoorTileSubtitle') : t('categoryTabsSection.outdoorSubtitle')}
-          backgroundClassName="bg-[var(--coupon-section-bg-2)]"
+          variant="photo"
+          title={t('categoryGroupGrid.heading')}
+          subtitle={t('categoryGroupGrid.subheading')}
+          backgroundClassName="coupon-section-bg-2"
           categories={catTab === "indoor" ? homeIndoorCats : homeOutdoorCats}
-          hrefBase={`/${catTab}`}
+          hrefBase={catTab === "indoor" ? "/binnen" : "/buiten"}
+          moreCategoriesHref="/categorie"
           headerExtra={
-            <div className="flex w-full max-w-[340px] bg-white/70 rounded-2xl p-1 shadow-soft">
-              <button
-                onClick={() => setCatTab("indoor")}
-                disabled={homeIndoorCats.length === 0}
-                className={`flex-1 text-center py-2.5 rounded-xl font-semibold text-sm transition-all disabled:opacity-40 disabled:cursor-not-allowed
-                  ${catTab === "indoor" ? "bg-white text-gray-900 shadow-soft" : "text-gray-600 hover:bg-white/70"}`}
-              >
-                {t('categoryTabsSection.indoorLabel')}
-              </button>
-              <button
-                onClick={() => setCatTab("outdoor")}
-                disabled={homeOutdoorCats.length === 0}
-                className={`flex-1 text-center py-2.5 rounded-xl font-semibold text-sm transition-all disabled:opacity-40 disabled:cursor-not-allowed
-                  ${catTab === "outdoor" ? "bg-white text-gray-900 shadow-soft" : "text-gray-600 hover:bg-white/70"}`}
-              >
-                {t('categoryTabsSection.outdoorLabel')}
-              </button>
-            </div>
+            <IndoorOutdoorToggle
+              value={catTab}
+              onChange={setCatTab}
+              indoorLabel={t('categoryTabsSection.indoorLabel')}
+              outdoorLabel={t('categoryTabsSection.outdoorLabel')}
+              indoorDisabled={homeIndoorCats.length === 0}
+              outdoorDisabled={homeOutdoorCats.length === 0}
+            />
           }
         />
       )}
 
       {/* NEWSLETTER (admin-managed) */}
       <NewsletterSection
-        sectionClassName="bg-white py-20 border-t"
+        sectionClassName="bg-white coupon-section-pattern-1 py-20 border-t"
         cardClassName="bg-gray-50 rounded-3xl overflow-hidden shadow-soft"
         inputClassName="flex-1 px-6 py-4 rounded-xl border focus:outline-none focus:ring-2 focus:ring-primary-500"
         buttonClassName="bg-primary-600 text-white px-10 py-4 rounded-xl font-medium hover:bg-primary-700 transition"
@@ -411,7 +418,7 @@ export default function CouponsHome() {
 
       {/* LONG CONTENT + FAQ */}
       {(s.longContent || s.faqs.length > 0) && (
-        <section className="w-full bg-white py-6 sm:py-8 md:py-10 lg:py-12 xl:py-16 border-t border-gray-200">
+        <section className="w-full bg-white coupon-section-pattern-2 py-6 sm:py-8 md:py-10 lg:py-12 xl:py-16 border-t border-gray-200">
           <div className="max-w-7xl mx-auto px-3 sm:px-4 md:px-6 lg:px-8">
             {s.faqs.length > 0 && (
               <>

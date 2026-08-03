@@ -29,6 +29,7 @@ const config: Config = {
       fontFamily: {
         sans: ["var(--font-geist-sans)", ...defaultTheme.fontFamily.sans],
         mono: ["var(--font-geist-mono)", ...defaultTheme.fontFamily.mono],
+        display: ["var(--font-display)", ...defaultTheme.fontFamily.serif],
       },
       fontSize: {
         display: ["3rem", { lineHeight: "1.1", letterSpacing: "-0.02em", fontWeight: "700" }],
@@ -48,6 +49,14 @@ const config: Config = {
         "soft-md": "0 8px 24px -4px rgba(15,23,42,0.08), 0 2px 6px rgba(15,23,42,0.04)",
         "soft-lg": "0 16px 40px -8px rgba(15,23,42,0.12), 0 4px 12px rgba(15,23,42,0.06)",
         cta: "0 10px 24px -6px rgb(var(--primary-600-rgb) / 0.35)",
+        "depth-1": "0 1px 2px rgba(15,23,42,0.06), 0 1px 1px rgba(15,23,42,0.04)",
+        "depth-2": "0 4px 12px -2px rgba(15,23,42,0.10), 0 2px 4px -2px rgba(15,23,42,0.06)",
+        "depth-3": "0 12px 32px -6px rgba(15,23,42,0.16), 0 4px 10px -4px rgba(15,23,42,0.08)",
+        "depth-4": "0 24px 60px -12px rgba(15,23,42,0.24), 0 8px 20px -8px rgba(15,23,42,0.10)",
+        glass: "0 8px 32px rgba(0,0,0,0.10), inset 0 1px 0 rgba(255,255,255,0.4)",
+      },
+      backdropBlur: {
+        xs: "2px",
       },
     },
   },

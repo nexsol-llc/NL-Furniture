@@ -540,12 +540,12 @@ export default function InfluencerPostPage() {
       <FAQSection
         faqs={post.faqs}
         title={t('influencerPostPage.faqTitle')}
-        sectionClassName="bg-[#fafafa] py-14 md:py-20 border-t border-gray-100"
+        sectionClassName="bg-[#fafafa] section-pattern-2 py-14 md:py-20 border-t border-gray-100"
       />
 
       {/* ── NEWSLETTER (admin-managed) ── */}
       <NewsletterSection
-        sectionClassName="bg-white py-12 md:py-16 border-t border-gray-100"
+        sectionClassName="bg-white section-pattern-1 py-12 md:py-16 border-t border-gray-100"
         cardClassName="bg-gray-50 rounded-3xl overflow-hidden shadow-soft max-w-[1100px] mx-auto"
         inputClassName="flex-1 px-4 py-3 rounded-xl border focus:outline-none focus:ring-2 focus:ring-primary-600 text-sm"
         buttonClassName="bg-primary-600 text-white px-8 py-3 rounded-xl text-sm font-medium hover:bg-primary-700 transition"

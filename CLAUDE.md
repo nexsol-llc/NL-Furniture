@@ -50,7 +50,7 @@ This codebase was copied from the German DIEWOHNEN project and re-localized for 
 
 ## Frontend (`Frontend/`)
 
-**Public site:** `src/app/*` (home, category, product, coupons, influencer, blog/magazine, legal pages). Shared UI in `src/app/components/`.
+**Public site:** `src/app/*` (home, category, product, coupons, influencer, blog/magazine, legal pages). Shared UI in `src/app/components/`. Generic, presentational primitives live in `src/components/ui/` (the shadcn-style path third-party snippets import as `@/components/ui/*`); this is **not** a shadcn project — no `components.json`, no Radix — and `src/lib/utils.ts` exports `cn` backed by `clsx` alone (no `tailwind-merge`).
 
 **Admin panel:** `src/app/admin/*` — one page per manageable section. `admin/layout.tsx` renders the permission-aware sidebar. Auth helpers in `src/lib/adminAuth.ts` (`adminFetch` attaches the `Authorization: Bearer` token).
 
@@ -58,6 +58,11 @@ This codebase was copied from the German DIEWOHNEN project and re-localized for 
 - **Media library** — `admin/media/page.tsx` + reusable `components/MediaPicker.tsx` for choosing/uploading images from the R2-backed library.
 - **Staff & permissions** — `admin/staff/page.tsx`; permission modules/groups defined in `src/lib/adminPermissions.ts`.
 - **Theme system** — `admin/theme/page.tsx` lets admins pick a color preset or a custom hex. `src/lib/colorPresets.ts` holds the Tailwind-shade presets (pink, rose, red, orange, purple, violet, blue, teal, green + custom) and `applyTheme`/`applyCustomHex` which set CSS variables. `src/providers/themeContext.tsx` (`ThemeProvider`/`useTheme`) loads from localStorage first (no flash) then reconciles with `/api/site-settings`. Tailwind consumes the CSS variables (`tailwind.config.ts`, `globals.css`).
+- **Section patterns** — the same admin theme page picks an optional background texture (`none` | `dots` | `grid` | `diagonal-stripes` | `horizontal-lines` | `vertical-lines` | `checkerboard`) plus its ink color, opacity and tile size. There are **four independent slots — one per section color** (`section_pattern_1|2`, `coupon_section_pattern_1|2`), so the alternating A/B sections can differ. `src/lib/bgPatterns.ts` owns the gradient definitions and the `PatternSlot` type, which doubles as the settings-key base (`section_pattern_1_color`) and the CSS-variable prefix (`--section-pattern-1-image`); `ThemeProvider` publishes all four. Two families of classes in `globals.css` consume them:
+  - `.section-bg-1|2` / `.coupon-section-bg-1|2` — the admin **color plus its pattern**, for sections painted with a section color.
+  - `.section-pattern-1|2` / `.coupon-section-pattern-1|2` — **pattern only**, for sections that keep a background of their own (`bg-white`, `bg-gray-50`, …). Pair with a `bg-*` utility; never with a gradient, which fights over `background-image`.
+
+  Public sections alternate the 1/2 pair down each page. Cards and chips that merely borrow a section color keep `bg-[var(--section-bg-N)]` and stay flat, and photo heroes / gradient / solid-black sections are deliberately left untextured. **Never set a section color with an inline `style={{ backgroundColor }}`** — that bypasses the pattern entirely (this bug is why `/`, `/kortingscodes` and `/categorie` showed no texture) and duplicates a fetch `ThemeProvider` already makes.
 
 **Libs of note:** `lib/imageOptimizer.ts`, `lib/csvParser.ts`, `lib/userAuth.ts`, plus catalog data in `lib/categoryCatalog.ts`, `lib/homeCategoryGroups.ts`, `lib/influencerCatalog.ts`.
 

@@ -3,6 +3,7 @@
 import { useRef } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import ProductCard from "./ProductCard";
+import { Reveal } from "./motion/Reveal";
 import { useLanguage } from "@/providers/languageContext";
 
 type FeaturedProduct = {
@@ -35,7 +36,7 @@ export default function TopsellerCarousel({
   };
 
   return (
-    <div className="mb-8 rounded-2xl bg-[var(--section-bg-2)] p-5 sm:p-6">
+    <Reveal className="mb-8 rounded-2xl section-bg-2 p-5 sm:p-6">
       <div className="mb-4 flex items-center justify-between">
         <h2 className="text-lg font-black uppercase tracking-wide text-gray-900 sm:text-xl">
           {title ?? t('topsellerCarousel.defaultTitle')}
@@ -79,6 +80,6 @@ export default function TopsellerCarousel({
           </div>
         ))}
       </div>
-    </div>
+    </Reveal>
   );
 }

@@ -139,7 +139,11 @@
     "noImage": "Kein Bild"
   },
   "categoryGroupGrid": {
-    "viewMore": "Mehr anzeigen"
+    "viewMore": "Mehr anzeigen",
+    "heading": "Entdecke unsere Kategorien",
+    "subheading": "Finde die perfekten Möbel für jeden Raum in deinem Zuhause.",
+    "categoriesCount": "{{count}} Kategorien",
+    "categoriesCountSingular": "{{count}} Kategorie"
   },
   "newsletterSection": {
     "overlayTitle": "Werde Teil der Community.",

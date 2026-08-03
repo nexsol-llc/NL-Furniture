@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import toast, { Toaster } from "react-hot-toast";
 import { useLanguage } from "@/providers/languageContext";
+import { Reveal } from "../components/motion/Reveal";
 
 function ResetPasswordContent() {
   const router = useRouter();
@@ -67,7 +68,7 @@ function ResetPasswordContent() {
   if (!token) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-[radial-gradient(circle_at_top_right,_rgba(240,115,76,0.15),_transparent_35%),linear-gradient(135deg,_#f3f4f6,_#e5e7eb_60%,_#d1d5db)] px-4">
-        <div className="bg-white/80 backdrop-blur-md p-8 md:p-10 rounded-3xl shadow-[0_20px_50px_rgba(0,0,0,0.08)] border border-white/20 w-full max-w-md text-center">
+        <Reveal className="glass-panel p-8 md:p-10 rounded-3xl shadow-depth-4 w-full max-w-md text-center">
           <div className="w-16 h-16 bg-red-100 text-red-600 rounded-full flex items-center justify-center mx-auto mb-4">
             <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
@@ -83,7 +84,7 @@ function ResetPasswordContent() {
           >
             {t('auth.requestNewLink')}
           </Link>
-        </div>
+        </Reveal>
       </div>
     );
   }
@@ -91,8 +92,8 @@ function ResetPasswordContent() {
   return (
     <div className="min-h-screen flex items-center justify-center bg-[radial-gradient(circle_at_top_right,_rgba(240,115,76,0.15),_transparent_35%),linear-gradient(135deg,_#f3f4f6,_#e5e7eb_60%,_#d1d5db)] px-4">
       <Toaster position="top-center" />
-      <div className="bg-white/80 backdrop-blur-md p-8 md:p-10 rounded-3xl shadow-[0_20px_50px_rgba(0,0,0,0.08)] border border-white/20 w-full max-w-md">
-        
+      <Reveal className="glass-panel p-8 md:p-10 rounded-3xl shadow-depth-4 w-full max-w-md">
+
         {/* Header / Logo */}
         <div className="text-center mb-8">
           <h1 className="text-3xl font-extrabold tracking-tight text-gray-900">
@@ -164,7 +165,7 @@ function ResetPasswordContent() {
             </button>
           </form>
         )}
-      </div>
+      </Reveal>
     </div>
   );
 }

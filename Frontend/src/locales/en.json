@@ -139,7 +139,11 @@
     "noImage": "No image"
   },
   "categoryGroupGrid": {
-    "viewMore": "View more"
+    "viewMore": "View more",
+    "heading": "Discover our categories",
+    "subheading": "Find the perfect furniture for every room in your home.",
+    "categoriesCount": "{{count}} categories",
+    "categoriesCountSingular": "{{count}} category"
   },
   "newsletterSection": {
     "overlayTitle": "Join the community.",

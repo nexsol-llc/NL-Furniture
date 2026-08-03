@@ -40,6 +40,129 @@
   --section-bg-2: #F5E6D7;
   --coupon-section-bg-1: #f3f4f6;
   --coupon-section-bg-2: #f5f5f5;
+
+  /* Optional pattern layered over those colors (dots, grid, stripes, …), also
+     set at runtime by ThemeProvider. One per section color, so A and B can
+     differ. `none` = plain color, the default until an admin picks a pattern
+     under Theme → Section Patterns. */
+  --section-pattern-1-image: none;
+  --section-pattern-1-size: auto;
+  --section-pattern-1-position: 0 0;
+  --section-pattern-2-image: none;
+  --section-pattern-2-size: auto;
+  --section-pattern-2-position: 0 0;
+  --coupon-section-pattern-1-image: none;
+  --coupon-section-pattern-1-size: auto;
+  --coupon-section-pattern-1-position: 0 0;
+  --coupon-section-pattern-2-image: none;
+  --coupon-section-pattern-2-size: auto;
+  --coupon-section-pattern-2-position: 0 0;
+}
+
+/* =============================================
+   Section surfaces
+   An admin-configured section color plus its optional background pattern.
+   Reserved for full-width section/page surfaces: cards and chips that merely
+   borrow a section color keep using bg-[var(--section-bg-N)], so the pattern
+   never lands on small elements where it would read as noise.
+   ============================================= */
+@layer components {
+  .section-bg-1,
+  .section-bg-2,
+  .coupon-section-bg-1,
+  .coupon-section-bg-2 {
+    background-repeat: repeat;
+  }
+
+  .section-bg-1 {
+    background-color: var(--section-bg-1);
+  }
+  .section-bg-2 {
+    background-color: var(--section-bg-2);
+  }
+  .coupon-section-bg-1 {
+    background-color: var(--coupon-section-bg-1);
+  }
+  .coupon-section-bg-2 {
+    background-color: var(--coupon-section-bg-2);
+  }
+
+  .section-bg-1 {
+    background-image: var(--section-pattern-1-image);
+    background-size: var(--section-pattern-1-size);
+    background-position: var(--section-pattern-1-position);
+  }
+  .section-bg-2 {
+    background-image: var(--section-pattern-2-image);
+    background-size: var(--section-pattern-2-size);
+    background-position: var(--section-pattern-2-position);
+  }
+  .coupon-section-bg-1 {
+    background-image: var(--coupon-section-pattern-1-image);
+    background-size: var(--coupon-section-pattern-1-size);
+    background-position: var(--coupon-section-pattern-1-position);
+  }
+  .coupon-section-bg-2 {
+    background-image: var(--coupon-section-pattern-2-image);
+    background-size: var(--coupon-section-pattern-2-size);
+    background-position: var(--coupon-section-pattern-2-position);
+  }
+
+  /* Pattern without the color — for sections that keep a background of their own
+     (bg-white, bg-gray-50, a hero photo, …) but should still carry the texture.
+     Pairs with a `bg-*` utility; don't combine with a gradient, which would
+     fight over background-image. */
+  .section-pattern-1 {
+    background-image: var(--section-pattern-1-image);
+    background-size: var(--section-pattern-1-size);
+    background-position: var(--section-pattern-1-position);
+    background-repeat: repeat;
+  }
+  .section-pattern-2 {
+    background-image: var(--section-pattern-2-image);
+    background-size: var(--section-pattern-2-size);
+    background-position: var(--section-pattern-2-position);
+    background-repeat: repeat;
+  }
+  .coupon-section-pattern-1 {
+    background-image: var(--coupon-section-pattern-1-image);
+    background-size: var(--coupon-section-pattern-1-size);
+    background-position: var(--coupon-section-pattern-1-position);
+    background-repeat: repeat;
+  }
+  .coupon-section-pattern-2 {
+    background-image: var(--coupon-section-pattern-2-image);
+    background-size: var(--coupon-section-pattern-2-size);
+    background-position: var(--coupon-section-pattern-2-position);
+    background-repeat: repeat;
+  }
+}
+
+/* =============================================
+   Spatial UI — glass surface utilities
+   Glass is reserved for chrome/floating/overlay surfaces (header, filter
+   drawers, badges over photos, hover states). Anything with paragraph text
+   or a price stays on a solid bg-white + shadow-depth-* surface instead —
+   translucent backgrounds under body copy risk failing contrast, especially
+   once glass-tint picks up a very light admin-configured brand color.
+   ============================================= */
+.glass-panel {
+  background: rgba(255, 255, 255, 0.55);
+  backdrop-filter: blur(20px) saturate(160%);
+  -webkit-backdrop-filter: blur(20px) saturate(160%);
+  border: 1px solid rgba(255, 255, 255, 0.4);
+}
+.glass-panel-dark {
+  background: rgba(17, 24, 39, 0.55);
+  backdrop-filter: blur(20px) saturate(160%);
+  -webkit-backdrop-filter: blur(20px) saturate(160%);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+}
+.glass-tint {
+  background: rgb(var(--primary-500-rgb) / 0.12);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgb(var(--primary-500-rgb) / 0.18);
 }
 
 /* Infinite horizontal marquee (brand logos, furniture carousels) */
@@ -154,6 +277,62 @@ h10, .h10 {
     animation: none;
   }
 }
+/* =============================================
+   Card fan carousel (components/ui/card-fan-carousel.tsx)
+   Cards are stacked on top of each other and positioned entirely by GSAP
+   transforms, so the only job here is the box: size, radius, shadow.
+   The .fan-layout heights below MUST match getHeightMultiplier() in the
+   component — it scales the fan's vertical spread against them.
+   Mobile first: the cards get smaller and getSpread() measures the fan against
+   the container width, so seven cards still read as a hand instead of a smear.
+   overflow:hidden is the backstop that keeps a fan wider than its container
+   from turning into a horizontal page scroll.
+   ============================================= */
+.fan-layout {
+  height: 16rem;
+  max-height: 70vh; /* same budget getHeightMultiplier() assumes */
+  overflow: hidden;
+  touch-action: pan-y; /* horizontal swipe cycles, vertical still scrolls */
+}
+
+.fan-card {
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  margin: auto; /* centers without a transform — GSAP owns `transform` */
+  width: 7.5rem;
+  height: 10.5rem;
+  border-radius: 0.875rem;
+  overflow: hidden;
+  background-color: #e5e7eb;
+  box-shadow: 0 12px 30px -10px rgba(15, 23, 42, 0.35), 0 2px 6px rgba(15, 23, 42, 0.08);
+  opacity: 0; /* GSAP fades each card in on entry */
+  will-change: transform, opacity;
+  backface-visibility: hidden;
+}
+
+@media (min-width: 480px) {
+  .fan-layout { height: 18rem; }
+  .fan-card { width: 8.5rem; height: 12rem; }
+}
+
+@media (min-width: 640px) {
+  .fan-layout { height: 20rem; }
+  .fan-card { width: 10rem; height: 14rem; border-radius: 1rem; }
+}
+
+@media (min-width: 768px) {
+  .fan-layout { height: 24rem; }
+  .fan-card { width: 11.5rem; height: 16.5rem; border-radius: 1.125rem; }
+}
+
+@media (min-width: 1024px) {
+  .fan-layout { height: 28rem; }
+  .fan-card { width: 13rem; height: 18.5rem; border-radius: 1.25rem; }
+}
+
 /* Ticket-style coupon cards: punch two real transparent notches out of the
    card edges, in line with the dashed divider, so the page background shows
    through (a true "cut", not a painted dot). Desktop only — mobile stacks

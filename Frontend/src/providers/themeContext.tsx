@@ -18,6 +18,14 @@ import {
   applyCustomHex,
   resolveShades,
 } from "@/lib/colorPresets";
+import {
+  DEFAULT_SECTION_PATTERN,
+  DEFAULT_SECTION_PATTERNS,
+  PATTERN_SLOTS,
+  SectionPatternMap,
+  applyAllPatternVars,
+  readAllPatterns,
+} from "@/lib/bgPatterns";
 import { adminFetch } from "@/lib/adminAuth";
 
 // ── Section background colors (published as CSS variables for every section) ──
@@ -47,6 +55,25 @@ function applySectionBgVars(bgs: SectionBgs) {
   root.style.setProperty("--section-bg-2", merged.section_bg_2);
   root.style.setProperty("--coupon-section-bg-1", merged.coupon_section_bg_1);
   root.style.setProperty("--coupon-section-bg-2", merged.coupon_section_bg_2);
+}
+
+// ── Section background patterns (dots/grid/stripes/… over those colors) ───────
+// One per section color, so A and B can carry different textures.
+const SECTION_PATTERN_KEY = "nl-furniture-section-patterns";
+
+function readCachedPatterns(): SectionPatternMap {
+  try {
+    const raw = localStorage.getItem(SECTION_PATTERN_KEY);
+    if (!raw) return DEFAULT_SECTION_PATTERNS;
+    const parsed = JSON.parse(raw) ?? {};
+    const patterns = { ...DEFAULT_SECTION_PATTERNS };
+    PATTERN_SLOTS.forEach((slot) => {
+      patterns[slot] = { ...DEFAULT_SECTION_PATTERN, ...parsed[slot] };
+    });
+    return patterns;
+  } catch {
+    return DEFAULT_SECTION_PATTERNS;
+  }
 }
 
 type ThemeContextType = {
@@ -86,8 +113,9 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
   const [loaded, setLoaded] = useState(false);
 
   useEffect(() => {
-    // Apply cached section-background colors immediately (no flash), then reconcile below.
+    // Apply cached section backgrounds + patterns immediately (no flash), then reconcile below.
     applySectionBgVars(readCachedSectionBgs());
+    applyAllPatternVars(readCachedPatterns());
 
     // Apply cached values immediately (no flash)
     const cachedTheme = localStorage.getItem(STORAGE_KEY) as ThemeKey | null;
@@ -156,6 +184,13 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
         applySectionBgVars(bgs);
         try {
           localStorage.setItem(SECTION_BG_KEY, JSON.stringify(bgs));
+        } catch {}
+
+        // Section background patterns → CSS variables consumed by .section-bg-*.
+        const patterns = readAllPatterns(data);
+        applyAllPatternVars(patterns);
+        try {
+          localStorage.setItem(SECTION_PATTERN_KEY, JSON.stringify(patterns));
         } catch {}
       })
       .catch(() => {})

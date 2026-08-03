@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import Image from "next/image";
 import FAQSection from "../components/FAQSection";
@@ -18,12 +18,16 @@ function CategoryGridSkeleton() {
         <div className="flex flex-col items-center mb-6">
           <div className="h-7 w-40 rounded-lg skeleton" />
           <div className="h-3 w-56 rounded skeleton mt-2.5" />
+          <div className="h-12 w-64 rounded-full skeleton mt-5" />
         </div>
-        <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-7 gap-4">
-          {Array.from({ length: 7 }).map((_, i) => (
-            <div key={i} className="flex flex-col items-center">
-              <div className="w-24 h-24 sm:w-28 sm:h-28 rounded-3xl skeleton" />
-              <div className="h-3 w-16 rounded skeleton mt-2.5" />
+        <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
+          {Array.from({ length: 6 }).map((_, i) => (
+            <div key={i} className="rounded-2xl overflow-hidden bg-white">
+              <div className="aspect-[4/3] w-full skeleton" />
+              <div className="px-3 py-2.5 space-y-2">
+                <div className="h-3.5 w-3/4 rounded skeleton" />
+                <div className="h-2.5 w-1/2 rounded skeleton" />
+              </div>
             </div>
           ))}
         </div>
@@ -139,18 +143,19 @@ function CategorySection({
   products,
   categoryKey,
   loading,
-  bgColor,
+  backgroundClassName = "",
 }: {
   title: string;
   desc: string;
   products: any[];
   categoryKey: string;
   loading?: boolean;
-  bgColor?: string;
+  /** Section surface class — carries the admin color *and* its pattern. */
+  backgroundClassName?: string;
 }) {
   const { t } = useLanguage();
   return (
-    <section className="py-8 md:py-10" style={bgColor ? { backgroundColor: bgColor } : undefined}>
+    <section className={`${backgroundClassName} py-8 md:py-10`}>
       <div className="max-w-content mx-auto px-4">
         <div className="flex justify-between items-center mb-6 flex-wrap gap-2">
           <div>
@@ -257,10 +262,6 @@ export default function KategoriePage() {
   const [loadingProducts, setLoadingProducts] = useState(true);
   const [catalogs, setCatalogs] = useState<any[]>([]);
 
-  // 2nd admin section color (Admin → Theme → Section colors) used as the
-  // background of the product sections.
-  const [sectionBg2, setSectionBg2] = useState("#F5E6D7");
-
   // 1️⃣ Fetch DB settings for this page
   useEffect(() => {
     const fetchSettings = async () => {
@@ -294,21 +295,11 @@ export default function KategoriePage() {
         // Only Featured parent categories show here, in their drag-configured
         // order (the API already returns them sorted by sort_order).
         const list = (Array.isArray(data) ? data : []).filter((p: any) => p?.slug && (p.featured === true || p.featured === "true"));
-        const mapItem = (p: any) => ({ name: p.name || p.slug, slug: p.slug, image: p.image || null });
+        const mapItem = (p: any) => ({ id: p._id, name: p.name || p.slug, slug: p.slug, image: p.image || null });
         setIndoorCats(list.filter((p: any) => p.type !== "outdoor").map(mapItem));
         setOutdoorCats(list.filter((p: any) => p.type === "outdoor").map(mapItem));
       })
       .catch((err) => console.error("Failed to fetch parent categories:", err));
-  }, []);
-
-  // Fetch the admin-configured 2nd section background color.
-  useEffect(() => {
-    fetch("/api/site-settings")
-      .then((res) => (res.ok ? res.json() : null))
-      .then((d) => {
-        if (d?.section_bg_2) setSectionBg2(d.section_bg_2);
-      })
-      .catch(() => {});
   }, []);
 
   // Fetch category catalogs (each with its subcategories) for the nested display
@@ -326,6 +317,34 @@ export default function KategoriePage() {
     };
     fetchCatalogs();
   }, []);
+
+  // Tiles for the indoor/outdoor grid, captioned with how many Category Catalog
+  // entries hang off each parent. Memoized so the reveal animation doesn't
+  // restart on every render.
+  const [indoorTiles, outdoorTiles] = useMemo(() => {
+    const counts = new Map<string, number>();
+    for (const entry of catalogs) {
+      const parentId = entry?.parentCategoryId;
+      if (parentId) counts.set(parentId, (counts.get(parentId) ?? 0) + 1);
+    }
+    const withCaption = (items: any[]) =>
+      items.map((c) => {
+        const count = counts.get(c.id) ?? 0;
+        return {
+          ...c,
+          caption:
+            count > 0
+              ? t(
+                  count === 1
+                    ? "categoryGroupGrid.categoriesCountSingular"
+                    : "categoryGroupGrid.categoriesCount",
+                  { count }
+                )
+              : undefined,
+        };
+      });
+    return [withCaption(indoorCats), withCaption(outdoorCats)];
+  }, [catalogs, indoorCats, outdoorCats, t]);
 
   // 2️⃣ Apply SEO headers dynamically
   useEffect(() => {
@@ -388,7 +407,7 @@ export default function KategoriePage() {
     <div className="min-h-screen bg-[#f3f4f6] text-gray-800 font-sans pb-10">
       {/* Indoor / Outdoor categories in one tabbed section (only when configured) */}
       {(indoorCats.length > 0 || outdoorCats.length > 0) && (
-        <CategoryTabsSection indoor={indoorCats} outdoor={outdoorCats} />
+        <CategoryTabsSection indoor={indoorTiles} outdoor={outdoorTiles} />
       )}
 
       {/* Category product sections — horizontal scrollers on the 2nd admin
@@ -402,7 +421,7 @@ export default function KategoriePage() {
             desc={sec.desc}
             products={sectionData[sec.key] || []}
             loading={loadingProducts}
-            bgColor={sectionBg2}
+            backgroundClassName="section-bg-2"
           />
         ))}
       </div>
@@ -424,7 +443,7 @@ export default function KategoriePage() {
 
       {/* Newsletter */}
       <NewsletterSection
-        sectionClassName="bg-white py-12 border-t mt-10"
+        sectionClassName="bg-white section-pattern-1 py-12 border-t mt-10"
         cardClassName="bg-gray-50 rounded-3xl overflow-hidden shadow-soft"
         privacyHref="/privacy"
         buttonClassName="bg-primary-500 text-white px-6 py-3 rounded-lg text-sm font-medium hover:bg-primary-600 transition"

@@ -5,14 +5,15 @@
 import Link from 'next/link';
 import { useLanguage } from '@/providers/languageContext';
 import { LOCALE_TAG } from "@/lib/languageDefaults";
+import { Reveal } from '../components/motion/Reveal';
 
 export default function ImpressumClient() {
   const { t, language } = useLanguage();
   return (
     <main className="min-h-screen bg-white text-gray-900">
       {/* Header / Hero-Bereich */}
-      <section className="py-16 sm:py-24 bg-gray-50 border-b border-gray-200">
-        <div className="max-w-content mx-auto px-6 sm:px-12 text-center">
+      <section className="py-16 sm:py-24 bg-gray-50 section-pattern-1 border-b border-gray-200">
+        <Reveal className="max-w-content mx-auto px-6 sm:px-12 text-center">
           <h1 className="text-4xl sm:text-5xl md:text-6xl font-bold mb-6 tracking-tight">
             {t('impressum.heroTitle')}
           </h1>
@@ -22,11 +23,11 @@ export default function ImpressumClient() {
           <p className="mt-6 text-lg text-gray-500">
             {t('impressum.lastUpdated')} {new Date().toLocaleDateString(LOCALE_TAG[language])}
           </p>
-        </div>
+        </Reveal>
       </section>
 
       {/* Hauptinhalt */}
-      <section className="py-16 sm:py-24">
+      <section className="section-pattern-2 py-16 sm:py-24">
         <div className="max-w-[1100px] mx-auto px-6 sm:px-12 prose prose-lg prose-gray max-w-none">
           <h2 className="text-3xl font-bold mt-8 mb-6">{t('impressum.s1Heading')}</h2>
           <p className="mb-6">
@@ -105,7 +106,7 @@ export default function ImpressumClient() {
       </section>
 
       {/* CTA / Zurück */}
-      <section className="py-16 bg-gray-50 border-t border-gray-200">
+      <section className="py-16 bg-gray-50 section-pattern-1 border-t border-gray-200">
         <div className="max-w-content mx-auto px-6 sm:px-12 text-center">
           <Link
             href="/"

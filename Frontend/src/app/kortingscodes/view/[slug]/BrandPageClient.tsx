@@ -9,6 +9,7 @@ import toast from "react-hot-toast";
 import { Star, StarHalf, ThumbsUp, ThumbsDown, Lightbulb, Twitter, Instagram, Linkedin, Globe as GlobeIcon } from "lucide-react";
 import FAQSection from "@/app/components/FAQSection";
 import NewsletterSection from "@/app/components/NewsletterSection";
+import { Reveal } from "@/app/components/motion/Reveal";
 import { getVisitorId } from "@/lib/visitorId";
 import { useTurnstileToken } from "@/lib/useTurnstileToken";
 import { useLanguage } from "@/providers/languageContext";
@@ -514,7 +515,7 @@ export default function BrandPage() {
       {/* ==================== HERO SECTION ==================== */}
       <div className="pt-4 pb-2">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="bg-white rounded-2xl border border-gray-200 shadow-soft p-6 sm:p-8 md:p-10">
+          <Reveal className="bg-white rounded-2xl border border-gray-200 shadow-depth-2 p-6 sm:p-8 md:p-10">
             <div className="flex flex-col md:flex-row items-center justify-center md:justify-start gap-8 md:gap-10">
 
               {/* Logo */}
@@ -599,7 +600,7 @@ export default function BrandPage() {
                 </div>
               </div>
             </div>
-          </div>
+          </Reveal>
         </div>
       </div>
 
@@ -937,7 +938,7 @@ export default function BrandPage() {
 
       {/* ==================== NEWSLETTER (admin-managed) ==================== */}
       <NewsletterSection
-        sectionClassName="pb-12"
+        sectionClassName="coupon-section-pattern-1 pb-12"
         cardClassName="bg-white rounded-3xl overflow-hidden shadow-soft border border-gray-200 max-w-7xl mx-auto"
         inputClassName="flex-1 px-5 py-3.5 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-primary-500"
         buttonClassName="bg-primary-600 text-white px-8 py-3.5 rounded-xl font-medium hover:bg-primary-700 transition whitespace-nowrap"
@@ -946,7 +947,7 @@ export default function BrandPage() {
       <FAQSection
         faqs={displayedFaqs}
         title={storeFaqs.length > 0 ? t('brandPage.faqTitleWithBrand', { name: safeBrand.name }) : t('brandPage.faqTitleGeneric')}
-        sectionClassName="bg-gray-100 py-14 md:py-20 pb-16"
+        sectionClassName="bg-gray-100 coupon-section-pattern-2 py-14 md:py-20 pb-16"
       />
     </div>
   );

@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import FashionCard from '../components/FashionCard'
 import FAQSection from '../components/FAQSection'
+import { Reveal } from '../components/motion/Reveal'
 import { useLanguage } from '@/providers/languageContext'
 
 type Blog = {
@@ -67,16 +68,18 @@ export default function MagazinePage() {
   ).sort((a, b) => a.localeCompare(b));
 
   return (
-    <div className="min-h-screen bg-[#f3f4f6] text-gray-800 font-sans">
+    <div className="min-h-screen bg-[#f3f4f6] section-pattern-1 text-gray-800 font-sans">
 
       {/* Page Header */}
       <div className="max-w-content mx-auto px-4 sm:px-8 lg:px-10 pt-12 pb-4">
+        <Reveal>
         <p className="text-[11px] uppercase tracking-[0.2em] font-bold text-primary-600 mb-2">
           {t('magazinePage.eyebrow')}
         </p>
-        <h1 className="text-display text-gray-900 mb-1">
+        <h1 className="text-display font-display text-gray-900 mb-1">
           {t('magazinePage.heading')}
         </h1>
+        </Reveal>
         <div className="mt-6 mb-4 max-w-xl">
           <input
             type="search"
@@ -113,7 +116,7 @@ export default function MagazinePage() {
               >
                 {/* Category header */}
                 <div className="px-4 sm:px-8 lg:px-10 flex items-end justify-between mb-6">
-                  <h2 className="text-h2 text-gray-900">
+                  <h2 className="text-h2 font-display text-gray-900">
                     {category}
                   </h2>
                 </div>

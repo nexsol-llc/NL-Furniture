@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { Search, Loader2 } from "lucide-react";
 import FAQSection from "../components/FAQSection";
+import { Reveal } from "../components/motion/Reveal";
 import { useLanguage } from "@/providers/languageContext";
 
 // Fallback if logo fails to load
@@ -86,10 +87,11 @@ export default function MarkenPage() {
     <>
       {/* ─── HERO ─── */}
       <section
-        className="bg-white pb-8 border-b"
+        className="bg-white section-pattern-1 pb-8 border-b"
         style={{ paddingTop: "calc(var(--header-height) + 2.5rem)" }}
       >
         <div className="max-w-content mx-auto px-4 text-center">
+          <Reveal>
           <h1 className="text-xl md:text-3xl lg:text-4xl font-bold text-gray-900 mb-3 leading-tight">
             {t('markenPage.heroTitle1')}
             <br />
@@ -99,6 +101,7 @@ export default function MarkenPage() {
           <p className="text-xs md:text-base text-gray-700 max-w-xl mx-auto mb-4">
             {t('markenPage.heroText')}
           </p>
+          </Reveal>
 
           {/* Search */}
           <div className="max-w-xl mx-auto">
@@ -191,7 +194,7 @@ export default function MarkenPage() {
 
       {/* ─── FOOTER CTA ─── */}
       {!loading && (
-        <section className="max-w-content mx-auto px-4 py-12 text-center border-t bg-white">
+        <section className="max-w-content mx-auto px-4 py-12 text-center border-t bg-white section-pattern-2">
           <p className="text-gray-600 mb-4">
             {t('markenPage.footerCtaText')}
           </p>
@@ -202,7 +205,7 @@ export default function MarkenPage() {
       )}
 
       {/* ─── APPLY TO SELL ─── */}
-      <section className="bg-white py-20 md:py-28 border-t">
+      <section className="bg-white section-pattern-1 py-20 md:py-28 border-t">
         <div className="max-w-[1000px] mx-auto px-4">
           <div className="text-center mb-14">
             <h2 className="text-3xl md:text-4xl lg:text-5xl font-bold text-gray-900 mb-5">

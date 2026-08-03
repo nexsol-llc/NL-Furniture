@@ -294,7 +294,7 @@ export default function ProductDetailPage() {
 
       {/* ==================== NEWSLETTER (admin-managed) ==================== */}
       <NewsletterSection
-        sectionClassName="bg-white py-16 border-t border-gray-200"
+        sectionClassName="bg-white section-pattern-1 py-16 border-t border-gray-200"
         cardClassName="bg-gray-50 rounded-3xl overflow-hidden shadow-sm max-w-[1200px] mx-auto"
         inputClassName="flex-1 px-5 py-3.5 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-primary-500 text-sm"
         buttonClassName="bg-primary-600 text-white px-8 py-3.5 rounded-xl font-semibold hover:bg-primary-700 transition text-sm whitespace-nowrap"

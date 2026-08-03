@@ -8,6 +8,7 @@ import { useState, useEffect, useRef } from "react";
 import useSWR from "swr";
 import { getUser, userFetch, type UserPayload } from "@/lib/userAuth";
 import VisualSearchModal from "./VisualSearchModal";
+import { Spotlight } from "./motion/Spotlight";
 import { useLanguage } from "@/providers/languageContext";
 
 function DSearchIcon({ size = 20 }: { size?: number }) {
@@ -102,8 +103,8 @@ export default function Header() {
   // so the header search is hidden there.
   const isHome = pathname === "/";
   const headerSurfaceClass = isHome
-    ? "bg-white"
-    : "bg-gradient-to-r from-primary-400 via-primary-500 to-primary-400";
+    ? "glass-panel"
+    : "bg-gradient-to-r from-primary-400/85 via-primary-500/85 to-primary-400/85 backdrop-blur-xl";
   const navLinkClass = isHome
     ? "text-gray-700 hover:text-primary-600"
     : "text-white hover:text-white/90";
@@ -181,8 +182,16 @@ export default function Header() {
         className="sticky top-0 z-[999] flex flex-col will-change-transform transition-transform duration-300 ease-out"
         style={{ transform: 'translateY(0)', marginBottom: 'calc(-1 * var(--header-height))' }}
       >
+        {/* Ambient color aura behind the floating header — gives the glass panel's
+            backdrop-blur something to actually blur so it's visibly "glass" on
+            every page, not just when a photo happens to scroll underneath. */}
+        <div className="pointer-events-none absolute -inset-x-2 -top-6 h-24 -z-10 overflow-visible" aria-hidden="true">
+          <div className="absolute left-[8%] top-0 h-20 w-40 rounded-full bg-primary-400/50 blur-3xl" />
+          <div className="absolute right-[12%] top-0 h-20 w-40 rounded-full bg-primary-600/40 blur-3xl" />
+        </div>
+
         {/* Main Header */}
-        <header className={`${headerSurfaceClass} shadow-soft rounded-2xl mx-3 md:mx-6 mt-3`}>
+        <header className={`relative ${headerSurfaceClass} shadow-depth-2 rounded-2xl mx-3 md:mx-6 mt-3`}>
           <div className="max-w-content mx-auto px-4 md:px-6">
 
             {/* Top Row: logo + menu + search (not on home) + icons */}
@@ -243,6 +252,7 @@ export default function Header() {
               {/* Desktop Search (hidden on home, hero has its own) */}
               {!isHome ? (
               <div className="hidden md:flex flex-1 max-w-xl mx-4 lg:mx-6 relative group rounded-full p-[2px] bg-gradient-to-r from-primary-400 via-primary-600 to-primary-400 shadow-lg shadow-primary-500/30">
+                <Spotlight size={220} className="from-white/70 via-white/25" />
                 <form onSubmit={handleSearch} className="relative w-full bg-gray-100 rounded-full flex items-center">
                   <button type="submit" className="relative ml-5 mr-3 transition-opacity hover:opacity-80 flex items-center justify-center">
                     <DSearchIcon size={22} />

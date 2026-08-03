@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { ChevronDown } from "lucide-react";
 import { useLanguage } from "@/providers/languageContext";
+import { Reveal, RevealGroup, RevealItem } from "./motion/Reveal";
 
 export interface FAQItem {
   question: string;
@@ -29,16 +30,16 @@ export default function FAQSection({
     <section className={sectionClassName}>
       <div className="max-w-3xl mx-auto px-4 md:px-6">
         {/* Heading */}
-        <div className="text-center mb-10">
-          <h2 className="text-h2 text-gray-900">{title ?? t('faqSection.defaultTitle')}</h2>
+        <Reveal className="text-center mb-10">
+          <h2 className="text-h2 font-display text-gray-900">{title ?? t('faqSection.defaultTitle')}</h2>
           <p className="text-gray-500 mt-2 text-sm">{subtitle ?? t('faqSection.subtitle')}</p>
-        </div>
+        </Reveal>
 
-        <div className="space-y-3">
+        <RevealGroup className="space-y-3">
           {faqs.map((faq, i) => {
             const isOpen = openIndex === i;
             return (
-              <div
+              <RevealItem
                 key={i}
                 className="border border-gray-200 rounded-xl overflow-hidden shadow-soft-sm bg-white"
               >
@@ -70,10 +71,10 @@ export default function FAQSection({
                     </div>
                   </div>
                 </div>
-              </div>
+              </RevealItem>
             );
           })}
-        </div>
+        </RevealGroup>
       </div>
     </section>
   );

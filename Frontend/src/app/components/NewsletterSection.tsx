@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import NewsletterForm from "./NewsletterForm";
 import PlaceholderImage from "./PlaceholderImage";
+import { Reveal } from "./motion/Reveal";
 import { useLanguage } from "@/providers/languageContext";
 
 // Content managed from the admin panel: /admin/newsletter → "Section Content".
@@ -63,7 +64,7 @@ export default function NewsletterSection({
   return (
     <section className={sectionClassName}>
       <div className="max-w-content mx-auto px-4">
-        <div className={cardClassName}>
+        <Reveal className={cardClassName}>
           <div className="grid md:grid-cols-2">
             {/* IMAGE */}
             <div className="relative h-64 md:h-auto min-h-[16rem]">
@@ -74,14 +75,16 @@ export default function NewsletterSection({
                 className="object-cover"
               />
               <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
-              <div className="absolute bottom-6 left-6 text-white">
-                {content.overlayTitle && (
-                  <h3 className="text-xl md:text-2xl font-bold">{content.overlayTitle}</h3>
-                )}
-                {content.overlaySubtitle && (
-                  <p className="mt-2 text-sm opacity-90">{content.overlaySubtitle}</p>
-                )}
-              </div>
+              {(content.overlayTitle || content.overlaySubtitle) && (
+                <div className="absolute bottom-6 left-6 right-6 glass-panel-dark rounded-xl px-4 py-3 text-white">
+                  {content.overlayTitle && (
+                    <h3 className="text-xl md:text-2xl font-bold">{content.overlayTitle}</h3>
+                  )}
+                  {content.overlaySubtitle && (
+                    <p className="mt-2 text-sm opacity-90">{content.overlaySubtitle}</p>
+                  )}
+                </div>
+              )}
             </div>
 
             {/* FORM */}
@@ -109,7 +112,7 @@ export default function NewsletterSection({
               )}
             </div>
           </div>
-        </div>
+        </Reveal>
       </div>
     </section>
   );

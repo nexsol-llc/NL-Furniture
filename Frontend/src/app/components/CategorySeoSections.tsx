@@ -23,7 +23,7 @@ export default function CategorySeoSections({
   if (loading) {
     return (
       <>
-        <section className="border-t border-gray-200 bg-white">
+        <section className="border-t border-gray-200 bg-white section-pattern-1">
           <div className="mx-auto max-w-content px-4 py-12 sm:px-6 lg:px-8">
             <div className="h-7 w-64 rounded skeleton mb-5" />
             <div className="max-w-4xl space-y-2.5">
@@ -34,7 +34,7 @@ export default function CategorySeoSections({
           </div>
         </section>
 
-        <section className="border-t border-gray-200 bg-gray-50/50">
+        <section className="border-t border-gray-200 bg-gray-50/50 section-pattern-2">
           <div className="mx-auto max-w-content px-4 py-12 sm:px-6 lg:px-8">
             <div className="h-7 w-48 rounded skeleton mb-6" />
             <div className="space-y-3 max-w-3xl">
@@ -53,7 +53,7 @@ export default function CategorySeoSections({
 
   return (
     <>
-      <section className="border-t border-gray-200 bg-white">
+      <section className="border-t border-gray-200 bg-white section-pattern-1">
         <div className="mx-auto max-w-content px-4 py-12 sm:px-6 lg:px-8">
           <h2 className="text-xl md:text-2xl font-black text-gray-900 uppercase tracking-tight mb-4">
             {t('categorySeoSections.aboutHeading', { title })}

@@ -87,7 +87,7 @@ export default function CoupanHeader() {
     <header className="sticky top-0 z-[999] flex flex-col px-3 pt-3 transition-all duration-300 md:px-6">
 
       {/* MAIN HEADER */}
-      <div className={`relative bg-primary-700 text-white border border-primary-500/40 transition-all duration-300 rounded-2xl ${scrolled ? 'shadow-soft-lg shadow-primary-900/20' : 'shadow-soft-lg shadow-primary-900/10'}`}>
+      <div className={`relative bg-primary-700/85 backdrop-blur-xl text-white border border-primary-500/40 transition-all duration-300 rounded-2xl ${scrolled ? 'shadow-depth-2 shadow-primary-900/20' : 'shadow-depth-2 shadow-primary-900/10'}`}>
 
         <div className="max-w-[1450px] mx-auto px-3 sm:px-4 md:px-6 h-14 md:h-16 flex items-center gap-2">
 

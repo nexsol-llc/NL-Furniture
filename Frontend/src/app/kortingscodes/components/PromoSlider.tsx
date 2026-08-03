@@ -167,7 +167,7 @@ function HeroSlider({ slides }: { slides: Slide[] }) {
                 className="absolute top-1/2 -translate-y-1/2 z-20
                            w-9 h-9 md:w-11 md:h-11 flex items-center justify-center
                            rounded-full bg-primary-600 hover:bg-primary-700
-                           text-white shadow-soft-md transition-colors cursor-pointer"
+                           text-white shadow-depth-2 transition-colors cursor-pointer"
                 style={{ left: "calc(9% + 12px)" }}
                 aria-label={t('promoSlider.prevAriaLabel')}
               ><ChevronLeft className="w-5 h-5 md:w-6 md:h-6" strokeWidth={2.5} /></button>
@@ -176,7 +176,7 @@ function HeroSlider({ slides }: { slides: Slide[] }) {
                 className="absolute top-1/2 -translate-y-1/2 z-20
                            w-9 h-9 md:w-11 md:h-11 flex items-center justify-center
                            rounded-full bg-primary-600 hover:bg-primary-700
-                           text-white shadow-soft-md transition-colors cursor-pointer"
+                           text-white shadow-depth-2 transition-colors cursor-pointer"
                 style={{ right: "calc(9% + 12px)" }}
                 aria-label={t('promoSlider.nextAriaLabel')}
               ><ChevronRight className="w-5 h-5 md:w-6 md:h-6" strokeWidth={2.5} /></button>
@@ -227,7 +227,7 @@ function MobileHeroSlider({ slides }: { slides: Slide[] }) {
   return (
     <section className="w-full px-4 py-4">
       <div
-        className="relative w-full rounded-2xl overflow-hidden shadow-soft-lg"
+        className="relative w-full rounded-2xl overflow-hidden shadow-depth-3"
         style={{ aspectRatio: "2.5 / 1" }}
         onTouchStart={(e) => { touchStartX.current = e.touches[0].clientX; }}
         onTouchEnd={(e) => {

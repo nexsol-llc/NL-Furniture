@@ -4,6 +4,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import NewsletterForm from '../../components/NewsletterForm';
 import PlaceholderImage from '../../components/PlaceholderImage';
+import { Reveal } from '../../components/motion/Reveal';
 import useSWR from 'swr';
 import { useLanguage } from '@/providers/languageContext';
 
@@ -89,12 +90,12 @@ const SpringDealsBanner: React.FC = () => {
             priority
           />
         </div>
-        <div className="text-center flex-1 px-4">
+        <Reveal className="text-center flex-1 px-4">
           <p className="text-white text-lg md:text-xl font-medium">{t('springSavecationPage.discountBanner')}</p>
           <h1 className="text-[#6b21a8] text-4xl md:text-6xl font-bold tracking-tight">
             {t('springSavecationPage.heading')}
           </h1>
-        </div>
+        </Reveal>
         <div className="mr-6 md:mr-12 hidden sm:block">
           <Image
             src="https://images.unsplash.com/photo-1618220179428-22790b461013?w=400&h=400&fit=crop"
@@ -197,7 +198,7 @@ const SpringDealsBanner: React.FC = () => {
       </div>
 
       {/* ===== SEO LONG DESCRIPTION SECTION ===== */}
-      <section className="bg-gray-50 py-12 md:py-16">
+      <section className="bg-gray-50 coupon-section-pattern-2 py-12 md:py-16">
         <div className="max-w-4xl mx-auto px-4">
           <h2 className="text-2xl md:text-3xl font-bold text-gray-900 mb-6">
             {t('springSavecationPage.seoHeading')}
@@ -214,7 +215,7 @@ const SpringDealsBanner: React.FC = () => {
       </section>
 
       {/* ===== FAQ SECTION ===== */}
-      <section className="w-full bg-white py-12 md:py-16 border-t border-gray-200">
+      <section className="w-full bg-white coupon-section-pattern-1 py-12 md:py-16 border-t border-gray-200">
         <div className="max-w-7xl mx-auto px-3 sm:px-4 md:px-6 lg:px-8">
           <h2 className="text-2xl md:text-3xl font-bold text-gray-900 mb-8 text-center">
             {t('springSavecationPage.faqHeading')}
@@ -235,7 +236,7 @@ const SpringDealsBanner: React.FC = () => {
       </section>
 
       {/* ================= NEWSLETTER SECTION ================= */}
-      <section className="bg-white py-6 border-t">
+      <section className="bg-white coupon-section-pattern-2 py-6 border-t">
         <div className="max-w-content mx-auto px-4">
           <div className="bg-gray-50 rounded-2xl overflow-hidden shadow-soft">
             <div className="grid md:grid-cols-2">

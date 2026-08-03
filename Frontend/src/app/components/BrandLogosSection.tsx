@@ -22,7 +22,7 @@ const duplicatedBrands = [...brands, ...brands, ...brands];
 
 export default function BrandLogosSection() {
   return (
-    <section className="py-12 md:py-20 bg-white overflow-hidden">
+    <section className="py-12 md:py-20 bg-white section-pattern-2 overflow-hidden">
       <div className="container mx-auto px-6 text-center">
         <h2 className="text-2xl md:text-4xl font-bold tracking-tight mb-10 text-gray-900">
           Search products from iconic and emerging brands

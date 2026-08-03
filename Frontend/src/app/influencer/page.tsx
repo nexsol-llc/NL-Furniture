@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { Search, Loader2, Sparkles } from "lucide-react";
 import FAQSection from "../components/FAQSection";
+import { Reveal } from "../components/motion/Reveal";
 import { useLanguage } from "@/providers/languageContext";
 
 function BrandLogo({ logo, name }: { logo: string; name: string }) {
@@ -76,9 +77,10 @@ export default function InfluencerPage() {
   return (
     <>
       {/* HERO */}
-      <section className="bg-white py-6 md:py-8 border-b" style={{ paddingTop: "calc(var(--header-height) + 2.5rem)" }}>
+      <section className="bg-white section-pattern-1 py-6 md:py-8 border-b" style={{ paddingTop: "calc(var(--header-height) + 2.5rem)" }}>
 
         <div className="max-w-content mx-auto px-4 text-center">
+          <Reveal>
           <h1 className="text-xl md:text-3xl lg:text-4xl font-bold text-gray-900 mb-3 leading-tight">
             {t('influencerListPage.heroTitle1')}
             <br />
@@ -88,6 +90,7 @@ export default function InfluencerPage() {
           <p className="text-xs md:text-base text-gray-700 max-w-xl mx-auto mb-4">
             {t('influencerListPage.heroText')}
           </p>
+          </Reveal>
 
           <div className="max-w-xl mx-auto">
             <div className="flex items-center border-2 border-primary-600 rounded-full overflow-hidden bg-white shadow-soft">
@@ -178,7 +181,7 @@ export default function InfluencerPage() {
       )}
 
       {!loading && (
-        <section className="max-w-content mx-auto px-4 py-12 text-center border-t bg-white">
+        <section className="max-w-content mx-auto px-4 py-12 text-center border-t bg-white section-pattern-2">
           <p className="text-gray-600 mb-4">
             {t('influencerListPage.footerCtaText')}
           </p>

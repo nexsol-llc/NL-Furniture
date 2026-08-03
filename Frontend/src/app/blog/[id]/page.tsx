@@ -9,6 +9,7 @@ import { Heart } from "lucide-react";
 import FAQSection from "../../components/FAQSection";
 import { SOCIAL_PLATFORMS } from "../../components/Footer";
 import PlaceholderImage from "@/app/components/PlaceholderImage";
+import { Reveal } from "@/app/components/motion/Reveal";
 import { useLanguage } from "@/providers/languageContext";
 
 const generateBlogFAQs = (title: string, category: string, t: (key: string, params?: Record<string, string | number>) => string) => [
@@ -243,14 +244,16 @@ export default function BlogDetailPage({ params }: { params: { id: string } }) {
       <div className="max-w-[760px] mx-auto px-5 py-8 md:py-16">
 
         {/* Large headline title */}
-        <h1 className="text-display text-gray-900 mb-6">
-          {blog.title}
-        </h1>
-        {blog.subHeading && (
-          <h2 className="text-gray-600 mb-6 text-lg md:text-xl font-medium leading-relaxed">
-            {blog.subHeading}
-          </h2>
-        )}
+        <Reveal>
+          <h1 className="text-display font-display text-gray-900 mb-6">
+            {blog.title}
+          </h1>
+          {blog.subHeading && (
+            <h2 className="text-gray-600 mb-6 text-lg md:text-xl font-medium leading-relaxed">
+              {blog.subHeading}
+            </h2>
+          )}
+        </Reveal>
 
         {/* Solid Black Divider line matching reference */}
         <hr className="border-t-2 border-black mb-8" />
@@ -514,7 +517,7 @@ export default function BlogDetailPage({ params }: { params: { id: string } }) {
         </div>
       </div>
 
-      <section className="bg-white py-6 border-t mb-12">
+      <section className="bg-white section-pattern-1 py-6 border-t mb-12">
           <div className="max-w-content mx-auto px-4">
             <div className="bg-gray-50 rounded-2xl overflow-hidden shadow-soft">
               <div className="grid md:grid-cols-2">

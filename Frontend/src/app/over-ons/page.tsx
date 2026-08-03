@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import PlaceholderImage from '../components/PlaceholderImage';
+import { Reveal } from '../components/motion/Reveal';
 import { useLanguage } from '@/providers/languageContext';
 
 export default function AboutNLFurniture() {
@@ -21,7 +22,7 @@ export default function AboutNLFurniture() {
         </div>
         <div className="absolute inset-0 bg-black/40" />
         
-        <div className="relative z-10 max-w-5xl px-4 sm:px-6">
+        <Reveal className="relative z-10 max-w-5xl px-4 sm:px-6">
           <h1 className="text-3xl sm:text-5xl md:text-6xl lg:text-7xl font-extrabold mb-3 sm:mb-4 md:mb-6 tracking-tight text-white drop-shadow-lg">
             {t('over-ons.heroTitle')}
           </h1>
@@ -37,11 +38,11 @@ export default function AboutNLFurniture() {
           >
             {t('over-ons.heroCta')}
           </Link>
-        </div>
+        </Reveal>
       </section>
 
       {/* Willkommen & Einleitung */}
-      <section className="py-12 sm:py-16 md:py-20 lg:py-24 bg-white">
+      <section className="py-12 sm:py-16 md:py-20 lg:py-24 bg-white section-pattern-1">
         <div className="max-w-content mx-auto px-4 sm:px-6 md:px-8 lg:px-12">
           <div className="max-w-4xl mx-auto text-center">
             <h2 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold mb-4 sm:mb-6 md:mb-8 lg:mb-10">
@@ -58,7 +59,7 @@ export default function AboutNLFurniture() {
       </section>
 
       {/* Was wir tun */}
-      <section className="py-12 sm:py-16 md:py-20 lg:py-24 bg-gray-50">
+      <section className="py-12 sm:py-16 md:py-20 lg:py-24 bg-gray-50 section-pattern-2">
         <div className="max-w-content mx-auto px-4 sm:px-6 md:px-8 lg:px-12">
           <h2 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold text-center mb-8 sm:mb-10 md:mb-12 lg:mb-16">
             {t('over-ons.whatWeDoHeading')}
@@ -100,7 +101,7 @@ export default function AboutNLFurniture() {
       </section>
 
       {/* Warum NL Furniture? */}
-      <section className="py-12 sm:py-16 md:py-20 lg:py-24 bg-white">
+      <section className="py-12 sm:py-16 md:py-20 lg:py-24 bg-white section-pattern-1">
         <div className="max-w-content mx-auto px-4 sm:px-6 md:px-8 lg:px-12">
           <h2 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold text-center mb-6 sm:mb-8 md:mb-10 lg:mb-16">
             {t('over-ons.whyHeading')}
@@ -132,7 +133,7 @@ export default function AboutNLFurniture() {
       </section>
 
       {/* Unsere Mission */}
-      <section className="py-12 sm:py-16 md:py-20 lg:py-24 bg-gray-50 text-center">
+      <section className="py-12 sm:py-16 md:py-20 lg:py-24 bg-gray-50 section-pattern-2 text-center">
         <div className="max-w-content mx-auto px-4 sm:px-6 md:px-8 lg:px-12">
           <h2 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold mb-6 sm:mb-8 md:mb-10 lg:mb-12 uppercase tracking-wider">
             {t('over-ons.missionHeading')}
@@ -144,7 +145,7 @@ export default function AboutNLFurniture() {
       </section>
 
       {/* So funktioniert es + CTA */}
-      <section className="py-12 sm:py-16 md:py-20 lg:py-24 bg-white">
+      <section className="py-12 sm:py-16 md:py-20 lg:py-24 bg-white section-pattern-1">
         <div className="max-w-content mx-auto px-4 sm:px-6 md:px-8 lg:px-12 text-center">
           <h2 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold mb-6 sm:mb-8 md:mb-10 lg:mb-12">
             {t('over-ons.howItWorksHeading')}

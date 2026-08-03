@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import toast, { Toaster } from "react-hot-toast";
 import { useLanguage } from "@/providers/languageContext";
+import { Reveal } from "../components/motion/Reveal";
 
 export default function RegisterPage() {
   const router = useRouter();
@@ -48,7 +49,7 @@ export default function RegisterPage() {
   return (
     <div className="min-h-screen flex items-center justify-center bg-[radial-gradient(circle_at_top_right,_rgba(240,115,76,0.15),_transparent_35%),linear-gradient(135deg,_#f3f4f6,_#e5e7eb_60%,_#d1d5db)] px-4">
       <Toaster position="top-center" />
-      <div className="bg-white/80 backdrop-blur-md p-8 md:p-10 rounded-3xl shadow-[0_20px_50px_rgba(0,0,0,0.08)] border border-white/20 w-full max-w-md">
+      <Reveal className="glass-panel p-8 md:p-10 rounded-3xl shadow-depth-4 w-full max-w-md">
         
         {/* Header / Logo */}
         <div className="text-center mb-8">
@@ -123,7 +124,7 @@ export default function RegisterPage() {
             </Link>
           </p>
         </div>
-      </div>
+      </Reveal>
     </div>
   );
 }

@@ -3,7 +3,21 @@
 import { useEffect, useRef, useState } from "react";
 import { useTheme } from "@/providers/themeContext";
 import { COLOR_PRESETS, ColorPresetKey, ThemeKey, generateShades, applyCustomHex } from "@/lib/colorPresets";
-import { Check, Loader2, Palette, Pipette, Layers, Sofa, Tag } from "lucide-react";
+import {
+  DEFAULT_SECTION_PATTERNS,
+  PATTERN_OPACITY_MAX,
+  PATTERN_SIZE_MAX,
+  PATTERN_SIZE_MIN,
+  PatternSlot,
+  SECTION_PATTERNS,
+  SectionPatternMap,
+  SectionPatternSettings,
+  patternFill,
+  readAllPatterns,
+  writeAllPatterns,
+} from "@/lib/bgPatterns";
+import { BGPattern } from "@/components/ui/bg-pattern";
+import { Check, Loader2, Palette, Pipette, Layers, Sofa, Tag, Grid2x2 } from "lucide-react";
 import { adminFetch } from "@/lib/adminAuth";
 
 export default function ThemeSettingsPage() {
@@ -28,6 +42,13 @@ export default function ThemeSettingsPage() {
   const [bgLoading, setBgLoading] = useState(true);
   const [bgSaving, setBgSaving] = useState(false);
 
+  // ── Section background patterns — one per section color, layered over it ─────
+  const [patterns, setPatterns] = useState<SectionPatternMap>(DEFAULT_SECTION_PATTERNS);
+  const [patternSaving, setPatternSaving] = useState(false);
+
+  const updatePattern = (slot: PatternSlot) => (next: SectionPatternSettings) =>
+    setPatterns((prev) => ({ ...prev, [slot]: next }));
+
   useEffect(() => {
     adminFetch("/api/site-settings")
       .then((r) => r.json())
@@ -36,6 +57,7 @@ export default function ThemeSettingsPage() {
         if (d?.section_bg_2) setSectionBg2(d.section_bg_2);
         if (d?.coupon_section_bg_1) setCouponSectionBg1(d.coupon_section_bg_1);
         if (d?.coupon_section_bg_2) setCouponSectionBg2(d.coupon_section_bg_2);
+        setPatterns(readAllPatterns(d));
       })
       .catch(() => {})
       .finally(() => setBgLoading(false));
@@ -58,6 +80,21 @@ export default function ThemeSettingsPage() {
       // no-op
     } finally {
       setBgSaving(false);
+    }
+  };
+
+  const handleSaveSectionPatterns = async () => {
+    setPatternSaving(true);
+    try {
+      const res = await adminFetch("/api/site-settings", {
+        method: "PUT",
+        body: JSON.stringify(writeAllPatterns(patterns)),
+      });
+      if (res.ok) flashSaved("Section patterns saved");
+    } catch {
+      // no-op
+    } finally {
+      setPatternSaving(false);
     }
   };
 
@@ -162,6 +199,62 @@ export default function ThemeSettingsPage() {
               >
                 {bgSaving ? <Loader2 size={14} className="animate-spin" /> : <Check size={14} />}
                 Save Section Backgrounds
+              </button>
+            </div>
+          </>
+        )}
+      </div>
+
+      {/* Section Background Patterns */}
+      <div className="bg-white rounded-lg shadow-sm p-6 mt-4">
+        <div className="flex items-center gap-2 mb-1">
+          <Grid2x2 size={16} className="text-primary-600" />
+          <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider">
+            Section Patterns
+          </p>
+        </div>
+        <p className="text-sm text-gray-500 mb-5">
+          An optional texture drawn over each section color above — Color 1 and Color 2 are set
+          independently, so alternating sections can differ. Pick <strong>None</strong> to keep a
+          color flat.
+        </p>
+
+        {bgLoading ? (
+          <div className="py-8 text-center text-gray-400 text-sm">Loading…</div>
+        ) : (
+          <>
+            <PatternGroup
+              icon={<Sofa size={15} className="text-primary-600" />}
+              title="Furniture Homepage"
+              slots={[
+                { label: "Color 1 (A)", previewBg: sectionBg1, slot: "section_pattern_1" },
+                { label: "Color 2 (B)", previewBg: sectionBg2, slot: "section_pattern_2" },
+              ]}
+              patterns={patterns}
+              onChange={updatePattern}
+            />
+
+            <div className="mt-6">
+              <PatternGroup
+                icon={<Tag size={15} className="text-primary-600" />}
+                title="Coupons Page (/kortingscodes)"
+                slots={[
+                  { label: "Color 1 (A)", previewBg: couponSectionBg1, slot: "coupon_section_pattern_1" },
+                  { label: "Color 2 (B)", previewBg: couponSectionBg2, slot: "coupon_section_pattern_2" },
+                ]}
+                patterns={patterns}
+                onChange={updatePattern}
+              />
+            </div>
+
+            <div className="mt-6">
+              <button
+                onClick={handleSaveSectionPatterns}
+                disabled={patternSaving}
+                className="bg-primary-600 hover:bg-primary-700 disabled:opacity-50 text-white text-sm font-medium px-5 py-2 rounded-lg transition flex items-center gap-2"
+              >
+                {patternSaving ? <Loader2 size={14} className="animate-spin" /> : <Check size={14} />}
+                Save Section Patterns
               </button>
             </div>
           </>
@@ -415,6 +508,180 @@ function SectionBgGroup({
           </div>
         ))}
       </div>
+    </div>
+  );
+}
+
+/** One site's two section colors, each with its own independent pattern. */
+function PatternGroup({
+  icon,
+  title,
+  slots,
+  patterns,
+  onChange,
+}: {
+  icon: React.ReactNode;
+  title: string;
+  slots: ReadonlyArray<{ label: string; previewBg: string; slot: PatternSlot }>;
+  patterns: SectionPatternMap;
+  onChange: (slot: PatternSlot) => (next: SectionPatternSettings) => void;
+}) {
+  return (
+    <div className="border border-gray-100 rounded-xl p-4">
+      <div className="flex items-center gap-2 mb-4">
+        {icon}
+        <p className="text-sm font-semibold text-gray-700">{title}</p>
+      </div>
+
+      <div className="divide-y divide-gray-100">
+        {slots.map(({ label, previewBg, slot }, i) => (
+          <div key={slot} className={i === 0 ? "pb-5" : "pt-5"}>
+            <PatternPicker
+              label={label}
+              previewBg={previewBg}
+              value={patterns[slot]}
+              onChange={onChange(slot)}
+            />
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+/**
+ * One section color's pattern: the variant tiles first ("None" included), then
+ * the ink controls, then a full-width preview — all drawn with the same
+ * <BGPattern> gradients the public sections use.
+ */
+function PatternPicker({
+  label,
+  previewBg,
+  value,
+  onChange,
+}: {
+  label: string;
+  previewBg: string;
+  value: SectionPatternSettings;
+  onChange: (next: SectionPatternSettings) => void;
+}) {
+  const bg = /^#[0-9a-fA-F]{6}$/.test(previewBg) ? previewBg : "#ffffff";
+  const fill = patternFill(value.color, value.opacity);
+
+  return (
+    <div>
+      <div className="flex items-center justify-between gap-2 mb-3">
+        <p className="text-xs font-medium text-gray-600">{label}</p>
+        <span
+          className="w-4 h-4 rounded border border-gray-200 flex-shrink-0"
+          style={{ backgroundColor: bg }}
+          title={`Section color ${previewBg}`}
+        />
+      </div>
+
+      {/* Variant tiles */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+        {SECTION_PATTERNS.map(({ key, label }) => {
+          const isActive = value.pattern === key;
+          return (
+            <button
+              key={key}
+              onClick={() => onChange({ ...value, pattern: key })}
+              className={`
+                relative overflow-hidden rounded-xl border-2 text-left transition-all
+                ${isActive
+                  ? "border-gray-700 shadow-sm"
+                  : "border-gray-100 hover:border-gray-300 hover:shadow-sm"
+                }
+              `}
+              title={label}
+            >
+              {/* `isolate` keeps BGPattern's negative z-index above this swatch's
+                  own background instead of behind it. */}
+              <div className="relative isolate h-14 w-full" style={{ backgroundColor: bg }}>
+                {key !== "none" && <BGPattern variant={key} size={value.size} fill={fill} />}
+              </div>
+              <span className="block px-2 py-1.5 text-[11px] font-medium text-gray-600 bg-white truncate">
+                {label}
+              </span>
+              {isActive && (
+                <div className="absolute top-1 right-1 w-4 h-4 rounded-full bg-gray-800 flex items-center justify-center text-white">
+                  <Check size={9} strokeWidth={3} />
+                </div>
+              )}
+            </button>
+          );
+        })}
+      </div>
+
+      {/* Ink controls — only meaningful once a pattern is selected */}
+      {value.pattern !== "none" && (
+        <>
+          <div className="mt-5 grid sm:grid-cols-3 gap-4">
+            <div className="flex items-center gap-3">
+              <label
+                className="relative w-11 h-11 rounded-lg border-2 border-gray-200 shadow-sm cursor-pointer flex-shrink-0"
+                style={{ backgroundColor: /^#[0-9a-fA-F]{6}$/.test(value.color) ? value.color : "#000000" }}
+              >
+                <input
+                  type="color"
+                  value={/^#[0-9a-fA-F]{6}$/.test(value.color) ? value.color : "#000000"}
+                  onChange={(e) => onChange({ ...value, color: e.target.value })}
+                  className="sr-only"
+                />
+              </label>
+              <div className="flex flex-col gap-1">
+                <span className="text-xs font-medium text-gray-600">Pattern color</span>
+                <input
+                  type="text"
+                  value={value.color}
+                  maxLength={7}
+                  onChange={(e) => onChange({ ...value, color: e.target.value })}
+                  className="w-24 border border-gray-200 rounded-lg px-2.5 py-1 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-primary-400"
+                />
+              </div>
+            </div>
+
+            <div className="flex flex-col gap-1">
+              <span className="text-xs font-medium text-gray-600">
+                Opacity <span className="text-gray-400 font-normal">{value.opacity}%</span>
+              </span>
+              <input
+                type="range"
+                min={1}
+                max={PATTERN_OPACITY_MAX}
+                value={value.opacity}
+                onChange={(e) => onChange({ ...value, opacity: Number(e.target.value) })}
+                className="accent-primary-600 w-full"
+              />
+              <span className="text-[11px] text-gray-400">Subtle textures read best under text.</span>
+            </div>
+
+            <div className="flex flex-col gap-1">
+              <span className="text-xs font-medium text-gray-600">
+                Tile size <span className="text-gray-400 font-normal">{value.size}px</span>
+              </span>
+              <input
+                type="range"
+                min={PATTERN_SIZE_MIN}
+                max={PATTERN_SIZE_MAX}
+                value={value.size}
+                onChange={(e) => onChange({ ...value, size: Number(e.target.value) })}
+                className="accent-primary-600 w-full"
+              />
+            </div>
+          </div>
+
+          {/* Full-width preview at the real tile size */}
+          <div
+            className="relative isolate mt-4 h-24 rounded-lg overflow-hidden border border-gray-100 flex items-center px-4"
+            style={{ backgroundColor: bg }}
+          >
+            <BGPattern variant={value.pattern} size={value.size} fill={fill} />
+            <span className="text-xs text-gray-600">Section preview</span>
+          </div>
+        </>
+      )}
     </div>
   );
 }

@@ -8,6 +8,7 @@ import toast from "react-hot-toast";
 import { getUser, userFetch, type UserPayload } from "@/lib/userAuth";
 import { formatPrice, normalizeLink } from "@/lib/productFormat";
 import { useLanguage } from "@/providers/languageContext";
+import { Tilt } from "./motion/Tilt";
 
 export interface OfferProductCardProps {
   title: string;
@@ -104,11 +105,11 @@ export default function OfferProductCard({
   const href = normalizeLink(link);
 
   const card = (
-    <div className="group bg-white rounded-xl border border-gray-200 shadow-soft overflow-hidden hover:shadow-soft-lg hover:-translate-y-0.5 transition-all duration-300 h-full flex flex-col">
+    <div className="group bg-white rounded-2xl border border-gray-200 shadow-soft overflow-hidden hover:shadow-depth-3 hover:-translate-y-1 hover:ring-2 hover:ring-primary-400/50 transition-all duration-300 h-full flex flex-col">
       {/* PRODUCT IMAGE (top) */}
       <div className="relative h-44 bg-gray-50 flex items-center justify-center p-3">
         {saleValue && (
-          <span className="absolute top-2 left-2 bg-primary-500 text-white text-xs px-2 py-0.5 font-bold z-10 rounded-md shadow-soft-sm">
+          <span className="absolute top-2 left-2 bg-primary-500/85 backdrop-blur-md border border-white/30 text-white text-xs px-2 py-0.5 font-bold z-10 rounded-md shadow-soft-sm">
             {saleValue}
           </span>
         )}
@@ -182,11 +183,19 @@ export default function OfferProductCard({
     </div>
   );
 
-  if (href === "#") return card;
+  if (href === "#") {
+    return (
+      <Tilt rotationFactor={5} className="h-full">
+        {card}
+      </Tilt>
+    );
+  }
 
   return (
-    <a href={href} target="_blank" rel="noopener noreferrer" className="block h-full">
-      {card}
-    </a>
+    <Tilt rotationFactor={5} className="h-full">
+      <a href={href} target="_blank" rel="noopener noreferrer" className="block h-full">
+        {card}
+      </a>
+    </Tilt>
   );
 }

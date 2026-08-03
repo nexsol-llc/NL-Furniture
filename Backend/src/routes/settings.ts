@@ -84,6 +84,25 @@ const DEFAULT_SITE_SETTINGS = {
   // Two background colors for the coupons (/kortingscodes) page content sections.
   coupon_section_bg_1: "#f3f4f6",
   coupon_section_bg_2: "#f5f5f5",
+  // Optional pattern drawn over each section color above — one per color, so the
+  // alternating A/B sections can differ. Pattern is one of:
+  // none | dots | grid | diagonal-stripes | horizontal-lines | vertical-lines | checkerboard.
+  section_pattern_1: "none",
+  section_pattern_1_color: "#000000",
+  section_pattern_1_opacity: 8,
+  section_pattern_1_size: 24,
+  section_pattern_2: "none",
+  section_pattern_2_color: "#000000",
+  section_pattern_2_opacity: 8,
+  section_pattern_2_size: 24,
+  coupon_section_pattern_1: "none",
+  coupon_section_pattern_1_color: "#000000",
+  coupon_section_pattern_1_opacity: 8,
+  coupon_section_pattern_1_size: 24,
+  coupon_section_pattern_2: "none",
+  coupon_section_pattern_2_color: "#000000",
+  coupon_section_pattern_2_opacity: 8,
+  coupon_section_pattern_2_size: 24,
   // Social media profile URLs shown in the footer. Empty = icon hidden.
   social_links: {
     facebook: "",

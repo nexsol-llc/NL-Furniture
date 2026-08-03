@@ -6,6 +6,8 @@ import { useEffect, useState } from "react";
 import NewsletterSection from "@/app/components/NewsletterSection";
 import Button from "@/app/components/Button";
 import ProductCard from "@/app/components/ProductCard";
+import { Spotlight } from "@/app/components/motion/Spotlight";
+import { Reveal, RevealGroup, RevealItem } from "@/app/components/motion/Reveal";
 import toast, { Toaster } from "react-hot-toast";
 import { useLanguage } from "@/providers/languageContext";
 
@@ -197,7 +199,7 @@ export default function ProductDetailClient({ initialProduct }: { initialProduct
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
             {/* Left - Images */}
             <div className="space-y-4">
-              <div className="relative aspect-[4/3] max-h-[480px] bg-white rounded-2xl overflow-hidden border border-gray-200 shadow-soft-md flex items-center justify-center p-4">
+              <div className="relative aspect-[4/3] max-h-[480px] bg-white rounded-2xl overflow-hidden border border-gray-200 shadow-depth-3 flex items-center justify-center p-4">
                 <Image
                   src={selectedImage || `https://placehold.co/800x600?text=${t('productDetail.noImage')}`}
                   alt={product.product_name}
@@ -263,7 +265,7 @@ export default function ProductDetailClient({ initialProduct }: { initialProduct
             {/* Right - Product Details */}
             <div className="space-y-5">
               {/* Titel — max. 2 Zeilen, Rest abgeschnitten */}
-              <h1 className="text-h4 lg:text-h3 text-gray-900 line-clamp-2" title={product.product_name}>
+              <h1 className="text-h4 lg:text-h3 font-display text-gray-900 line-clamp-2" title={product.product_name}>
                 {product.product_name}
               </h1>
 
@@ -317,16 +319,19 @@ export default function ProductDetailClient({ initialProduct }: { initialProduct
                     <span className="text-lg font-black text-gray-900 tracking-tight whitespace-nowrap">
                       {formattedPrice}
                     </span>
-                    <Button
-                      as="a"
-                      href={shopLink}
-                      external
-                      variant="primary"
-                      size="lg"
-                      className="flex-1 sm:flex-none whitespace-nowrap"
-                    >
-                      {t('productDetail.goToShop')}
-                    </Button>
+                    <div className="relative flex-1 sm:flex-none rounded-lg">
+                      <Spotlight size={160} className="from-white/60 via-white/20" />
+                      <Button
+                        as="a"
+                        href={shopLink}
+                        external
+                        variant="primary"
+                        size="lg"
+                        className="w-full whitespace-nowrap"
+                      >
+                        {t('productDetail.goToShop')}
+                      </Button>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -357,7 +362,7 @@ export default function ProductDetailClient({ initialProduct }: { initialProduct
 
         {/* ==================== ÄHNLICHE PRODUKTE ==================== */}
         <section className="max-w-content mx-auto px-4 pb-10 mt-8">
-          <h2 className="text-h2 text-gray-900 mb-6">{t('productDetail.similarProductsHeading')}</h2>
+          <Reveal><h2 className="text-h2 font-display text-gray-900 mb-6">{t('productDetail.similarProductsHeading')}</h2></Reveal>
 
           {similarLoading ? (
             <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
@@ -368,21 +373,22 @@ export default function ProductDetailClient({ initialProduct }: { initialProduct
           ) : similarProducts.length === 0 ? (
             <p className="text-gray-500 text-center py-10">{t('productDetail.noSimilarProducts')}</p>
           ) : (
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+            <RevealGroup className="grid grid-cols-2 md:grid-cols-4 gap-6">
               {similarProducts.map((item: any) => (
-                <ProductCard
-                  key={item._id}
-                  id={item._id}
-                  slug={item.slug}
-                  name={item.product_name}
-                  price={item.display_price || ""}
-                  image={item.merchant_image_url || item.aw_image_url || ""}
-                  brand={item.brand_name || item.merchant_name || ""}
-                  is_sponsored={item.is_sponsored}
-                  deliveryCost={item.delivery_cost}
-                />
+                <RevealItem key={item._id}>
+                  <ProductCard
+                    id={item._id}
+                    slug={item.slug}
+                    name={item.product_name}
+                    price={item.display_price || ""}
+                    image={item.merchant_image_url || item.aw_image_url || ""}
+                    brand={item.brand_name || item.merchant_name || ""}
+                    is_sponsored={item.is_sponsored}
+                    deliveryCost={item.delivery_cost}
+                  />
+                </RevealItem>
               ))}
-            </div>
+            </RevealGroup>
           )}
         </section>
 
@@ -390,7 +396,7 @@ export default function ProductDetailClient({ initialProduct }: { initialProduct
         {product.description && (
           <section className="max-w-content mx-auto px-4 pb-16">
             <div className="bg-white rounded-3xl border border-gray-200 shadow-soft p-8">
-              <h2 className="text-h3 text-gray-900 mb-5">{t('productDetail.descriptionHeading')}</h2>
+              <h2 className="text-h3 font-display text-gray-900 mb-5">{t('productDetail.descriptionHeading')}</h2>
               <div className="prose max-w-none text-gray-750 leading-relaxed text-sm">
                 {product.description.split('\n').map((para: string, idx: number) =>
                   para.trim() ? <p key={idx} className="mb-3">{para}</p> : null
@@ -403,7 +409,7 @@ export default function ProductDetailClient({ initialProduct }: { initialProduct
 
       {/* ==================== NEWSLETTER ==================== */}
       <NewsletterSection
-        sectionClassName="bg-white py-12 border-t"
+        sectionClassName="bg-white section-pattern-1 py-12 border-t"
         cardClassName="bg-gray-50 rounded-3xl overflow-hidden shadow-soft-md max-w-content mx-auto"
         inputClassName="flex-1 px-4 py-3 rounded-xl border focus:outline-none focus:ring-2 focus:ring-primary-600 text-sm"
         buttonClassName="bg-primary-600 text-white px-8 py-3 rounded-xl font-semibold shadow-cta hover:bg-primary-700 hover:shadow-soft-lg active:scale-[0.98] transition-all duration-200 text-sm"

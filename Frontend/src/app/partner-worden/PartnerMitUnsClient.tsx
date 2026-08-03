@@ -5,6 +5,7 @@
 import Link from 'next/link';
 import Image from 'next/image';
 import PlaceholderImage from '../components/PlaceholderImage';
+import { Reveal } from '../components/motion/Reveal';
 import { useLanguage } from '@/providers/languageContext';
 
 export default function PartnerMitUnsClient() {
@@ -16,7 +17,7 @@ export default function PartnerMitUnsClient() {
         <div className="absolute inset-0">
           <div className="absolute inset-0 bg-gradient-to-r from-gray-900/40 to-gray-900/20" />
         </div>
-        <div className="relative max-w-content mx-auto px-4 sm:px-6 md:px-8 lg:px-12 text-center">
+        <Reveal className="relative max-w-content mx-auto px-4 sm:px-6 md:px-8 lg:px-12 text-center">
           <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl xl:text-7xl font-extrabold mb-4 sm:mb-6 md:mb-8 tracking-tight px-2">
             {t('partnerMitUns.heroTitle')}
           </h1>
@@ -32,11 +33,11 @@ export default function PartnerMitUnsClient() {
           >
             {t('partnerMitUns.heroCta')}
           </Link>
-        </div>
+        </Reveal>
       </section>
 
       {/* Why Partner Section - Responsive */}
-      <section className="py-12 sm:py-16 md:py-20 lg:py-24">
+      <section className="section-pattern-1 py-12 sm:py-16 md:py-20 lg:py-24">
         <div className="max-w-content mx-auto px-4 sm:px-6 md:px-8 lg:px-12">
           <h2 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold text-center mb-8 sm:mb-10 md:mb-12 lg:mb-16">
             {t('partnerMitUns.whyHeading')}
@@ -83,7 +84,7 @@ export default function PartnerMitUnsClient() {
       </section>
 
       {/* Partnership Inquiry Form - Responsive */}
-      <section id="form" className="py-12 sm:py-16 md:py-20 lg:py-24 bg-gray-50">
+      <section id="form" className="py-12 sm:py-16 md:py-20 lg:py-24 bg-gray-50 section-pattern-2">
         <div className="max-w-[900px] mx-auto px-4 sm:px-6 md:px-8 lg:px-12">
           <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-center mb-6 sm:mb-8 md:mb-10 lg:mb-12">
             {t('partnerMitUns.formHeading')}

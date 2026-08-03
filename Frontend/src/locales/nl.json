@@ -139,7 +139,11 @@
     "noImage": "Geen afbeelding"
   },
   "categoryGroupGrid": {
-    "viewMore": "Meer bekijken"
+    "viewMore": "Meer bekijken",
+    "heading": "Ontdek onze categorieën",
+    "subheading": "Vind de perfecte meubels voor elke ruimte in jouw huis.",
+    "categoriesCount": "{{count}} categorieën",
+    "categoriesCountSingular": "{{count}} categorie"
   },
   "newsletterSection": {
     "overlayTitle": "Word lid van de community.",

@@ -4,6 +4,7 @@
 
 import Link from 'next/link';
 import PlaceholderImage from '../components/PlaceholderImage';
+import { Reveal } from '../components/motion/Reveal';
 import { useLanguage } from '@/providers/languageContext';
 
 export default function SellOnNLFurnitureClient() {
@@ -23,7 +24,7 @@ export default function SellOnNLFurnitureClient() {
           <div className="absolute inset-0 bg-gradient-to-r from-gray-900/70 via-gray-900/60 to-transparent" />
         </div>
 
-        <div className="relative max-w-content mx-auto px-6 sm:px-12 text-center text-white z-10">
+        <Reveal className="relative max-w-content mx-auto px-6 sm:px-12 text-center text-white z-10">
           <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-extrabold mb-8 tracking-tight">
             {t('sellOnNlFurniture.heroTitle')}
           </h1>
@@ -39,11 +40,11 @@ export default function SellOnNLFurnitureClient() {
           >
             {t('sellOnNlFurniture.heroCta')}
           </Link>
-        </div>
+        </Reveal>
       </section>
 
       {/* Why List Section */}
-      <section className="py-20 sm:py-24 bg-white">
+      <section className="py-20 sm:py-24 bg-white section-pattern-1">
         <div className="max-w-content mx-auto px-6 sm:px-12">
           <h2 className="text-4xl sm:text-5xl font-bold text-center mb-16">
             {t('sellOnNlFurniture.whyHeading')}
@@ -78,7 +79,7 @@ export default function SellOnNLFurnitureClient() {
       </section>
 
       {/* Onboarding Process */}
-      <section className="py-20 sm:py-24 bg-gray-50">
+      <section className="py-20 sm:py-24 bg-gray-50 section-pattern-2">
         <div className="max-w-content mx-auto px-6 sm:px-12">
           <h2 className="text-4xl sm:text-5xl font-bold text-center mb-16">
             {t('sellOnNlFurniture.onboardingHeading')}
@@ -109,7 +110,7 @@ export default function SellOnNLFurnitureClient() {
       </section>
 
       {/* Retailer Application Form */}
-      <section id="form" className="py-20 sm:py-24 bg-white">
+      <section id="form" className="py-20 sm:py-24 bg-white section-pattern-1">
         <div className="max-w-[900px] mx-auto px-6 sm:px-12">
           <h2 className="text-3xl sm:text-4xl font-bold text-center mb-12">
             {t('sellOnNlFurniture.formHeading')}

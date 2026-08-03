@@ -5,6 +5,7 @@ import Image from "next/image";
 import { useState } from "react";
 import useSWR from "swr";
 import { Search, Store, Ticket } from "lucide-react";
+import { Reveal } from "../../components/motion/Reveal";
 import { useLanguage } from "@/providers/languageContext";
 
 const fetcher = (url: string) => fetch(url).then((res) => res.json());
@@ -32,8 +33,8 @@ export default function GeschaeftPage() {
   return (
     <main className="min-h-screen pt-[12px] sm:pt-[12px] pb-16">
       {/* Header band */}
-      <section className="bg-primary-700 text-white">
-        <div className="max-w-7xl mx-auto px-4 py-10 md:py-14">
+      <section className="bg-primary-700/90 backdrop-blur-xl text-white">
+        <Reveal className="max-w-7xl mx-auto px-4 py-10 md:py-14">
           <div className="flex items-center gap-3 mb-2">
             <Store size={26} />
             <h1 className="text-2xl md:text-3xl font-bold">{t('geschaeftPage.heading')}</h1>
@@ -52,11 +53,11 @@ export default function GeschaeftPage() {
               className="w-full bg-white text-black placeholder:text-gray-400 rounded-full py-3 pl-11 pr-4 text-sm outline-none focus:ring-2 focus:ring-primary-400"
             />
           </div>
-        </div>
+        </Reveal>
       </section>
 
       {/* Grid */}
-      <section className="max-w-7xl mx-auto px-4 py-10">
+      <section className="coupon-section-pattern-1 max-w-7xl mx-auto px-4 py-10">
         {isLoading ? (
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
             {Array.from({ length: 10 }).map((_, i) => (

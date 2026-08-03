@@ -1,6 +1,7 @@
 'use client';
 
 import Image from 'next/image';
+import { Reveal } from '../../components/motion/Reveal';
 import { useLanguage } from '@/providers/languageContext';
 
 function HeroCashbackBanner() {
@@ -25,7 +26,7 @@ function HeroCashbackBanner() {
         </div>
 
         {/* Center Text */}
-        <div className="text-center text-white">
+        <Reveal className="text-center text-white">
           <p className="text-base md:text-lg font-semibold tracking-wide opacity-90 mb-2 md:mb-3">
             {t('cashbackPage.bannerTagline')}
           </p>
@@ -38,7 +39,7 @@ function HeroCashbackBanner() {
           <p className="text-sm md:text-base mt-3 opacity-90 font-medium">
             {t('cashbackPage.bannerYearsSaving')}
           </p>
-        </div>
+        </Reveal>
 
         {/* Right Coin Badge */}
         <div className="relative w-28 h-28 md:w-36 md:h-36 flex-shrink-0 hidden md:flex">
@@ -97,7 +98,7 @@ export default function CashbackPage() {
       <HeroCashbackBanner />
 
       {/* 2. Today's Featured Cash Back - Furniture Edition */}
-      <section className="max-w-7xl mx-auto px-4 py-10">
+      <section className="coupon-section-pattern-1 max-w-7xl mx-auto px-4 py-10">
         <p className="text-center text-sm mb-6 text-gray-600">
           {t('cashbackPage.affiliateNoticePrefix')}{' '}
           <a href="#" className="underline hover:text-blue-600" target="_blank" rel="noopener noreferrer">
@@ -149,7 +150,7 @@ export default function CashbackPage() {
       </section>
 
       {/* 3. Top Cash Back + Banner */}
-      <section className="w-full bg-white py-8 md:py-10 border-t border-gray-200">
+      <section className="w-full bg-white coupon-section-pattern-2 py-8 md:py-10 border-t border-gray-200">
         <div className="max-w-7xl mx-auto px-4 md:px-6">
           <h2 className="text-2xl md:text-3xl lg:text-4xl font-bold text-center text-gray-900 mb-2">
             {t('cashbackPage.topCashbackHeading')}
@@ -241,7 +242,7 @@ export default function CashbackPage() {
       </section>
 
       {/* 4. All Cash Back Offers - Furniture Focus */}
-      <section className="max-w-7xl mx-auto px-4 py-12">
+      <section className="coupon-section-pattern-1 max-w-7xl mx-auto px-4 py-12">
         <div className="flex items-center justify-between mb-6">
           <h2 className="text-2xl md:text-3xl font-bold text-gray-900">
             {t('cashbackPage.allOffersHeading')}
@@ -330,7 +331,7 @@ export default function CashbackPage() {
       </section>
 
       {/* 5. How Cash Back Works */}
-      <section className="py-12 md:py-16 bg-white border-t border-gray-200">
+      <section className="py-12 md:py-16 bg-white coupon-section-pattern-2 border-t border-gray-200">
         <div className="max-w-7xl mx-auto px-4 md:px-6">
           <h2 className="text-2xl md:text-3xl font-bold text-center text-gray-900 mb-10">
             {t('cashbackPage.howItWorksHeading')}

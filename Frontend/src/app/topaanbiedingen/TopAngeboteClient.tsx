@@ -3,6 +3,7 @@ import { useState, useEffect } from "react";
 import FAQSection from "../components/FAQSection";
 import OfferProductCard from "../components/OfferProductCard";
 import PlaceholderImage from "../components/PlaceholderImage";
+import { Reveal } from "../components/motion/Reveal";
 import { useLanguage } from "@/providers/languageContext";
 
 type TopAngeboteClientProps = {
@@ -36,17 +37,17 @@ function SuperSaleBanner({ settings }: { settings: any }) {
       />
       <div className="absolute inset-0 bg-black/45" />
       <div className="absolute inset-0 flex items-center justify-center text-center text-white px-6">
-        <div>
-          <h1 className="text-3xl md:text-5xl font-black mb-3 drop-shadow-lg tracking-tight">
+        <Reveal className="glass-panel-dark rounded-2xl px-6 py-6 md:px-10 md:py-8">
+          <h1 className="text-3xl md:text-5xl font-black mb-3 tracking-tight">
             {bannerTitle}
           </h1>
-          <p className="text-sm md:text-xl mb-5 drop-shadow-md opacity-90">
+          <p className="text-sm md:text-xl mb-5 opacity-90">
             {bannerSubtitle}
           </p>
           <button className="bg-white text-gray-900 px-8 py-2.5 rounded-xl font-bold text-sm md:text-base hover:bg-gray-100 transition-colors">
             {t('topAngebote.bannerCta')}
           </button>
-        </div>
+        </Reveal>
       </div>
     </section>
   );
@@ -157,7 +158,7 @@ export default function TopAngeboteClient({
         ];
 
   return (
-    <div className="min-h-screen bg-[#f2f3f5]">
+    <div className="min-h-screen bg-[#f2f3f5] section-pattern-1">
       {/* Banner */}
       <SuperSaleBanner settings={settings} />
 

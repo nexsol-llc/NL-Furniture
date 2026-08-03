@@ -1,11 +1,20 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { Camera, Search } from 'lucide-react';
 import VisualSearchModal from './VisualSearchModal';
+import { Tilt } from './motion/Tilt';
+import { Reveal } from './motion/Reveal';
+import { ShaderBackground, hexToShaderColor } from './ui/rds-silk';
 import { useLanguage } from '@/providers/languageContext';
+import { useTheme } from '@/providers/themeContext';
+import { resolveShades } from '@/lib/colorPresets';
+
+/* Dark → light ramp the silk shader mixes through. Deep shades keep the white
+   headline readable; 400 supplies the light sheen that gives the fabric look. */
+const HERO_SHADER_SHADES = ['950', '800', '600', '400'] as const;
 
 export interface HeroItem {
   _id: string;
@@ -93,25 +102,39 @@ function CollageImage({
     </>
   );
 
-  const classes = `relative group rounded-2xl overflow-hidden shadow-soft-lg block ${className || ''}`;
+  const innerClasses = "relative group h-full w-full rounded-2xl overflow-hidden shadow-depth-3 block";
 
   if (item?.link) {
     return (
-      <a href={item.link} target="_blank" rel="noopener noreferrer" className={classes}>
-        {content}
-      </a>
+      <Tilt rotationFactor={6} className={`h-full w-full ${className || ''}`}>
+        <a href={item.link} target="_blank" rel="noopener noreferrer" className={innerClasses}>
+          {content}
+        </a>
+      </Tilt>
     );
   }
-  return <div className={classes}>{content}</div>;
+  return (
+    <Tilt rotationFactor={6} className={`h-full w-full ${className || ''}`}>
+      <div className={innerClasses}>{content}</div>
+    </Tilt>
+  );
 }
 
 export default function HomeHero({ items }: { items: HeroItem[] }) {
   const router = useRouter();
   const { t, tList } = useLanguage();
+  const { theme, customHex } = useTheme();
   const [query, setQuery] = useState('');
   const [showVisualSearch, setShowVisualSearch] = useState(false);
   const searchLines = tList<string>('homeHero.searchLines');
   const animatedPlaceholder = useTypewriterPlaceholder(searchLines);
+
+  // Follows the admin-configured primary color, so the hero restyles itself
+  // whenever the theme changes (no WebGL rebuild — only the palette uniform).
+  const shaderColors = useMemo(() => {
+    const shades = resolveShades(theme, customHex);
+    return HERO_SHADER_SHADES.map((shade) => hexToShaderColor(shades[shade]));
+  }, [theme, customHex]);
 
   const handleSearch = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -121,34 +144,48 @@ export default function HomeHero({ items }: { items: HeroItem[] }) {
   };
 
   return (
-    <section className="w-full -mt-[var(--header-height)] bg-gradient-to-br from-primary-400 via-primary-500 to-primary-600">
-      <div className="max-w-content mx-auto px-4 pt-[calc(var(--header-height)+2.5rem)] pb-16 md:pb-28">
+    <section className="relative w-full -mt-[var(--header-height)] bg-gradient-to-br from-primary-600 via-primary-700 to-primary-900">
+      {/* Animated silk background. The gradient above stays as the fallback for
+          browsers/devices without WebGL. */}
+      <ShaderBackground
+        colors={shaderColors}
+        className="absolute inset-0 h-full w-full pointer-events-none"
+      />
+      {/* Legibility scrim — darkest on the headline side, barely there over the collage. */}
+      <div
+        aria-hidden="true"
+        className="absolute inset-0 pointer-events-none bg-gradient-to-r from-black/25 via-black/10 to-black/5"
+      />
+
+      <div className="relative z-10 max-w-content mx-auto px-4 pt-[calc(var(--header-height)+2.5rem)] pb-16 md:pb-28">
         <div className="relative grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12 items-center">
 
           {/* LEFT: headline + AI search */}
           <div>
-            <h1 className="text-3xl md:text-display text-white">
-              {t('homeHero.headline')}
-            </h1>
-            <p className="mt-3 text-white/90 text-base md:text-lg">
-              {t('homeHero.subheadline')}
-            </p>
+            <Reveal>
+              <h1 className="text-3xl md:text-display font-display text-white">
+                {t('homeHero.headline')}
+              </h1>
+              <p className="mt-3 text-white/90 text-base md:text-lg">
+                {t('homeHero.subheadline')}
+              </p>
+            </Reveal>
 
             {/* AI search bar */}
             <form
               onSubmit={handleSearch}
-              className="mt-7 flex items-center bg-white rounded-full shadow-xl pl-4 pr-2 py-2"
+              className="mt-7 flex items-center glass-panel-dark rounded-full shadow-depth-4 pl-4 pr-2 py-2"
             >
               <AiSparkIcon />
               <div className="relative flex-1 min-w-0 ml-3">
                 <input
                   value={query}
                   onChange={(e) => setQuery(e.target.value)}
-                  className="w-full bg-transparent border-none py-2 pr-2 text-sm md:text-base text-gray-900 outline-none focus:ring-0"
+                  className="w-full bg-transparent border-none py-2 pr-2 text-sm md:text-base text-white caret-white outline-none focus:ring-0"
                   aria-label={t('homeHero.searchAriaLabel')}
                 />
                 {!query && (
-                  <span className="pointer-events-none absolute left-0 top-1/2 -translate-y-1/2 text-sm md:text-base text-gray-500 truncate max-w-full">
+                  <span className="pointer-events-none absolute left-0 top-1/2 -translate-y-1/2 text-sm md:text-base text-white truncate max-w-full">
                     {animatedPlaceholder}
                     <span className="animate-pulse">|</span>
                   </span>
@@ -251,7 +288,7 @@ export default function HomeHero({ items }: { items: HeroItem[] }) {
           </div>
 
           {/* RIGHT: visual-search collage from the hero images */}
-          <div>
+          <Reveal delay={0.1} y={24}>
             <div className="grid grid-cols-2 gap-3 h-[280px] md:h-[340px]">
               <div className="grid grid-rows-2 gap-3">
                 <CollageImage item={items[0]} fallback="/hero/sofa.jpg" alt={t('homeHero.collageAlt1')} />
@@ -271,7 +308,7 @@ export default function HomeHero({ items }: { items: HeroItem[] }) {
                 {t('homeHero.teaserCta')}
               </button>
             </p>
-          </div>
+          </Reveal>
 
         </div>
       </div>
