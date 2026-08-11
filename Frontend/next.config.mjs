@@ -1,6 +1,28 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   output: "standalone",
+  // Category URLs are flat now (/banken, /banken/hoekbanken, /slaapkamer).
+  // Keep the old /categorie/* URLs working for bookmarks and indexed pages.
+  // /categorie itself is untouched — it is still the category overview page.
+  async redirects() {
+    return [
+      {
+        source: "/categorie/groep/:slug",
+        destination: "/:slug",
+        permanent: true,
+      },
+      {
+        source: "/categorie/:slug/:childslug",
+        destination: "/:slug/:childslug",
+        permanent: true,
+      },
+      {
+        source: "/categorie/:slug",
+        destination: "/:slug",
+        permanent: true,
+      },
+    ];
+  },
   async rewrites() {
     const apiUrl = process.env.NEXT_PUBLIC_API_URL;
     if (!apiUrl) {

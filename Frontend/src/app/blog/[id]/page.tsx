@@ -440,7 +440,7 @@ export default function BlogDetailPage({ params }: { params: { id: string } }) {
                 {/* Center "Weitere Produkte" Button under the grid */}
                 <div className="flex justify-center mt-8 mb-12">
                   <button
-                    onClick={() => router.push(`/categorie/${blog.category}`)}
+                    onClick={() => router.push(`/${blog.category}`)}
                     className="border border-black text-gray-900 font-bold text-[10px] uppercase tracking-widest px-8 py-3.5 hover:bg-black hover:text-white transition-colors duration-300"
                   >
                     {t('blogDetailPage.moreProducts')}

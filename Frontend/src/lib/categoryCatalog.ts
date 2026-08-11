@@ -1,13 +1,13 @@
 // Category catalog is fully API-driven (see Backend `/api/category-catalog`).
 // This module now only holds the shared types + small fetch helpers used by the
-// public category pages. No category/subcategory data is hardcoded here anymore.
+// public category pages. No category/childCategory data is hardcoded here anymore.
 
 export type CategoryFAQ = {
   question: string;
   answer: string;
 };
 
-export type SubcategoryDef = {
+export type ChildCategoryDef = {
   slug: string;
   name: string;
   // Images come from the media library (imageUrl); iconName is an optional
@@ -32,28 +32,23 @@ export type CategoryDef = {
   logo?: string;
   priceUnder?: number;
   featured?: boolean;
-  // Indoor/Outdoor — decides which type of Parent Category this can be assigned to.
-  type?: "indoor" | "outdoor";
   // Parent category this entry is grouped under (see /api/parent-categories) —
   // a category belongs to at most one parent at a time.
   parentCategoryId?: string;
-  // Whether this category's products should appear on the special Innen/Außen Furniture pages.
-  showOnFurniture?: boolean;
-  showOnFurnitureAussen?: boolean;
   faqs?: CategoryFAQ[];
-  subcategories?: SubcategoryDef[];
+  childCategories?: ChildCategoryDef[];
 };
 
+// One flat list — parent categories have no indoor/outdoor type and no tie to
+// the Furniture pages. They only group Category Catalog entries on /categorie,
+// the home page and /kortingscodes. Their public page is the flat root URL
+// `/<parentSlug>`, resolved by `app/[parentslug]/page.tsx`.
 export type ParentCategoryDef = {
   _id: string;
   slug: string;
   name: string;
-  type?: "indoor" | "outdoor";
   image?: string;
   featured?: boolean;
-  // Whether this parent category shows up in the Innen/Außen Furniture pages'
-  // parent filter row. Missing (older rows) is treated as visible.
-  showOnFurniture?: boolean;
   sortOrder?: number;
   seoTitle?: string;
   seoDescription?: string;
@@ -117,6 +112,16 @@ export async function fetchCatalogList(): Promise<CategoryDef[]> {
   }
 }
 
+// Resolve a single parent category by slug. Parent categories have no
+// by-slug endpoint, so this filters the full list. Safe on server and client.
+export async function fetchParentCategory(
+  slug: string
+): Promise<ParentCategoryDef | null> {
+  const target = slug.toLowerCase();
+  const parents = await fetchParentCategories();
+  return parents.find((p) => p.slug.toLowerCase() === target) ?? null;
+}
+
 // Fetch the full list of parent categories (bare array).
 export async function fetchParentCategories(): Promise<ParentCategoryDef[]> {
   try {
@@ -131,50 +136,17 @@ export async function fetchParentCategories(): Promise<ParentCategoryDef[]> {
   }
 }
 
-export type FurniturePageSettings = {
-  slug: string;
-  pageTitle: string;
-  seoTitle: string;
-  seoDescription: string;
-  longContent: string;
-  faqs: CategoryFAQ[];
-  // Tile image for the "Möbel" card prepended to the home page's Parent
-  // Category grid — set the same way as a Parent Category's image.
-  image?: string;
-};
-
-async function fetchFurnitureSettingsFrom(endpoint: string): Promise<FurniturePageSettings | null> {
-  try {
-    const res = await fetch(`${apiBase()}/api/${endpoint}`, { cache: "no-store" });
-    if (!res.ok) return null;
-    const data = await res.json();
-    return data?.success && data.settings ? data.settings : null;
-  } catch {
-    return null;
-  }
-}
-
-// Fetch the Innen Furniture page's settings (slug, SEO, long content, FAQs).
-export function fetchFurniturePageSettings(): Promise<FurniturePageSettings | null> {
-  return fetchFurnitureSettingsFrom("furniture-page-settings");
-}
-
-// Fetch the Außen Furniture page's settings.
-export function fetchFurnitureAussenPageSettings(): Promise<FurniturePageSettings | null> {
-  return fetchFurnitureSettingsFrom("furniture-aussen-page-settings");
-}
-
-// Resolve a subcategory match across a list of categories (used to redirect a
-// bare `/categorie/<subslug>` URL to its parent category page).
-export function findSubcategoryMatch(
+// Resolve a childCategory match across a list of categories (used to redirect a
+// bare `/<childslug>` URL to its parent category page).
+export function findChildCategoryMatch(
   categories: CategoryDef[],
   searchSlug: string
-): { categorySlug: string; subSlug: string } | null {
+): { categorySlug: string; childSlug: string } | null {
   const target = searchSlug.toLowerCase();
   const targetSpaced = target.replace(/-/g, " ");
   for (const cat of categories) {
-    if (!cat.subcategories) continue;
-    const sub = cat.subcategories.find(
+    if (!cat.childCategories) continue;
+    const sub = cat.childCategories.find(
       (s) =>
         s.slug === target ||
         s.name?.toLowerCase() === targetSpaced ||
@@ -183,7 +155,63 @@ export function findSubcategoryMatch(
             (term) => term.toLowerCase().replace(/[\s-]+/g, "-") === target
           ))
     );
-    if (sub) return { categorySlug: cat.slug, subSlug: sub.slug };
+    if (sub) return { categorySlug: cat.slug, childSlug: sub.slug };
   }
   return null;
+}
+
+// ── Public URL shape ─────────────────────────────────────────────────────────
+// Category pages are nested under the Parent Category they are assigned to:
+//   /<parentSlug>                              parent group page
+//   /<parentSlug>/<categorySlug>               category listing
+//   /<parentSlug>/<categorySlug>/<childSlug>   child category listing
+// A category with no `parentCategoryId` therefore has NO public URL and its
+// pages 404 until an admin assigns it a parent. Build links with the helpers
+// below rather than by hand — they are the single definition of that shape.
+
+export const categoryHref = (parentSlug: string, categorySlug: string): string =>
+  `/${encodeURIComponent(parentSlug)}/${encodeURIComponent(categorySlug)}`;
+
+export const childCategoryHref = (
+  parentSlug: string,
+  categorySlug: string,
+  childSlug: string
+): string =>
+  `/${encodeURIComponent(parentSlug)}/${encodeURIComponent(categorySlug)}/${encodeURIComponent(childSlug)}`;
+
+export type CategoryLocation = {
+  parent: ParentCategoryDef;
+  category: CategoryDef;
+};
+
+// Resolve a category slug (or alias) to its full location in the hierarchy.
+// Returns null when the slug matches no category, or when the category it
+// matches has no parent assigned — both cases are 404s.
+export function locateCategoryIn(
+  parents: ParentCategoryDef[],
+  categories: CategoryDef[],
+  categorySlug: string
+): CategoryLocation | null {
+  const target = categorySlug.toLowerCase();
+  const category = categories.find(
+    (c) =>
+      c.slug.toLowerCase() === target ||
+      (c.aliases ?? []).some((a) => a.toLowerCase() === target)
+  );
+  if (!category?.parentCategoryId) return null;
+
+  const parent = parents.find((p) => p._id === category.parentCategoryId);
+  return parent ? { parent, category } : null;
+}
+
+// Fetching variant of `locateCategoryIn`, for callers that don't already hold
+// the two lists.
+export async function locateCategory(
+  categorySlug: string
+): Promise<CategoryLocation | null> {
+  const [parents, categories] = await Promise.all([
+    fetchParentCategories(),
+    fetchCatalogList(),
+  ]);
+  return locateCategoryIn(parents, categories, categorySlug);
 }

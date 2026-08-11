@@ -314,7 +314,7 @@ export default function AdminDashboardPage() {
               <div>
                 <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Catalog Categories</p>
                 <h3 className="text-2xl font-semibold text-slate-850 mt-1">{stats.totalCategories}</h3>
-                <p className="text-[11px] text-slate-500 mt-0.5">Main & subcategories</p>
+                <p className="text-[11px] text-slate-500 mt-0.5">Main & child categories</p>
               </div>
             </div>
 

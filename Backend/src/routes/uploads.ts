@@ -192,7 +192,7 @@ uploads.post("/upload-csv", authMiddleware, requireStaff, async (c) => {
     }
   }
 
-  // ── Coverage analysis: which brands / categories / subcategories in this feed
+  // ── Coverage analysis: which brands / categories / childCategories in this feed
   //    are NOT yet configured in the admin (furniture brands + category catalog)?
   const countBy = (keyFn: (p: ProductRecord) => string | null | undefined) => {
     const m = new Map<string, { name: string; count: number }>();
@@ -209,7 +209,7 @@ uploads.post("/upload-csv", authMiddleware, requireStaff, async (c) => {
 
   const brandMap = countBy((p) => p.brand_name);
   const categoryMap = countBy((p) => p.category_name);
-  const subcategoryMap = countBy((p) => p.merchant_category);
+  const childCategoryMap = countBy((p) => p.merchant_category);
 
   const [brandRows, catRows] = await db.batch([
     db.prepare("SELECT title, slug FROM furniture_brands"),
@@ -223,16 +223,16 @@ uploads.post("/upload-csv", authMiddleware, requireStaff, async (c) => {
   }
 
   const existingCategories = new Set<string>();
-  const existingSubcategories = new Set<string>();
+  const existingChildCategories = new Set<string>();
   for (const r of catRows.results as any[]) {
     let doc: any = {};
     try { doc = JSON.parse(r.data); } catch { /* ignore */ }
     for (const v of [doc.name, doc.slug, ...(Array.isArray(doc.aliases) ? doc.aliases : [])]) {
       if (v) existingCategories.add(String(v).toLowerCase());
     }
-    for (const s of Array.isArray(doc.subcategories) ? doc.subcategories : []) {
-      if (s?.name) existingSubcategories.add(String(s.name).toLowerCase());
-      if (s?.slug) existingSubcategories.add(String(s.slug).toLowerCase());
+    for (const s of Array.isArray(doc.childCategories) ? doc.childCategories : []) {
+      if (s?.name) existingChildCategories.add(String(s.name).toLowerCase());
+      if (s?.slug) existingChildCategories.add(String(s.slug).toLowerCase());
     }
   }
 
@@ -246,7 +246,7 @@ uploads.post("/upload-csv", authMiddleware, requireStaff, async (c) => {
 
   const missingBrands = missingFrom(brandMap, existingBrands);
   const missingCategories = missingFrom(categoryMap, existingCategories);
-  const missingSubcategories = missingFrom(subcategoryMap, existingSubcategories);
+  const missingChildCategories = missingFrom(childCategoryMap, existingChildCategories);
 
   const logNow = nowIso();
   await db
@@ -279,14 +279,14 @@ uploads.post("/upload-csv", authMiddleware, requireStaff, async (c) => {
     validProducts: products.length,
     inserted,
     updated,
-    // Coverage: items in the feed whose brand/category/subcategory isn't configured yet.
+    // Coverage: items in the feed whose brand/category/childCategory isn't configured yet.
     coverage: {
       missingBrands,
       missingCategories,
-      missingSubcategories,
+      missingChildCategories,
       productsFromMissingBrands: sum(missingBrands),
       productsFromMissingCategories: sum(missingCategories),
-      productsFromMissingSubcategories: sum(missingSubcategories),
+      productsFromMissingChildCategories: sum(missingChildCategories),
     },
   });
 });

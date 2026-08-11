@@ -139,7 +139,7 @@ export default function HomeHero({ items }: { items: HeroItem[] }) {
   const handleSearch = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (!query.trim()) return;
-    router.push(`/categorie/${query.toLowerCase().trim().replace(/\s+/g, '-')}`);
+    router.push(`/${query.toLowerCase().trim().replace(/\s+/g, '-')}`);
     setQuery('');
   };
 

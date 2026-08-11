@@ -33,7 +33,7 @@ categories.get("/:slug", async (c) => {
         catalogEntry.name,
         catalogEntry.slug,
         ...(catalogEntry.aliases ?? []),
-        ...(catalogEntry.subcategories ?? []).flatMap((s: any) => [
+        ...(catalogEntry.childCategories ?? []).flatMap((s: any) => [
           s.slug,
           s.name,
           ...(s.searchTerms ?? []),

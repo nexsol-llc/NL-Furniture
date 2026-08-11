@@ -23,7 +23,7 @@ import Button from './components/Button';
 import { Tilt } from './components/motion/Tilt';
 import { Reveal, RevealGroup, RevealItem } from './components/motion/Reveal';
 import { normalizeLink } from '@/lib/productFormat';
-import { fetchFurniturePageSettings, fetchFurnitureAussenPageSettings, fetchCatalogList } from '@/lib/categoryCatalog';
+import { fetchCatalogList } from '@/lib/categoryCatalog';
 import { useLanguage } from '@/providers/languageContext';
 
 interface MagazineArticle {
@@ -67,10 +67,9 @@ export default function HomePage() {
   const [loading, setLoading] = useState(true);
   const [featuredBrands, setFeaturedBrands] = useState<any[]>([]);
 
-  // Categories flagged "Show on home page" (from the admin indoor/outdoor lists).
-  const [homeIndoorCats, setHomeIndoorCats] = useState<any[]>([]);
-  const [homeOutdoorCats, setHomeOutdoorCats] = useState<any[]>([]);
-  const [homeCatTab, setHomeCatTab] = useState<'indoor' | 'outdoor'>('indoor');
+  // Featured Parent Categories. One flat list — parent categories have no
+  // indoor/outdoor type, so there is no tab.
+  const [homeParentCats, setHomeParentCats] = useState<any[]>([]);
 
   // Custom Categories & Products states
   const [dynamicIndoorCats, setDynamicIndoorCats] = useState<any[]>([]);
@@ -121,17 +120,14 @@ export default function HomePage() {
       })
       .catch((err) => console.error("Error fetching featured furniture brands:", err));
 
-    // Fetch Parent Categories (split by type) plus the Innen/Außen Furniture
-    // page settings, and build the home page's Innenbereich/Außenbereich tile
-    // grid: a "Möbel" tile linking to the Furniture page, first, followed by
-    // the Featured parent categories in their drag-configured order.
+    // Fetch Parent Categories and build the home page's tile grid in their
+    // drag-configured order. One flat grid — no indoor/outdoor split — so
+    // each tile brings its own href rather than sharing a hrefBase.
     Promise.all([
       fetch(`/api/parent-categories?t=${Date.now()}`, { cache: "no-store" }).then((res) => (res.ok ? res.json() : [])),
-      fetchFurniturePageSettings(),
-      fetchFurnitureAussenPageSettings(),
       fetchCatalogList(),
     ])
-      .then(([data, furnitureSettings, furnitureAussenSettings, catalog]: [any, any, any, any]) => {
+      .then(([data, catalog]: [any, any]) => {
         const list = Array.isArray(data) ? data : [];
 
         // How many Category Catalog entries are assigned to each parent — shown
@@ -144,25 +140,17 @@ export default function HomePage() {
 
         // Only Featured parent categories show here, in their drag-configured
         // order (the API already returns them sorted by sort_order).
-        const pick = (type: "indoor" | "outdoor") =>
-          list
-            .filter((p: any) => p?.slug && (p.featured === true || p.featured === "true") && (p.type === type || (type === "indoor" && p.type !== "outdoor")))
-            .map((p: any) => ({
-              name: p.name || p.slug,
-              slug: p.slug,
-              image: p.image || null,
-              count: catalogCounts.get(p._id) ?? 0,
-            }));
+        const parentTiles = list
+          .filter((p: any) => p?.slug && (p.featured === true || p.featured === "true"))
+          .map((p: any) => ({
+            name: p.name || p.slug,
+            slug: p.slug,
+            image: p.image || null,
+            count: catalogCounts.get(p._id) ?? 0,
+            href: `/${encodeURIComponent(p.slug)}`,
+          }));
 
-        // The Möbel tile only appears once the admin has configured a slug
-        // for that Furniture page — otherwise it would have nowhere to link.
-        const furnitureTile = (settings: any) =>
-          settings?.slug
-            ? [{ name: settings.pageTitle || t('listingPage.breadcrumbFurniture'), slug: settings.slug, image: settings.image || null }]
-            : [];
-
-        setHomeIndoorCats([...furnitureTile(furnitureSettings), ...pick("indoor")]);
-        setHomeOutdoorCats([...furnitureTile(furnitureAussenSettings), ...pick("outdoor")]);
+        setHomeParentCats(parentTiles);
       })
       .catch((err) => console.error("Error fetching home parent categories:", err));
 
@@ -206,21 +194,11 @@ export default function HomePage() {
       .catch((err) => console.error("Error fetching home SEO settings:", err));
   }, []);
 
-  // Default the home-categories switcher to whichever section actually has items.
-  useEffect(() => {
-    if (homeCatTab === "indoor" && homeIndoorCats.length === 0 && homeOutdoorCats.length > 0) {
-      setHomeCatTab("outdoor");
-    } else if (homeCatTab === "outdoor" && homeOutdoorCats.length === 0 && homeIndoorCats.length > 0) {
-      setHomeCatTab("indoor");
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [homeIndoorCats, homeOutdoorCats]);
-
   // Tiles for the Parent Category grid, with the catalog count translated into
   // a caption. Memoized so a re-render doesn't restart the reveal animation.
   const homeCatTiles = useMemo(
     () =>
-      (homeCatTab === "indoor" ? homeIndoorCats : homeOutdoorCats).map((c: any) => ({
+      homeParentCats.map((c: any) => ({
         ...c,
         caption:
           typeof c.count === "number" && c.count > 0
@@ -232,7 +210,7 @@ export default function HomePage() {
               )
             : undefined,
       })),
-    [homeCatTab, homeIndoorCats, homeOutdoorCats, t]
+    [homeParentCats, t]
   );
 
   // Indoor/Outdoor section is fully backend-driven (managed in admin → Indoor/Outdoor).
@@ -357,26 +335,15 @@ export default function HomePage() {
   </div>
 </section>
 )}
-{/* Parent Categories, split by type, with an Innenbereich/Außenbereich
-    switcher. Only renders when at least one parent category exists. */}
-{(homeIndoorCats.length > 0 || homeOutdoorCats.length > 0) && (
+{/* Featured Parent Categories plus a tile per Furniture page, in one flat
+    grid — each tile carries its own href. Only renders when non-empty. */}
+{homeCatTiles.length > 0 && (
   <CategoryGroupGrid
     variant="photo"
     title={t('categoryGroupGrid.heading')}
     subtitle={t('categoryGroupGrid.subheading')}
     categories={homeCatTiles}
-    hrefBase={homeCatTab === "indoor" ? "/binnen" : "/buiten"}
     moreCategoriesHref="/categorie"
-    headerExtra={
-      <IndoorOutdoorToggle
-        value={homeCatTab}
-        onChange={setHomeCatTab}
-        indoorLabel={t('categoryTabsSection.indoorLabel')}
-        outdoorLabel={t('categoryTabsSection.outdoorLabel')}
-        indoorDisabled={homeIndoorCats.length === 0}
-        outdoorDisabled={homeOutdoorCats.length === 0}
-      />
-    }
   />
 )}
 {/* ================= INDOOR / OUTDOOR SECTION (admin-managed) ================= */}

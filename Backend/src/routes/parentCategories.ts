@@ -40,19 +40,17 @@ parentCategories.post("/", authMiddleware, requireStaff, async (c) => {
   }
 
   const slug = String(body.slug).toLowerCase();
-  const type = body.type === "outdoor" ? "outdoor" : "indoor";
-  // A slug only needs to be unique within its own type — the same slug can
-  // exist once as indoor and once as outdoor.
   const existing = await db
-    .prepare("SELECT id FROM parent_categories WHERE slug = ? AND json_extract(data, '$.type') = ? LIMIT 1")
-    .bind(slug, type)
+    .prepare("SELECT id FROM parent_categories WHERE slug = ? LIMIT 1")
+    .bind(slug)
     .first<{ id: string }>();
-  if (existing) return c.json({ error: "A parent category with this slug and type already exists" }, 409);
+  if (existing) return c.json({ error: "A parent category with this slug already exists" }, 409);
 
   const id = newId();
   const now = nowIso();
   const sortOrder = Number.isFinite(body.sortOrder) ? Number(body.sortOrder) : 0;
-  const doc = { ...body, slug, type, createdAt: now, updatedAt: now };
+  const { type: _type, showOnFurniture: _showOnFurniture, ...rest } = body;
+  const doc = { ...rest, slug, createdAt: now, updatedAt: now };
 
   await db
     .prepare(
@@ -79,19 +77,20 @@ parentCategories.put("/:id", authMiddleware, requireStaff, async (c) => {
 
   const existingDoc = JSON.parse(existing.data);
   const nextSlug = body.slug ? String(body.slug).toLowerCase() : existingDoc.slug;
-  const nextType = body.type === "outdoor" ? "outdoor" : body.type === "indoor" ? "indoor" : (existingDoc.type ?? "indoor");
 
-  // A slug only needs to be unique within its own type — the same slug can
-  // exist once as indoor and once as outdoor.
-  if (body.slug !== undefined || body.type !== undefined) {
+  if (body.slug !== undefined) {
     const clash = await db
-      .prepare("SELECT id FROM parent_categories WHERE slug = ? AND json_extract(data, '$.type') = ? AND id != ? LIMIT 1")
-      .bind(nextSlug, nextType, existing.id)
+      .prepare("SELECT id FROM parent_categories WHERE slug = ? AND id != ? LIMIT 1")
+      .bind(nextSlug, existing.id)
       .first<{ id: string }>();
-    if (clash) return c.json({ error: "A parent category with this slug and type already exists" }, 409);
+    if (clash) return c.json({ error: "A parent category with this slug already exists" }, 409);
   }
 
-  const updatedDoc = { ...existingDoc, ...body, slug: nextSlug, type: nextType, updatedAt: nowIso() };
+  // `type`/`showOnFurniture` are retired — drop them off both the incoming
+  // patch and any row still carrying them from before the migration.
+  const { type: _bodyType, showOnFurniture: _bodyShow, ...bodyRest } = body;
+  const { type: _docType, showOnFurniture: _docShow, ...existingRest } = existingDoc;
+  const updatedDoc = { ...existingRest, ...bodyRest, slug: nextSlug, updatedAt: nowIso() };
   const sortOrder = Number.isFinite(updatedDoc.sortOrder) ? Number(updatedDoc.sortOrder) : 0;
 
   await db

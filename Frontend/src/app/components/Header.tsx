@@ -171,7 +171,7 @@ export default function Header() {
   const handleSearch = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (!query.trim()) return;
-    router.push(`/categorie/${slugify(query)}`);
+    router.push(`/${slugify(query)}`);
     setQuery("");
   };
 

@@ -45,7 +45,7 @@ export default function TischePage() {
           <aside className="lg:col-span-3 space-y-9 lg:space-y-10">
             {/* Unterkategorien – bleibt gleich */}
             <div>
-              <h3 className="text-xl font-medium text-zinc-900 mb-5">{t('tischePage.subcategoriesHeading')}</h3>
+              <h3 className="text-xl font-medium text-zinc-900 mb-5">{t('tischePage.childCategoriesHeading')}</h3>
               <ul className="space-y-3 text-sm text-zinc-700">
                 <li className="flex justify-between">
                   <span>Arbeitstische</span>

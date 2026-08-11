@@ -73,7 +73,7 @@ app.route("/api/product", products);
 // /api/products-by-category — paginated/filtered product list
 // Shares the same router; GET / on this router serves the list
 app.route("/api/products-by-category", products);
-// Admin CRUD + rich filtering (create/update/delete, by brand/category/subcategory/price)
+// Admin CRUD + rich filtering (create/update/delete, by brand/category/childCategory/price)
 app.route("/api/products", productsAdmin);
 app.route("/api/merchants", merchants);
 

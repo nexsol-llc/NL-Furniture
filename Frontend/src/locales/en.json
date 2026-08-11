@@ -88,7 +88,7 @@
     "uploadHint": "JPG, PNG – straight from your phone or PC",
     "searchCta": "Find similar furniture"
   },
-  "subcategorySlider": {
+  "childCategorySlider": {
     "priceTileFallbackAlt": "Category"
   },
   "cookieConsent": {
@@ -156,15 +156,6 @@
     "imageAlt": "Newsletter",
     "privacyLinkText": "Privacy policy"
   },
-  "categoryTabsSection": {
-    "indoorLabel": "Indoor",
-    "indoorSubtitle": "Furniture for your home",
-    "outdoorLabel": "Outdoor",
-    "outdoorSubtitle": "Furniture for garden, patio & balcony"
-  },
-  "parentCategorySlider": {
-    "allLabel": "All"
-  },
   "listingPage": {
     "breadcrumbHome": "Home",
     "breadcrumbFurniture": "Furniture",
@@ -194,7 +185,7 @@
     "noResultsHeading": "No results",
     "noResultsText": "We couldn't find any products matching your filters.",
     "endOfResults": "End of results • {{count}} items",
-    "subcategoriesHeading": "Subcategories",
+    "childCategoriesHeading": "Subcategories",
     "categoriesHeading": "Categories",
     "categoriesCountSuffix": "{{count}} categories",
     "brandsFilterMobileHeading": "Brand filter",
@@ -701,7 +692,7 @@
     "breadcrumbLiving": "Living",
     "breadcrumbFurniture": "Furniture",
     "breadcrumbTables": "Tables",
-    "subcategoriesHeading": "Tables",
+    "childCategoriesHeading": "Tables",
     "showMore": "Show me more",
     "priceHeading": "Price",
     "save": "Save",
@@ -757,8 +748,8 @@
     "redirecting": "Redirecting...",
     "searchingCategory": "Searching for category...",
     "loadingPage": "Loading page...",
-    "subcategoryNotFoundHeading": "Subcategory not found",
-    "subcategoryNotFoundText": "The requested subcategory does not exist.",
+    "childCategoryNotFoundHeading": "Subcategory not found",
+    "childCategoryNotFoundText": "The requested subcategory does not exist.",
     "toCategory": "To category"
   },
   "kategoriePage": {

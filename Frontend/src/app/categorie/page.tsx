@@ -163,7 +163,7 @@ function CategorySection({
             <p className="text-gray-600 text-sm mt-1">{desc}</p>
           </div>
           <Link
-            href={`/categorie/${categoryKey}`}
+            href={`/${categoryKey}`}
             className="text-primary-600 font-semibold text-sm hover:underline flex items-center gap-1"
           >
             {t('kategoriePage.viewAll')}
@@ -249,8 +249,7 @@ export default function KategoriePage() {
   const { t } = useLanguage();
   // No hardcoded defaults — everything comes from the API. Skeletons show until loaded.
   const [sections, setSections] = useState<any[]>([]);
-  const [indoorCats, setIndoorCats] = useState<any[]>([]);
-  const [outdoorCats, setOutdoorCats] = useState<any[]>([]);
+  const [parentCats, setParentCats] = useState<any[]>([]);
   const [faqs, setFaqs] = useState<any[]>([]);
   const [settingsLoaded, setSettingsLoaded] = useState(false);
 
@@ -287,7 +286,9 @@ export default function KategoriePage() {
     fetchSettings();
   }, []);
 
-  // Parent Categories, split by type, drive the Innenbereich/Außenbereich grid.
+  // Featured Parent Categories drive the tile grid. One flat list — parent
+  // categories have no indoor/outdoor type — each tile linking to its own
+  // flat /[slug] page.
   useEffect(() => {
     fetch(`/api/parent-categories?t=${Date.now()}`)
       .then((res) => (res.ok ? res.json() : []))
@@ -295,14 +296,20 @@ export default function KategoriePage() {
         // Only Featured parent categories show here, in their drag-configured
         // order (the API already returns them sorted by sort_order).
         const list = (Array.isArray(data) ? data : []).filter((p: any) => p?.slug && (p.featured === true || p.featured === "true"));
-        const mapItem = (p: any) => ({ id: p._id, name: p.name || p.slug, slug: p.slug, image: p.image || null });
-        setIndoorCats(list.filter((p: any) => p.type !== "outdoor").map(mapItem));
-        setOutdoorCats(list.filter((p: any) => p.type === "outdoor").map(mapItem));
+        setParentCats(
+          list.map((p: any) => ({
+            id: p._id,
+            name: p.name || p.slug,
+            slug: p.slug,
+            image: p.image || null,
+            href: `/${encodeURIComponent(p.slug)}`,
+          }))
+        );
       })
       .catch((err) => console.error("Failed to fetch parent categories:", err));
   }, []);
 
-  // Fetch category catalogs (each with its subcategories) for the nested display
+  // Fetch category catalogs (each with its childCategories) for the nested display
   useEffect(() => {
     const fetchCatalogs = async () => {
       try {
@@ -318,33 +325,31 @@ export default function KategoriePage() {
     fetchCatalogs();
   }, []);
 
-  // Tiles for the indoor/outdoor grid, captioned with how many Category Catalog
-  // entries hang off each parent. Memoized so the reveal animation doesn't
-  // restart on every render.
-  const [indoorTiles, outdoorTiles] = useMemo(() => {
+  // Tiles for the Parent Category grid, captioned with how many Category
+  // Catalog entries hang off each parent. Memoized so the reveal animation
+  // doesn't restart on every render.
+  const parentTiles = useMemo(() => {
     const counts = new Map<string, number>();
     for (const entry of catalogs) {
       const parentId = entry?.parentCategoryId;
       if (parentId) counts.set(parentId, (counts.get(parentId) ?? 0) + 1);
     }
-    const withCaption = (items: any[]) =>
-      items.map((c) => {
-        const count = counts.get(c.id) ?? 0;
-        return {
-          ...c,
-          caption:
-            count > 0
-              ? t(
-                  count === 1
-                    ? "categoryGroupGrid.categoriesCountSingular"
-                    : "categoryGroupGrid.categoriesCount",
-                  { count }
-                )
-              : undefined,
-        };
-      });
-    return [withCaption(indoorCats), withCaption(outdoorCats)];
-  }, [catalogs, indoorCats, outdoorCats, t]);
+    return parentCats.map((c) => {
+      const count = counts.get(c.id) ?? 0;
+      return {
+        ...c,
+        caption:
+          count > 0
+            ? t(
+                count === 1
+                  ? "categoryGroupGrid.categoriesCountSingular"
+                  : "categoryGroupGrid.categoriesCount",
+                { count }
+              )
+            : undefined,
+      };
+    });
+  }, [catalogs, parentCats, t]);
 
   // 2️⃣ Apply SEO headers dynamically
   useEffect(() => {
@@ -405,10 +410,8 @@ export default function KategoriePage() {
 
   return (
     <div className="min-h-screen bg-[#f3f4f6] text-gray-800 font-sans pb-10">
-      {/* Indoor / Outdoor categories in one tabbed section (only when configured) */}
-      {(indoorCats.length > 0 || outdoorCats.length > 0) && (
-        <CategoryTabsSection indoor={indoorTiles} outdoor={outdoorTiles} />
-      )}
+      {/* Featured Parent Categories (only when configured) */}
+      {parentTiles.length > 0 && <CategoryTabsSection categories={parentTiles} />}
 
       {/* Category product sections — horizontal scrollers on the 2nd admin
           section color. Each shows shimmer cards until its products arrive. */}

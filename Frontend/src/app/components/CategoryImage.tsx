@@ -14,7 +14,7 @@ type CategoryImageProps = {
   sizes?: string;
 };
 
-// Category/subcategory tile image with a graceful fallback: when the URL is
+// Category/childCategory tile image with a graceful fallback: when the URL is
 // empty or fails to load we show a neutral placeholder icon instead of a broken
 // image / alt text.
 export default function CategoryImage({

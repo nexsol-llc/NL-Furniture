@@ -2,24 +2,32 @@
 
 // src/app/components/CategoryLinkSlider.tsx
 // Horizontal, drag-to-scroll row of Category tiles that link straight to
-// their own /categorie/[slug] page — same interaction as SubcategorySlider,
-// but for a flat list of top-level categories (e.g. everything under one
-// Parent Category) rather than one category's subcategories.
+// their own /[parentSlug]/[categorySlug] page — same interaction as
+// ChildCategorySlider, but for a flat list of top-level categories (e.g.
+// everything under one Parent Category) rather than one category's
+// childCategories.
 
 import { useRef, useState, useCallback } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { Layers } from "lucide-react";
-import type { CategoryDef } from "@/lib/categoryCatalog";
+import {
+  categoryHref,
+  locateCategoryIn,
+  type CategoryDef,
+  type ParentCategoryDef,
+} from "@/lib/categoryCatalog";
 
 type CategoryLinkSliderProps = {
   categories: CategoryDef[];
-  // Defaults to the flat category page; pass e.g. "/binnen/wohnzimmer" so
-  // tiles link to the nested /binnen/[parentSlug]/[categorySlug] page instead.
-  hrefBase?: string;
+  // Every tile's href is its canonical /<parentSlug>/<categorySlug>, resolved
+  // per tile — one row can mix categories from different parents (the Furniture
+  // page does). Categories with no parent have no public URL, so they are
+  // skipped rather than linked somewhere that 404s.
+  parents: ParentCategoryDef[];
 };
 
-export default function CategoryLinkSlider({ categories, hrefBase = "/categorie" }: CategoryLinkSliderProps) {
+export default function CategoryLinkSlider({ categories, parents }: CategoryLinkSliderProps) {
   const scrollRef = useRef<HTMLDivElement>(null);
   const [isDown, setIsDown] = useState(false);
   const startX = useRef(0);
@@ -68,11 +76,13 @@ export default function CategoryLinkSlider({ categories, hrefBase = "/categorie"
         onMouseLeave={handleMouseLeave}
       >
         {categories.map((cat) => {
+          const located = locateCategoryIn(parents, [cat], cat.slug);
+          if (!located) return null;
           const imageUrl = cat.image || cat.logo || "";
           return (
             <Link
               key={cat.slug}
-              href={`${hrefBase}/${encodeURIComponent(cat.slug)}`}
+              href={categoryHref(located.parent.slug, cat.slug)}
               draggable={false}
               onClick={(e) => {
                 if (hasMoved.current) {

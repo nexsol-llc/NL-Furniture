@@ -165,7 +165,7 @@ export default function HeroAdmin() {
                 type="text"
                 value={link1}
                 onChange={(e) => setLink1(e.target.value)}
-                placeholder="/categorie/moebel"
+                placeholder="/meubels"
                 className="border border-zinc-200 rounded-xl p-3 w-full outline-none focus:ring-2 focus:ring-black/5 focus:border-zinc-900 text-sm font-medium transition"
               />
             </div>
@@ -229,7 +229,7 @@ export default function HeroAdmin() {
                 type="text"
                 value={link2}
                 onChange={(e) => setLink2(e.target.value)}
-                placeholder="/categorie/outdoor"
+                placeholder="/buiten"
                 className="border border-zinc-200 rounded-xl p-3 w-full outline-none focus:ring-2 focus:ring-black/5 focus:border-zinc-900 text-sm font-medium transition"
               />
             </div>
@@ -293,7 +293,7 @@ export default function HeroAdmin() {
                 type="text"
                 value={link3}
                 onChange={(e) => setLink3(e.target.value)}
-                placeholder="/categorie/accessories"
+                placeholder="/accessoires"
                 className="border border-zinc-200 rounded-xl p-3 w-full outline-none focus:ring-2 focus:ring-black/5 focus:border-zinc-900 text-sm font-medium transition"
               />
             </div>

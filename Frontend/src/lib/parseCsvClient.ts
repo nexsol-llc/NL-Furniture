@@ -48,7 +48,7 @@ export type FeedProduct = {
   product_name: string;
   brand_name: string;
   category_name: string;
-  merchant_category: string; // subcategory
+  merchant_category: string; // childCategory
   merchant_name: string;
   search_price: string;
   display_price: string;
@@ -68,20 +68,24 @@ export type FeedProduct = {
 };
 
 // Map one AWIN feed row to a product object matching the backend columns.
+// aw_product_id is optional — not every merchant feed provides one, and the
+// backend's unique index only dedupes non-empty values (SQLite treats every
+// NULL as distinct), so rows without it just import as separate products.
 export function rowToFeedProduct(row: Record<string, string>): FeedProduct | null {
+  const product_name = (row.product_name || "").trim();
+  if (!product_name) return null;
   const aw_product_id = (row.aw_product_id || "").trim();
-  if (!aw_product_id) return null;
-  // Prefer the more specific merchant subcategory when available.
-  const subcategory =
+  // Prefer the more specific merchant childCategory when available.
+  const childCategory =
     row.merchant_product_second_category?.trim() ||
     row.merchant_category?.trim() ||
     "";
   return {
     aw_product_id,
-    product_name: row.product_name || "",
+    product_name,
     brand_name: row.brand_name || "",
     category_name: row.category_name || row.merchant_category || "",
-    merchant_category: subcategory,
+    merchant_category: childCategory,
     merchant_name: row.merchant_name || "",
     search_price: row.search_price || row.store_price || "",
     display_price: row.display_price || "",

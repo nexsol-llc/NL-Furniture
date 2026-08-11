@@ -2,18 +2,18 @@ import type { Metadata } from "next";
 import { fetchCatalogEntry, humanizeSlug } from "@/lib/categoryCatalog";
 
 type Props = {
-  params: { slug: string };
+  params: { parentslug: string; categoryslug: string };
   children: React.ReactNode;
 };
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
-  const category = await fetchCatalogEntry(params.slug);
+  const category = await fetchCatalogEntry(params.categoryslug);
 
   if (!category) {
-    const name = humanizeSlug(params.slug);
+    const name = humanizeSlug(params.categoryslug);
     return {
       title: `${name} | NL FURNITURE`,
-      description: `Entdecken Sie ${name} und weitere Möbel bei NL FURNITURE.`,
+      description: `Ontdek ${name} en meer meubels bij NL FURNITURE.`,
     };
   }
 
@@ -21,7 +21,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     title: category.seoTitle || `${category.name} | NL FURNITURE`,
     description:
       category.seoDescription ||
-      `Entdecken Sie unsere ${category.name}-Kollektion bei NL FURNITURE.`,
+      `Ontdek onze ${category.name}-collectie bij NL FURNITURE.`,
   };
 }
 

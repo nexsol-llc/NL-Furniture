@@ -6,7 +6,8 @@ import React, { useState, useEffect, useRef, useCallback } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import ProductCard from "@/app/components/ProductCard";
-import SubcategorySlider from "@/app/components/SubcategorySlider";
+import ChildCategorySlider from "@/app/components/ChildCategorySlider";
+import { categoryHref, childCategoryHref } from "@/lib/categoryCatalog";
 import CategorySeoSections from "@/app/components/CategorySeoSections";
 import TopsellerCarousel from "@/app/components/TopsellerCarousel";
 import { Filter, X, Search, ChevronDown, Check } from "lucide-react";
@@ -53,35 +54,35 @@ const mapProduct = (item: RawProduct, t: (key: string) => string): Product => ({
 });
 
 type CategoryListingPageProps = {
+  // Parent Category this category is nested under — the first segment of every
+  // link this page builds (/<parentSlug>/<categorySlug>/…).
+  parentSlug: string;
   categorySlug: string;
   pageTitle: string;
   description: string;
   faqs: CategoryFAQ[];
-  subcategorySlug?: string;
-  parentCategoryName?: string;
-  // Where the parentCategoryName breadcrumb crumb links to. Defaults to this
-  // category's own page (the subcategory-page use case); pass an explicit
-  // href when the "parent" isn't this category itself — e.g. a Parent
-  // Category page linking back to /binnen|aussen/[parentSlug].
-  parentCategoryHref?: string;
+  childCategorySlug?: string;
+  // Ancestor crumbs shown between "Home" and the current page title, in order
+  // (e.g. [ParentCategory, Category] on a child-category page).
+  breadcrumbs?: { name: string; href: string }[];
   searchTerms?: string[];
 };
 
 export default function CategoryListingPage({
+  parentSlug,
   categorySlug,
   pageTitle,
   description,
   faqs,
-  subcategorySlug,
-  parentCategoryName,
-  parentCategoryHref,
+  childCategorySlug,
+  breadcrumbs = [],
   searchTerms = [],
 }: CategoryListingPageProps) {
   const router = useRouter();
   const { t, language } = useLanguage();
 
   const [dbCategory, setDbCategory] = useState<any>(null);
-  const [dynamicSubcategories, setDynamicSubcategories] = useState<any[]>([]);
+  const [dynamicChildCategories, setDynamicChildCategories] = useState<any[]>([]);
   const [dbLoaded, setDbLoaded] = useState(false);
 
   // Fetch dynamic category catalog configurations from database
@@ -94,8 +95,8 @@ export default function CategoryListingPage({
           const data = await res.json();
           if (data.success && data.category) {
             setDbCategory(data.category);
-            if (Array.isArray(data.category.subcategories) && data.category.subcategories.length > 0) {
-              setDynamicSubcategories(data.category.subcategories);
+            if (Array.isArray(data.category.childCategories) && data.category.childCategories.length > 0) {
+              setDynamicChildCategories(data.category.childCategories);
             }
           }
         }
@@ -110,48 +111,48 @@ export default function CategoryListingPage({
 
   // The canonical category slug comes from the DB entry (falls back to the URL
   // slug until the config loads).
-  // Build subcategory/navigation links from the slug the user is actually
+  // Build childCategory/navigation links from the slug the user is actually
   // browsing (the URL slug), not the DB's canonical slug — otherwise clicking a
-  // subcategory of /categorie/betten would jump to /categorie/beds/<sub>.
+  // childCategory of /bedden would jump to /beds/<sub>.
   const catalogSlug = categorySlug;
 
-  // All category/subcategory data is API-driven.
-  const activeSubcategories = dynamicSubcategories;
-  const activeSubcategory = subcategorySlug
-    ? dynamicSubcategories.find((s: any) => s.slug === subcategorySlug) ?? null
+  // All category/childCategory data is API-driven.
+  const activeChildCategories = dynamicChildCategories;
+  const activeChildCategory = childCategorySlug
+    ? dynamicChildCategories.find((s: any) => s.slug === childCategorySlug) ?? null
     : null;
 
-  const activeTitle = subcategorySlug
-    ? (activeSubcategory?.name || pageTitle)
+  const activeTitle = childCategorySlug
+    ? (activeChildCategory?.name || pageTitle)
     : (dbCategory?.name || pageTitle);
 
-  const activeDescription = subcategorySlug
-    ? (activeSubcategory?.description || dbCategory?.description || description)
+  const activeDescription = childCategorySlug
+    ? (activeChildCategory?.description || dbCategory?.description || description)
     : (dbCategory?.description || description);
 
-  // On a subcategory page show the parent category FAQs first, then the
-  // subcategory-specific FAQs — both from the API config.
+  // On a childCategory page show the parent category FAQs first, then the
+  // childCategory-specific FAQs — both from the API config.
   const categoryLevelFaqs =
     (dbCategory?.faqs && dbCategory.faqs.length > 0 ? dbCategory.faqs : []) ?? [];
   const subLevelFaqs =
-    (activeSubcategory?.faqs && activeSubcategory.faqs.length > 0 ? activeSubcategory.faqs : []) ?? [];
+    (activeChildCategory?.faqs && activeChildCategory.faqs.length > 0 ? activeChildCategory.faqs : []) ?? [];
 
-  const subcategoryFaqs = [...categoryLevelFaqs, ...subLevelFaqs];
+  const childCategoryFaqs = [...categoryLevelFaqs, ...subLevelFaqs];
 
-  const activeFaqs = (subcategorySlug
-    ? (subcategoryFaqs.length > 0 ? subcategoryFaqs : faqs)
+  const activeFaqs = (childCategorySlug
+    ? (childCategoryFaqs.length > 0 ? childCategoryFaqs : faqs)
     : (dbCategory?.faqs && dbCategory.faqs.length > 0 ? dbCategory.faqs : faqs)) ?? [];
 
-  const activeSearchTerms = subcategorySlug
-    ? (activeSubcategory?.searchTerms && activeSubcategory.searchTerms.length > 0 ? activeSubcategory.searchTerms : searchTerms)
+  const activeSearchTerms = childCategorySlug
+    ? (activeChildCategory?.searchTerms && activeChildCategory.searchTerms.length > 0 ? activeChildCategory.searchTerms : searchTerms)
     : searchTerms;
 
-  const activeSeoTitle = subcategorySlug
-    ? (activeSubcategory?.seoTitle || activeTitle)
+  const activeSeoTitle = childCategorySlug
+    ? (activeChildCategory?.seoTitle || activeTitle)
     : (dbCategory?.seoTitle || activeTitle);
 
-  const activeSeoDescription = subcategorySlug
-    ? (activeSubcategory?.seoDescription || activeDescription)
+  const activeSeoDescription = childCategorySlug
+    ? (activeChildCategory?.seoDescription || activeDescription)
     : (dbCategory?.seoDescription || activeDescription);
 
   // Apply SEO headers dynamically
@@ -207,20 +208,20 @@ export default function CategoryListingPage({
     [loading, loadingMore, hasMore]
   );
 
-  // Scope params for the current view. A subcategory narrows strictly by its own
+  // Scope params for the current view. A childCategory narrows strictly by its own
   // search terms — the API OR-combines `category` and `searchTerms`, so also
   // passing the parent category would broaden results back to the whole category.
   // The base category uses the `category` param (plus any category-level terms).
   const buildScopeParams = useCallback(() => {
     const p = new URLSearchParams();
-    if (subcategorySlug) {
-      // Narrow to the subcategory by its own name, slug and any configured search
+    if (childCategorySlug) {
+      // Narrow to the childCategory by its own name, slug and any configured search
       // terms. Auto-created subs only carry name+slug, but that still matches the
       // product's merchant_category (e.g. "Solar-Gartenleuchten"). We never fall
       // back to the parent category here — that would broaden to the whole category.
       const terms = new Set<string>();
-      if (activeSubcategory?.name) terms.add(activeSubcategory.name);
-      terms.add(subcategorySlug);
+      if (activeChildCategory?.name) terms.add(activeChildCategory.name);
+      terms.add(childCategorySlug);
       for (const t of activeSearchTerms) terms.add(t);
       p.append("searchTerms", Array.from(terms).join(","));
     } else {
@@ -231,7 +232,7 @@ export default function CategoryListingPage({
     }
     return p;
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [categorySlug, subcategorySlug, activeSubcategory?.name, activeSearchTerms.join(",")]);
+  }, [categorySlug, childCategorySlug, activeChildCategory?.name, activeSearchTerms.join(",")]);
 
   const fetchProducts = async (pageNum: number, isInitial: boolean = false) => {
     try {
@@ -302,14 +303,14 @@ export default function CategoryListingPage({
     setSelectedBrands((qp.get("brands") || "").split(",").filter(Boolean));
     setFiltersReady(true);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [categorySlug, subcategorySlug]);
+  }, [categorySlug, childCategorySlug]);
 
   useEffect(() => {
     if (!filtersReady) return;
     setPage(1);
     fetchProducts(1, true);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [filtersReady, categorySlug, subcategorySlug, sort, selectedBrands, onSaleOnly, minPrice, maxPrice, activeSearchTerms.join(",")]);
+  }, [filtersReady, categorySlug, childCategorySlug, sort, selectedBrands, onSaleOnly, minPrice, maxPrice, activeSearchTerms.join(",")]);
 
   // Persist the active filters to the URL (no history spam, no reload).
   useEffect(() => {
@@ -332,8 +333,8 @@ export default function CategoryListingPage({
   }, [page]);
 
   // Featured "Gesponsert" strip — always shows the parent CATEGORY's sponsored
-  // products, independent of the active filters AND of the selected subcategory.
-  // Keyed on the category only, so it stays put while switching subcategories.
+  // products, independent of the active filters AND of the selected childCategory.
+  // Keyed on the category only, so it stays put while switching childCategories.
   useEffect(() => {
     let cancelled = false;
     (async () => {
@@ -363,7 +364,7 @@ export default function CategoryListingPage({
   }, [categorySlug]);
 
   // Brand list for the Marken filter — scoped to the current view (category or
-  // subcategory) so it matches the products shown, and filter-independent so it
+  // childCategory) so it matches the products shown, and filter-independent so it
   // doesn't collapse to just the selected brands.
   useEffect(() => {
     let cancelled = false;
@@ -387,7 +388,7 @@ export default function CategoryListingPage({
       cancelled = true;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [categorySlug, subcategorySlug, activeSearchTerms.join(",")]);
+  }, [categorySlug, childCategorySlug, activeSearchTerms.join(",")]);
 
   const toggleBrand = (brand: string) => {
     setSelectedBrands((prev) =>
@@ -406,9 +407,9 @@ export default function CategoryListingPage({
   const priceUnder = Number(dbCategory?.priceUnder) || 0;
   const priceUnderActive = priceUnder > 0 && maxPrice === String(priceUnder) && !minPrice;
 
-  // The budget filter and a selected subcategory are mutually exclusive — only
+  // The budget filter and a selected childCategory are mutually exclusive — only
   // one may be active at a time. Arriving at the base category with `?under=1`
-  // (set when the budget tile is clicked from a subcategory page) applies the
+  // (set when the budget tile is clicked from a childCategory page) applies the
   // filter once the category config has loaded.
   const [pendingUnder, setPendingUnder] = useState(false);
   useEffect(() => {
@@ -418,20 +419,20 @@ export default function CategoryListingPage({
   }, [categorySlug]);
 
   useEffect(() => {
-    if (pendingUnder && priceUnder > 0 && !subcategorySlug) {
+    if (pendingUnder && priceUnder > 0 && !childCategorySlug) {
       setMinPrice("");
       setTempMinPrice("");
       setMaxPrice(String(priceUnder));
       setTempMaxPrice(String(priceUnder));
       setPendingUnder(false);
     }
-  }, [pendingUnder, priceUnder, subcategorySlug]);
+  }, [pendingUnder, priceUnder, childCategorySlug]);
 
   const handlePriceUnderClick = () => {
-    // Activating the budget filter while a subcategory is selected returns to
+    // Activating the budget filter while a childCategory is selected returns to
     // the base category so the two never appear selected at the same time.
-    if (subcategorySlug && !priceUnderActive) {
-      router.push(`/categorie/${encodeURIComponent(catalogSlug)}?under=1`);
+    if (childCategorySlug && !priceUnderActive) {
+      router.push(`${categoryHref(parentSlug, catalogSlug)}?under=1`);
       return;
     }
     if (priceUnderActive) {
@@ -481,24 +482,15 @@ export default function CategoryListingPage({
               {t('listingPage.breadcrumbHome')}
             </Link>
             <span className="text-gray-200">/</span>
-            <Link href="/" className="hover:text-black transition-colors">
-              {t('listingPage.breadcrumbFurniture')}
-            </Link>
-            <span className="text-gray-200">/</span>
-            {parentCategoryName ? (
-              <>
-                <Link
-                  href={parentCategoryHref || `/categorie/${encodeURIComponent(categorySlug)}`}
-                  className="hover:text-black transition-colors"
-                >
-                  {parentCategoryName}
+            {breadcrumbs.map((crumb) => (
+              <React.Fragment key={crumb.href}>
+                <Link href={crumb.href} className="hover:text-black transition-colors">
+                  {crumb.name}
                 </Link>
                 <span className="text-gray-200">/</span>
-                <span className="text-gray-900 font-bold">{activeTitle}</span>
-              </>
-            ) : (
-              <span className="text-gray-900 font-bold">{activeTitle}</span>
-            )}
+              </React.Fragment>
+            ))}
+            <span className="text-gray-900 font-bold">{activeTitle}</span>
           </nav>
 
           {/* Affiliate-Link Hinweis (Werbekennzeichnung) */}
@@ -548,10 +540,11 @@ export default function CategoryListingPage({
                   </div>
                 </div>
               ) : (
-                <SubcategorySlider
+                <ChildCategorySlider
+                  parentSlug={parentSlug}
                   categorySlug={catalogSlug}
-                  subcategories={activeSubcategories}
-                  activeSubSlug={subcategorySlug}
+                  childCategories={activeChildCategories}
+                  activeChildSlug={childCategorySlug}
                   priceUnder={priceUnder}
                   priceLabel={t('listingPage.priceUnderLabel', { name: dbCategory?.name || pageTitle, price: priceUnder })}
                   priceActive={priceUnderActive}
@@ -691,19 +684,19 @@ export default function CategoryListingPage({
                     ))}
                   </div>
                 </div>
-              ) : activeSubcategories.length > 0 ? (
+              ) : activeChildCategories.length > 0 ? (
                 <div className="border-b border-gray-100 pb-5">
                   <h3 className="text-[13px] font-black text-gray-900 uppercase tracking-wider mb-4 flex items-center justify-between">
-                    {t('listingPage.subcategoriesHeading')}
+                    {t('listingPage.childCategoriesHeading')}
                     <ChevronDown size={14} className="text-gray-500" />
                   </h3>
                   <div className="space-y-2 text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                    {activeSubcategories.map((sub: any) => (
+                    {activeChildCategories.map((sub: any) => (
                       <Link
                         key={sub.slug}
-                        href={`/categorie/${encodeURIComponent(catalogSlug)}/${encodeURIComponent(sub.slug)}`}
+                        href={childCategoryHref(parentSlug, catalogSlug, sub.slug)}
                         className={`flex items-center justify-between py-0.5 transition-colors ${
-                          subcategorySlug === sub.slug
+                          childCategorySlug === sub.slug
                             ? "text-gray-900 font-bold"
                             : "hover:text-black"
                         }`}
@@ -842,7 +835,7 @@ export default function CategoryListingPage({
           {/* Product Grid Area */}
           <div className="flex-grow">
             {/* Topseller / featured (sponsored) products — above the grid.
-                Always the parent category's sponsored products, incl. on subcategories. */}
+                Always the parent category's sponsored products, incl. on childCategories. */}
             {featuredProducts.length > 0 && (
               <TopsellerCarousel products={featuredProducts} />
             )}

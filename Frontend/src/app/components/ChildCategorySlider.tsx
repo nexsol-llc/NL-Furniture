@@ -1,19 +1,22 @@
 "use client";
 
-// src/app/components/SubcategorySlider.tsx
+// src/app/components/ChildCategorySlider.tsx
 
 import { useRef, useState, useCallback } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { Tag, Layers } from "lucide-react";
-import type { SubcategoryDef } from "@/lib/categoryCatalog";
+import { childCategoryHref, type ChildCategoryDef } from "@/lib/categoryCatalog";
 import { useLanguage } from "@/providers/languageContext";
 
-type SubcategorySliderProps = {
+type ChildCategorySliderProps = {
+  // Parent Category the owning category sits under — child links are
+  // /<parentSlug>/<categorySlug>/<childSlug>.
+  parentSlug: string;
   categorySlug: string;
-  subcategories: SubcategoryDef[];
-  activeSubSlug?: string;
-  // Optional "budget" quick-filter tile shown first (not a real subcategory).
+  childCategories: ChildCategoryDef[];
+  activeChildSlug?: string;
+  // Optional "budget" quick-filter tile shown first (not a real childCategory).
   priceUnder?: number;
   priceLabel?: string;
   priceActive?: boolean;
@@ -21,16 +24,17 @@ type SubcategorySliderProps = {
   onPriceClick?: () => void;
 };
 
-export default function SubcategorySlider({
+export default function ChildCategorySlider({
+  parentSlug,
   categorySlug,
-  subcategories,
-  activeSubSlug,
+  childCategories,
+  activeChildSlug,
   priceUnder = 0,
   priceLabel,
   priceActive = false,
   priceImage,
   onPriceClick,
-}: SubcategorySliderProps) {
+}: ChildCategorySliderProps) {
   const { t } = useLanguage();
   const scrollRef = useRef<HTMLDivElement>(null);
   const [isDown, setIsDown] = useState(false);
@@ -73,7 +77,7 @@ export default function SubcategorySlider({
 
   const showPriceTile = priceUnder > 0 && !!onPriceClick;
 
-  if (subcategories.length === 0 && !showPriceTile) {
+  if (childCategories.length === 0 && !showPriceTile) {
     return null;
   }
 
@@ -90,7 +94,7 @@ export default function SubcategorySlider({
         onMouseUp={handleMouseUp}
         onMouseLeave={handleMouseLeave}
       >
-        {/* Budget quick-filter tile (first, not a real subcategory) */}
+        {/* Budget quick-filter tile (first, not a real childCategory) */}
         {showPriceTile && (
           <button
             type="button"
@@ -113,7 +117,7 @@ export default function SubcategorySlider({
               {priceImage ? (
                 <Image
                   src={priceImage}
-                  alt={priceLabel || t('subcategorySlider.priceTileFallbackAlt')}
+                  alt={priceLabel || t('childCategorySlider.priceTileFallbackAlt')}
                   fill
                   sizes="(max-width: 640px) 48px, 56px"
                   className="object-cover"
@@ -133,9 +137,9 @@ export default function SubcategorySlider({
           </button>
         )}
 
-        {subcategories.map((sub) => {
-          const isActive = activeSubSlug === sub.slug;
-          const href = `/categorie/${encodeURIComponent(categorySlug)}/${encodeURIComponent(sub.slug)}`;
+        {childCategories.map((sub) => {
+          const isActive = activeChildSlug === sub.slug;
+          const href = childCategoryHref(parentSlug, categorySlug, sub.slug);
           const imageUrl = sub.imageUrl || "";
 
           return (
@@ -155,7 +159,7 @@ export default function SubcategorySlider({
                   : "border-gray-100 hover:border-gray-300"
               }`}
             >
-              {/* Subcategory image on the left (icon fallback when none set) */}
+              {/* ChildCategory image on the left (icon fallback when none set) */}
               <div className="relative w-12 h-12 sm:w-14 sm:h-14 rounded-lg bg-gray-50 flex-shrink-0 overflow-hidden border border-gray-100 flex items-center justify-center text-gray-400">
                 {imageUrl ? (
                   <Image

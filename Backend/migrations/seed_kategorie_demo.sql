@@ -45,7 +45,7 @@ INSERT OR REPLACE INTO category_catalogs (id, slug, aliases, data) VALUES
   "seoDescription": "Gemütliche Betten in allen Größen und Stilen – vergleichen Sie Angebote führender Händler.",
   "description": "<p>Finden Sie das perfekte Bett für erholsamen Schlaf – von Massivholzbetten bis Polsterbetten.</p>",
   "faqs": [ { "question": "Welche Bettgrößen gibt es?", "answer": "Von 90x200 (Einzelbett) bis 180x200 (Familienbett) und mehr." } ],
-  "subcategories": [
+  "childCategories": [
     { "slug": "polsterbetten", "name": "Polsterbetten", "imageUrl": "https://images.unsplash.com/photo-1505693416388-ac5ce068fe85?auto=format&fit=crop&w=200&q=80", "iconName": "Bed", "seoTitle": "Polsterbetten", "seoDescription": "Weiche Polsterbetten.", "description": "Gepolsterte Betten für gemütlichen Komfort.", "searchTerms": ["polsterbett","upholstered bed"], "faqs": [] },
     { "slug": "massivholzbetten", "name": "Massivholzbetten", "imageUrl": "https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?auto=format&fit=crop&w=200&q=80", "iconName": "Bed", "seoTitle": "Massivholzbetten", "seoDescription": "Robuste Betten aus Massivholz.", "description": "Zeitlose Betten aus massivem Holz.", "searchTerms": ["massivholzbett","solid wood bed"], "faqs": [] }
   ],
@@ -60,7 +60,7 @@ INSERT OR REPLACE INTO category_catalogs (id, slug, aliases, data) VALUES
   "seoDescription": "Komfortable Sofas und Couches für jedes Wohnzimmer – Ecksofas, Schlafsofas und mehr.",
   "description": "<p>Entdecken Sie Sofas in allen Formen und Farben – vom kompakten 2-Sitzer bis zur großen Wohnlandschaft.</p>",
   "faqs": [ { "question": "Welche Sofatypen gibt es?", "answer": "Ecksofas, Schlafsofas, 2- und 3-Sitzer sowie Wohnlandschaften." } ],
-  "subcategories": [
+  "childCategories": [
     { "slug": "ecksofas", "name": "Ecksofas", "imageUrl": "https://images.unsplash.com/photo-1555041469-a586c61ea9bc?auto=format&fit=crop&w=200&q=80", "iconName": "Sofa", "seoTitle": "Ecksofas", "seoDescription": "Platzsparende Ecksofas.", "description": "L-förmige Sofas für mehr Sitzplätze.", "searchTerms": ["ecksofa","corner sofa"], "faqs": [] },
     { "slug": "schlafsofas", "name": "Schlafsofas", "imageUrl": "https://images.unsplash.com/photo-1567538096630-e0c55bd6374c?auto=format&fit=crop&w=200&q=80", "iconName": "Sofa", "seoTitle": "Schlafsofas", "seoDescription": "Sofas mit Schlaffunktion.", "description": "Praktische Sofas mit Bettfunktion für Gäste.", "searchTerms": ["schlafsofa","sofa bed"], "faqs": [] }
   ],

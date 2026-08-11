@@ -160,9 +160,6 @@ CREATE TABLE IF NOT EXISTS category_catalogs (
 CREATE UNIQUE INDEX IF NOT EXISTS idx_category_catalogs_slug ON category_catalogs(slug);
 -- Speeds up "categories in this parent" lookups (data.parentCategoryId).
 CREATE INDEX IF NOT EXISTS idx_category_catalogs_parent_id ON category_catalogs(json_extract(data, '$.parentCategoryId'));
--- Speeds up "which categories show on the Furniture pages" lookups.
-CREATE INDEX IF NOT EXISTS idx_category_catalogs_furniture ON category_catalogs(json_extract(data, '$.showOnFurniture'));
-CREATE INDEX IF NOT EXISTS idx_category_catalogs_furniture_aussen ON category_catalogs(json_extract(data, '$.showOnFurnitureAussen'));
 
 -- ── Parent Categories (group Category Catalog entries; a category can only
 --    belong to a single parent — enforced by category_catalogs.data.parentCategoryId
@@ -174,10 +171,10 @@ CREATE TABLE IF NOT EXISTS parent_categories (
   created_at TEXT NOT NULL,
   data TEXT NOT NULL
 );
--- A slug only needs to be unique per type — "wohnzimmer" can exist once as
--- indoor and once as outdoor. Replaces the old plain-slug unique index.
-DROP INDEX IF EXISTS idx_parent_categories_slug;
-CREATE UNIQUE INDEX IF NOT EXISTS idx_parent_categories_slug_type ON parent_categories(slug, json_extract(data, '$.type'));
+-- Parent categories are a single flat list — no indoor/outdoor type — so a
+-- slug is globally unique again. Replaces the old (slug, type) unique index.
+DROP INDEX IF EXISTS idx_parent_categories_slug_type;
+CREATE UNIQUE INDEX IF NOT EXISTS idx_parent_categories_slug ON parent_categories(slug);
 CREATE INDEX IF NOT EXISTS idx_parent_categories_sort_order ON parent_categories(sort_order);
 
 -- ── Categories (for sponsored product lookups) ───────────────────────────────
@@ -314,23 +311,6 @@ CREATE UNIQUE INDEX IF NOT EXISTS idx_page_seo_settings_page_key ON page_seo_set
 
 -- ── Kategorie Page Settings (singleton) ──────────────────────────────────────
 CREATE TABLE IF NOT EXISTS kategorie_page_settings (
-  id TEXT NOT NULL PRIMARY KEY,
-  data TEXT NOT NULL
-);
-
--- ── Furniture Page Settings — Innen (singleton) ──────────────────────────────
--- Drives the special top-level "Innen Furniture" category page (admin-
--- configurable slug, SEO, long content, FAQs). Which Category Catalog entries
--- appear on it is decided per-category via category_catalogs.data.showOnFurniture.
-CREATE TABLE IF NOT EXISTS furniture_page_settings (
-  id TEXT NOT NULL PRIMARY KEY,
-  data TEXT NOT NULL
-);
-
--- ── Furniture Page Settings — Außen (singleton) ──────────────────────────────
--- Sibling to furniture_page_settings, same shape, its own top-level slug.
--- Visibility decided via category_catalogs.data.showOnFurnitureAussen.
-CREATE TABLE IF NOT EXISTS furniture_aussen_page_settings (
   id TEXT NOT NULL PRIMARY KEY,
   data TEXT NOT NULL
 );

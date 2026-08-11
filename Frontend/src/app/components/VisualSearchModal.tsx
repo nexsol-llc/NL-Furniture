@@ -40,7 +40,7 @@ export default function VisualSearchModal({ open, onClose }: VisualSearchModalPr
 
   const handleSearch = () => {
     onClose();
-    router.push('/categorie/moebel');
+    router.push('/meubels');
   };
 
   return (

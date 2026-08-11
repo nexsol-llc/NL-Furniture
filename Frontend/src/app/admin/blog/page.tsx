@@ -63,7 +63,7 @@ export default function BlogAdminPage() {
   const [editLoading, setEditLoading] = useState(false);
   const [adminSearch, setAdminSearch] = useState("");
   // Category names come from the Categories Manager (Kategorie Main Page —
-  // Innenbereich + Außenbereich lists), not a blog-specific list.
+  // Kategorie Main Page category list), not a blog-specific list.
   const [categoriesList, setCategoriesList] = useState<string[]>([]);
   const [showForm, setShowForm] = useState(false);
 
@@ -101,11 +101,11 @@ export default function BlogAdminPage() {
   const fetchCategories = async (autoSelect = false) => {
     try {
       // Categories are managed on the Categories Manager (Kategorie Main Page).
-      // Combine the Innenbereich + Außenbereich items, keep unique names in order.
+      // Keep unique names in order.
       const res = await adminFetch("/api/kategorie-settings");
       const data = await res.json();
       const s = data?.settings ?? {};
-      // Unified categories[] (each item has type: "indoor" | "outdoor") replaces
+      // The flat categories[] list replaces
       // the old separate indoorCategories/outdoorCategories arrays; fall back to
       // those for any un-migrated environment.
       const combined: any[] = Array.isArray(s.categories)

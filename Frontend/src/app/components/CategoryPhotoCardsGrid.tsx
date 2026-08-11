@@ -45,7 +45,7 @@ export default function CategoryPhotoCardsGrid({
       <RevealGroup className="hidden md:grid md:grid-cols-4 lg:grid-cols-6 gap-4">
         {categories.map((cat) => (
           <RevealItem key={cat.slug}>
-            <PhotoCard cat={cat} href={`${hrefBase}/${cat.slug}`} />
+            <PhotoCard cat={cat} href={cat.href ?? `${hrefBase}/${cat.slug}`} />
           </RevealItem>
         ))}
       </RevealGroup>
@@ -54,7 +54,7 @@ export default function CategoryPhotoCardsGrid({
         <Reveal className="flex gap-4 overflow-x-auto pb-6 snap-x snap-mandatory scrollbar-hide">
           {categories.map((cat) => (
             <div key={cat.slug} className="flex-shrink-0 w-[190px] snap-start">
-              <PhotoCard cat={cat} href={`${hrefBase}/${cat.slug}`} />
+              <PhotoCard cat={cat} href={cat.href ?? `${hrefBase}/${cat.slug}`} />
             </div>
           ))}
         </Reveal>

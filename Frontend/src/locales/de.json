@@ -88,7 +88,7 @@
     "uploadHint": "JPG, PNG – direkt von deinem Handy oder PC",
     "searchCta": "Ähnliche Möbel finden"
   },
-  "subcategorySlider": {
+  "childCategorySlider": {
     "priceTileFallbackAlt": "Kategorie"
   },
   "cookieConsent": {
@@ -156,15 +156,6 @@
     "imageAlt": "Newsletter",
     "privacyLinkText": "Datenschutz"
   },
-  "categoryTabsSection": {
-    "indoorLabel": "Innenbereich",
-    "indoorSubtitle": "Möbel für Ihr Zuhause",
-    "outdoorLabel": "Außenbereich",
-    "outdoorSubtitle": "Möbel für Garten, Terrasse & Balkon"
-  },
-  "parentCategorySlider": {
-    "allLabel": "Alle"
-  },
   "listingPage": {
     "breadcrumbHome": "Home",
     "breadcrumbFurniture": "Möbel",
@@ -194,7 +185,7 @@
     "noResultsHeading": "Keine Ergebnisse",
     "noResultsText": "Wir konnten keine Produkte finden, die Ihren Filtern entsprechen.",
     "endOfResults": "Ende der Ergebnisse • {{count}} Artikel",
-    "subcategoriesHeading": "Unterkategorien",
+    "childCategoriesHeading": "Unterkategorien",
     "categoriesHeading": "Kategorien",
     "categoriesCountSuffix": "{{count}} Kategorien",
     "brandsFilterMobileHeading": "Marken filter",
@@ -701,7 +692,7 @@
     "breadcrumbLiving": "Wohnen",
     "breadcrumbFurniture": "Möbel",
     "breadcrumbTables": "Tische",
-    "subcategoriesHeading": "Tische",
+    "childCategoriesHeading": "Tische",
     "showMore": "Zeig mir mehr",
     "priceHeading": "Preis",
     "save": "Speichern",
@@ -757,8 +748,8 @@
     "redirecting": "Weiterleitung...",
     "searchingCategory": "Kategorie wird gesucht...",
     "loadingPage": "Seite wird geladen...",
-    "subcategoryNotFoundHeading": "Unterkategorie nicht gefunden",
-    "subcategoryNotFoundText": "Die gesuchte Unterkategorie existiert nicht.",
+    "childCategoryNotFoundHeading": "Unterkategorie nicht gefunden",
+    "childCategoryNotFoundText": "Die gesuchte Unterkategorie existiert nicht.",
     "toCategory": "Zur Kategorie"
   },
   "kategoriePage": {

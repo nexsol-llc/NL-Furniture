@@ -101,7 +101,7 @@ products.get("/", async (c) => {
       for (const t of [doc.name, doc.slug, ...(Array.isArray(doc.aliases) ? doc.aliases : [])]) {
         if (t) catTerms.push(String(t));
       }
-      for (const s of Array.isArray(doc.subcategories) ? doc.subcategories : []) {
+      for (const s of Array.isArray(doc.childCategories) ? doc.childCategories : []) {
         for (const t of [s?.name, s?.slug, ...(Array.isArray(s?.searchTerms) ? s.searchTerms : [])]) {
           if (t) catTerms.push(String(t));
         }
@@ -211,7 +211,7 @@ function buildProductValues(body: Record<string, any>, existing?: ProductRow): R
   return v;
 }
 
-// GET /api/products — filter by category, subcategory, brand and price range.
+// GET /api/products — filter by category, childCategory, brand and price range.
 productsAdmin.get("/", async (c) => {
   const db = c.env.DB;
   const q = c.req.query();
@@ -223,7 +223,7 @@ productsAdmin.get("/", async (c) => {
   const binds: any[] = [];
 
   if (q.category) { whereParts.push("(LOWER(category_name) LIKE LOWER(?) OR LOWER(merchant_category) LIKE LOWER(?))"); binds.push(`%${q.category}%`, `%${q.category}%`); }
-  if (q.subcategory) { whereParts.push("(LOWER(merchant_category) LIKE LOWER(?) OR LOWER(product_name) LIKE LOWER(?))"); binds.push(`%${q.subcategory}%`, `%${q.subcategory}%`); }
+  if (q.childCategory) { whereParts.push("(LOWER(merchant_category) LIKE LOWER(?) OR LOWER(product_name) LIKE LOWER(?))"); binds.push(`%${q.childCategory}%`, `%${q.childCategory}%`); }
   if (q.brand) { whereParts.push("LOWER(brand_name) = LOWER(?)"); binds.push(q.brand); }
   if (q.merchant) { whereParts.push("LOWER(merchant_name) = LOWER(?)"); binds.push(q.merchant); }
   if (q.search) { whereParts.push("(LOWER(product_name) LIKE LOWER(?) OR LOWER(brand_name) LIKE LOWER(?))"); binds.push(`%${q.search}%`, `%${q.search}%`); }
@@ -535,6 +535,32 @@ productsAdmin.delete("/:id", authMiddleware, requireStaff, async (c) => {
 
   await logActivity(db, user.email, "Product deleted", `ID: ${id}`);
   return c.json({ success: true });
+});
+
+// POST /api/products/bulk-delete — delete a batch of products by id (admin multi-select).
+productsAdmin.post("/bulk-delete", authMiddleware, requireStaff, async (c) => {
+  const db = c.env.DB;
+  const user = c.get("user");
+  const body = await c.req.json();
+  const ids: string[] = Array.isArray(body?.ids)
+    ? Array.from(new Set(body.ids.filter((x: any): x is string => typeof x === "string" && x)))
+    : [];
+  if (!ids.length) return c.json({ error: "No product ids provided" }, 400);
+  if (ids.length > 500) return c.json({ error: "Too many ids (max 500 per request)" }, 400);
+
+  let deleted = 0;
+  const CHUNK = 80; // keeps the IN() check under D1's bound-parameter limit
+  for (let i = 0; i < ids.length; i += CHUNK) {
+    const chunk = ids.slice(i, i + CHUNK);
+    const res = await db
+      .prepare(`DELETE FROM products WHERE id IN (${chunk.map(() => "?").join(", ")})`)
+      .bind(...chunk)
+      .run();
+    deleted += res.meta.changes;
+  }
+
+  await logActivity(db, user.email, "Products deleted (bulk)", `${deleted} products`);
+  return c.json({ success: true, deleted });
 });
 
 // ── GET /api/merchants — unique merchant names ────────────────────────────────

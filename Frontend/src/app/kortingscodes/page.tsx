@@ -1,10 +1,9 @@
 "use client";
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import Image from "next/image";
 import useSWR from "swr";
 import PromoSlider from "./components/PromoSlider";
 import CategoryGroupGrid from "../components/CategoryGroupGrid";
-import IndoorOutdoorToggle from "../components/IndoorOutdoorToggle";
 import NewsletterSection from "../components/NewsletterSection";
 import { Reveal, RevealGroup, RevealItem } from "../components/motion/Reveal";
 import type { HomeCategoryItem } from "@/lib/homeCategoryGroups";
@@ -117,11 +116,9 @@ export default function CouponsHome() {
   const [openFaqIndex, setOpenFaqIndex] = useState<number | null>(null);
   const toggleFaq = (i: number) => setOpenFaqIndex(openFaqIndex === i ? null : i);
 
-  // Innenbereich/Außenbereich toggle for the category grid (matches the furniture home page).
-  const [catTab, setCatTab] = useState<"indoor" | "outdoor">("indoor");
-
-  // Parent Categories, split by type, drive this page's Innenbereich/
-  // Außenbereich grid (same source as the furniture home page).
+  // Featured Parent Categories drive this page's tile grid (same source as the
+  // furniture home page). One flat list — parent categories have no
+  // indoor/outdoor type — each tile linking to its own group page.
   const { data: parentCategoriesData } = useSWR<any[]>("/api/parent-categories", fetcher);
   // How many Category Catalog entries hang off each parent — shown as the
   // caption under a tile's name.
@@ -142,27 +139,15 @@ export default function CouponsHome() {
       : undefined;
   // Only Featured parent categories show here, in their drag-configured order
   // (the API already returns them sorted by sort_order).
-  const pickParentCats = (type: "indoor" | "outdoor"): HomeCategoryItem[] =>
-    (Array.isArray(parentCategoriesData) ? parentCategoriesData : [])
-      .filter((p: any) => p?.slug && (p.featured === true || p.featured === "true") && (type === "outdoor" ? p.type === "outdoor" : p.type !== "outdoor"))
-      .map((p: any) => ({
-        name: p.name || p.slug,
-        slug: p.slug,
-        image: p.image || null,
-        caption: tileCaption(catalogCounts.get(p._id) ?? 0),
-      }));
-  const homeIndoorCats = pickParentCats("indoor");
-  const homeOutdoorCats = pickParentCats("outdoor");
-
-  // Default the switcher to whichever section actually has categories.
-  useEffect(() => {
-    if (catTab === "indoor" && homeIndoorCats.length === 0 && homeOutdoorCats.length > 0) {
-      setCatTab("outdoor");
-    } else if (catTab === "outdoor" && homeOutdoorCats.length === 0 && homeIndoorCats.length > 0) {
-      setCatTab("indoor");
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [homeIndoorCats.length, homeOutdoorCats.length]);
+  const parentCatTiles: HomeCategoryItem[] = (Array.isArray(parentCategoriesData) ? parentCategoriesData : [])
+    .filter((p: any) => p?.slug && (p.featured === true || p.featured === "true"))
+    .map((p: any) => ({
+      name: p.name || p.slug,
+      slug: p.slug,
+      image: p.image || null,
+      caption: tileCaption(catalogCounts.get(p._id) ?? 0),
+      href: `/${encodeURIComponent(p.slug)}`,
+    }));
 
   const s: Settings = {
     ...EMPTY,
@@ -385,26 +370,15 @@ export default function CouponsHome() {
         );
       })}
 
-      {/* CATEGORY GRID with Innenbereich/Außenbereich toggle (admin-managed, matches the furniture home page) */}
-      {(homeIndoorCats.length > 0 || homeOutdoorCats.length > 0) && (
+      {/* CATEGORY GRID — featured Parent Categories (admin-managed, matches the furniture home page) */}
+      {parentCatTiles.length > 0 && (
         <CategoryGroupGrid
           variant="photo"
           title={t('categoryGroupGrid.heading')}
           subtitle={t('categoryGroupGrid.subheading')}
           backgroundClassName="coupon-section-bg-2"
-          categories={catTab === "indoor" ? homeIndoorCats : homeOutdoorCats}
-          hrefBase={catTab === "indoor" ? "/binnen" : "/buiten"}
+          categories={parentCatTiles}
           moreCategoriesHref="/categorie"
-          headerExtra={
-            <IndoorOutdoorToggle
-              value={catTab}
-              onChange={setCatTab}
-              indoorLabel={t('categoryTabsSection.indoorLabel')}
-              outdoorLabel={t('categoryTabsSection.outdoorLabel')}
-              indoorDisabled={homeIndoorCats.length === 0}
-              outdoorDisabled={homeOutdoorCats.length === 0}
-            />
-          }
         />
       )}
 

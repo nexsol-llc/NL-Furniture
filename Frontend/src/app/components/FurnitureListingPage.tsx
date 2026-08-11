@@ -2,17 +2,16 @@
 
 // src/app/components/FurnitureListingPage.tsx
 //
-// The special "Furniture" category page: aggregates every Category Catalog
-// entry flagged `showOnFurniture`, and — instead of a subcategory row — shows
-// Parent Categories in a horizontal scroll row at the top. Selecting a parent
-// filters the grid in place (no navigation). Structurally mirrors
-// CategoryListingPage (filters, infinite scroll, sponsored strip, SEO/FAQ
-// section) since the two pages are meant to feel the same.
+// Generic listing page for a group of Category Catalog entries — currently
+// used for a Parent Category's page (`app/[parentslug]/page.tsx`), showing
+// those categories in a horizontal scroll row at the top, each linking to its
+// own page. Structurally mirrors CategoryListingPage (filters, infinite
+// scroll, sponsored strip, SEO/FAQ section) since the two pages are meant to
+// feel the same.
 
 import React, { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import Link from "next/link";
 import ProductCard from "@/app/components/ProductCard";
-import ParentCategorySlider from "@/app/components/ParentCategorySlider";
 import CategoryLinkSlider from "@/app/components/CategoryLinkSlider";
 import CategorySeoSections from "@/app/components/CategorySeoSections";
 import TopsellerCarousel from "@/app/components/TopsellerCarousel";
@@ -64,7 +63,7 @@ const mapProduct = (item: RawProduct, t: (key: string) => string): Product => ({
 });
 
 // Every search term a category catalog entry can be matched by (name, slug,
-// aliases, subcategory names/slugs/search terms) — same set the Backend uses
+// aliases, childCategory names/slugs/search terms) — same set the Backend uses
 // to resolve a single category's products, just computed client-side here
 // since the Furniture page has no single category_catalogs row of its own.
 const termsForCategory = (cat: CategoryDef): string[] => {
@@ -72,7 +71,7 @@ const termsForCategory = (cat: CategoryDef): string[] => {
   if (cat.name) terms.add(cat.name);
   if (cat.slug) terms.add(cat.slug);
   for (const a of cat.aliases ?? []) terms.add(a);
-  for (const s of cat.subcategories ?? []) {
+  for (const s of cat.childCategories ?? []) {
     if (s.name) terms.add(s.name);
     if (s.slug) terms.add(s.slug);
     for (const t of s.searchTerms ?? []) terms.add(t);
@@ -92,39 +91,23 @@ type FurnitureSettings = {
 type FurnitureListingPageProps = {
   settings: FurnitureSettings;
   // Decides which Category Catalog entries belong on this page — e.g.
-  // `(c) => c.showOnFurniture === true` for Innen Furniture, or
-  // `(c) => c.parentCategoryId === someParent._id` for a single parent's page.
+  // `(c) => c.parentCategoryId === parent._id` for a Parent Category page.
   filterCategories: (cat: CategoryDef) => boolean;
-  // Hide the Parent Categories row + in-place parent filtering — appropriate
-  // when the page is already scoped to a single parent (nothing to switch to).
-  // When false, the top row shows this page's own categories as links instead
-  // (see `categoryLinkHrefBase`).
-  showParentSlider?: boolean;
-  // hrefBase for that category-links row when showParentSlider is false —
-  // e.g. "/binnen/wohnzimmer" so tiles go to /binnen/wohnzimmer/[categorySlug].
-  categoryLinkHrefBase?: string;
-  // Restricts the Parent Categories row to one side — e.g. "outdoor" on the
-  // Außen Furniture page so Innen parents don't show up there (and vice versa).
-  parentCategoryType?: "indoor" | "outdoor";
-  // Extra breadcrumb crumb between Home and the page title — e.g. { label:
-  // "Möbel", href: "/binnen/mobel" } on a single Parent Category's page when
-  // that parent is also Related to Furniture, so visitors can navigate back
-  // to the Furniture page it belongs to.
+  // Extra breadcrumb crumb between Home and the page title, so visitors can
+  // navigate back to a page this one sits under.
   furnitureCrumb?: { label: string; href: string } | null;
 };
 
 export default function FurnitureListingPage({
   settings,
   filterCategories,
-  showParentSlider = true,
-  categoryLinkHrefBase,
-  parentCategoryType,
   furnitureCrumb,
 }: FurnitureListingPageProps) {
   const { t, language } = useLanguage();
   const pageTitle = settings.pageTitle || t('listingPage.breadcrumbFurniture');
 
   const [furnitureCategories, setFurnitureCategories] = useState<CategoryDef[]>([]);
+  // Needed to build each tile's canonical /<parentSlug>/<categorySlug> href.
   const [parentCategories, setParentCategories] = useState<ParentCategoryDef[]>([]);
   const [configLoaded, setConfigLoaded] = useState(false);
 
@@ -133,45 +116,26 @@ export default function FurnitureListingPage({
     (async () => {
       const [catalog, parents] = await Promise.all([
         fetchCatalogList(),
-        showParentSlider ? fetchParentCategories() : Promise.resolve([]),
+        fetchParentCategories(),
       ]);
       if (cancelled) return;
       setFurnitureCategories(catalog.filter(filterCategories));
-      // showOnFurniture gates whether a parent appears in this row at all —
-      // an explicit opt-in via the "Related to Furniture" admin checkbox —
-      // then split by type.
-      const furnitureParents = parents.filter((p) => p.showOnFurniture === true);
-      setParentCategories(
-        parentCategoryType === "outdoor"
-          ? furnitureParents.filter((p) => p.type === "outdoor")
-          : parentCategoryType === "indoor"
-          ? furnitureParents.filter((p) => p.type !== "outdoor")
-          : furnitureParents
-      );
+      setParentCategories(parents);
       setConfigLoaded(true);
     })();
     return () => {
       cancelled = true;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [filterCategories, showParentSlider, parentCategoryType]);
+  }, [filterCategories]);
 
-  // Selecting a parent tile filters in place — no navigation, no URL change.
-  const [activeParentId, setActiveParentId] = useState<string | null>(null);
-  // Selecting categories in the sidebar narrows further, also in place — it's
-  // a multi-select filter, not a link to /categorie/[slug].
+  // Selecting categories in the sidebar narrows the grid in place — it's
+  // a multi-select filter, not a link to /<parent>/<category>.
   const [activeCategorySlugs, setActiveCategorySlugs] = useState<string[]>([]);
 
-  const visibleCategories = useMemo(
-    () =>
-      activeParentId
-        ? furnitureCategories.filter((c) => c.parentCategoryId === activeParentId)
-        : furnitureCategories,
-    [furnitureCategories, activeParentId]
-  );
+  const visibleCategories = furnitureCategories;
 
-  // Category selections only apply while still in view for the current
-  // parent — switching parents drops now-irrelevant selections.
+  // Drop selections that are no longer in view.
   useEffect(() => {
     setActiveCategorySlugs((prev) => {
       const next = prev.filter((slug) => visibleCategories.some((c) => c.slug === slug));
@@ -201,21 +165,13 @@ export default function FurnitureListingPage({
     return Array.from(terms);
   }, [scopedCategories]);
 
-  const activeParent = activeParentId ? parentCategories.find((p) => p._id === activeParentId) : null;
   const activeCategoryNames = scopedCategories.map((c) => c.name);
   const activeTitle =
     activeCategorySlugs.length === 1
       ? `${pageTitle} · ${activeCategoryNames[0]}`
       : activeCategorySlugs.length > 1
       ? `${pageTitle} · ${t('listingPage.categoriesCountSuffix', { count: activeCategorySlugs.length })}`
-      : activeParent
-      ? `${pageTitle} · ${activeParent.name}`
       : pageTitle;
-
-  const selectParent = (parentId: string | null) => {
-    setActiveParentId(parentId);
-    setActiveCategorySlugs([]);
-  };
 
   // Apply SEO headers dynamically.
   useEffect(() => {
@@ -490,11 +446,10 @@ export default function FurnitureListingPage({
               </div>
             </div>
 
-            {/* Top horizontal slider — only this scrolls horizontally.
-                Furniture pages show Parent Categories (filters in place);
-                a single-parent page shows that parent's own categories,
-                each linking straight to its /categorie/[slug] page (same
-                interaction as the subcategory row on a normal category page). */}
+            {/* Top horizontal slider — only this scrolls horizontally. Shows
+                this page's own categories, each linking straight to its
+                /[parentSlug]/[categorySlug] page (same interaction as the childCategory
+                row on a normal category page). */}
             <div className="flex-1 min-w-0">
               {!configLoaded ? (
                 <div className="relative w-full overflow-hidden">
@@ -507,15 +462,8 @@ export default function FurnitureListingPage({
                     ))}
                   </div>
                 </div>
-              ) : showParentSlider ? (
-                <ParentCategorySlider
-                  parentCategories={parentCategories}
-                  activeParentId={activeParentId}
-                  onSelect={selectParent}
-                  hrefBase={parentCategoryType === "outdoor" ? "/buiten" : "/binnen"}
-                />
               ) : (
-                <CategoryLinkSlider categories={furnitureCategories} hrefBase={categoryLinkHrefBase} />
+                <CategoryLinkSlider categories={furnitureCategories} parents={parentCategories} />
               )}
             </div>
           </div>

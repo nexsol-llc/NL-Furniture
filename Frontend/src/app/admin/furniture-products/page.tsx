@@ -4,13 +4,67 @@ import { adminFetch } from "@/lib/adminAuth";
 import { useState, useEffect, useCallback } from "react";
 import {
   Plus, Trash2, Edit2, X, Search, ImagePlus, Loader2,
-  Package, ExternalLink, FileSpreadsheet, AlertTriangle, CheckCircle2,
+  Package, ExternalLink, FileSpreadsheet, AlertTriangle, CheckCircle2, Info, Download,
 } from "lucide-react";
 import MediaPicker, { type MediaItem } from "@/app/components/MediaPicker";
 import Pagination from "@/app/components/Pagination";
 import { parseCsvText, rowToFeedProduct, slugify, type FeedProduct } from "@/lib/parseCsvClient";
 
 type MissingItem = { name: string; count: number };
+
+// Every column `rowToFeedProduct` (in parseCsvClient.ts) recognizes. Anything
+// else in the CSV header row is simply ignored. Keep this list in sync with
+// that function — it drives both the format guide and the sample download.
+const CSV_FIELDS: { key: string; required?: boolean; label: string }[] = [
+  { key: "aw_product_id", label: "Unique product ID from the feed. Optional — used to match/update the same product on re-import; without it, each import adds a new product." },
+  { key: "product_name", required: true, label: "Product title. Rows without this are skipped entirely." },
+  { key: "brand_name", label: "Brand name — new brands are offered for creation in the confirm step." },
+  { key: "category_name", label: "Category (the \"sub category\" tier). Falls back to merchant_category when empty." },
+  { key: "merchant_category", label: "Child category tier. Overridden by merchant_product_second_category when present." },
+  { key: "merchant_product_second_category", label: "Optional, more specific child category — takes priority over merchant_category." },
+  { key: "merchant_name", label: "Store / merchant name." },
+  { key: "search_price", label: "Numeric price. store_price is used instead when this is empty." },
+  { key: "store_price", label: "Fallback numeric price, used only when search_price is empty." },
+  { key: "display_price", label: "Pre-formatted price text (e.g. \"€249,99\"), shown as-is." },
+  { key: "aw_deep_link", label: "Affiliate outbound link." },
+  { key: "merchant_deep_link", label: "Direct merchant product link." },
+  { key: "merchant_image_url", label: "Product image URL." },
+  { key: "aw_image_url", label: "Alternate product image URL." },
+  { key: "aw_thumb_url", label: "Thumbnail image URL." },
+  { key: "description", label: "Long description." },
+  { key: "product_short_description", label: "Short description." },
+  { key: "colour", label: "Colour." },
+  { key: "delivery_cost", label: "Delivery cost text." },
+  { key: "merchant_product_id", label: "Merchant's own product ID (feed bookkeeping)." },
+  { key: "merchant_id", label: "Merchant ID (feed bookkeeping)." },
+  { key: "data_feed_id", label: "Feed ID (feed bookkeeping)." },
+  { key: "slug", label: "URL slug — auto-generated from product_name when left empty." },
+];
+
+// Four realistic Dutch furniture rows, in CSV_FIELDS order, for the
+// downloadable sample file. The last one has no aw_product_id — it's optional
+// (some merchant feeds don't provide one) and still imports fine.
+const SAMPLE_CSV_ROWS: string[][] = [
+  ["1001", "Kinderbed Emma 90x200cm", "Home24", "Slaapkamer", "Kinderbed", "", "Home24 NL", "249.99", "", "€249,99",
+    "https://www.awin1.com/cread.php?awinmid=1234&awinaffid=5678&clickref=&p=https%3A%2F%2Fwww.home24.nl%2Fproduct%2F1001",
+    "https://www.home24.nl/product/kinderbed-emma-90x200", "https://images.home24.nl/kinderbed-emma.jpg", "", "",
+    "Stevig kinderbed van massief grenenhout, inclusief lattenbodem.", "Kinderbed 90x200cm, massief grenen", "Wit", "0.00",
+    "M-1001", "12345", "1", ""],
+  ["1002", "Loungeset Bali 5-delig", "Garden Impressions", "Tuin", "Loungesets", "", "Garden Impressions NL", "899.00", "", "€899,00",
+    "https://www.awin1.com/cread.php?awinmid=1234&awinaffid=5678&clickref=&p=https%3A%2F%2Fwww.gardenimpressions.nl%2Fproduct%2F1002",
+    "https://www.gardenimpressions.nl/product/loungeset-bali", "https://images.gardenimpressions.nl/loungeset-bali.jpg", "", "",
+    "5-delige loungeset van gevlochten wicker, inclusief kussens.", "Loungeset Bali, 5-delig", "Zwart", "29.95",
+    "M-1002", "12345", "1", ""],
+  ["1003", "Eettafel Milano 200cm", "Home24", "Woonkamer", "Eettafels", "", "Home24 NL", "499.00", "", "€499,00",
+    "https://www.awin1.com/cread.php?awinmid=1234&awinaffid=5678&clickref=&p=https%3A%2F%2Fwww.home24.nl%2Fproduct%2F1003",
+    "https://www.home24.nl/product/eettafel-milano-200", "https://images.home24.nl/eettafel-milano.jpg", "", "",
+    "Eettafel van massief eikenhout, geschikt voor 8 personen.", "Eettafel Milano 200cm, eiken", "Naturel eiken", "0.00",
+    "M-1003", "12345", "1", ""],
+  ["", "Plantenbak Nova 40cm", "Blooma", "Tuin", "Plantenbakken", "", "Bouwmarkt XL", "39.95", "", "€39,95",
+    "", "https://www.bouwmarktxl.nl/product/plantenbak-nova-40", "https://images.bouwmarktxl.nl/plantenbak-nova.jpg", "", "",
+    "Ronde plantenbak van vezelcement, vorstbestendig.", "Plantenbak Nova 40cm, vezelcement", "Antraciet", "4.95",
+    "", "", "", ""],
+];
 
 // A compact card listing "unknown" values (with product counts) inside the confirm modal.
 function MissingCard({ title, items, accent }: { title: string; items: { name: string; count: number }[]; accent: string }) {
@@ -85,6 +139,8 @@ export default function FurnitureProductsAdmin() {
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(20);
   const [loading, setLoading] = useState(true);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [bulkDeleting, setBulkDeleting] = useState(false);
 
   // Filters
   const [search, setSearch] = useState("");
@@ -99,7 +155,8 @@ export default function FurnitureProductsAdmin() {
 
   // Dropdown sources — the brands & category catalog configured elsewhere in admin.
   const [furnitureBrands, setFurnitureBrands] = useState<string[]>([]);
-  const [catalogs, setCatalogs] = useState<{ _id?: string; name: string; slug: string; subcategories?: { name: string; slug: string }[] }[]>([]);
+  const [catalogs, setCatalogs] = useState<{ _id?: string; name: string; slug: string; aliases?: string[]; parentCategoryId?: string; childCategories?: { name: string; slug: string }[] }[]>([]);
+  const [parentCategories, setParentCategories] = useState<{ _id: string; name: string }[]>([]);
 
   // Form
   const [showForm, setShowForm] = useState(false);
@@ -110,12 +167,13 @@ export default function FurnitureProductsAdmin() {
 
   // CSV import (client-side parse → confirm → chunked upload)
   const [csvBusy, setCsvBusy] = useState(false);
+  const [showCsvGuide, setShowCsvGuide] = useState(false);
   const [importData, setImportData] = useState<null | {
     fileName: string;
     products: FeedProduct[];
     missingBrands: MissingItem[];
     missingCategories: MissingItem[];
-    missingSubcategories: { name: string; count: number; category: string }[];
+    missingChildCategories: { name: string; count: number; category: string }[];
   }>(null);
   const [createBrands, setCreateBrands] = useState(true);
   // Per-brand canonical mapping chosen in the confirm modal: maps each new brand
@@ -125,7 +183,19 @@ export default function FurnitureProductsAdmin() {
   const [brandMappings, setBrandMappings] = useState<Record<string, string>>({});
   // Per-category placement chosen in the confirm modal: which grid (if any) each
   // newly-created category should be added to. Keyed by lowercased category name.
-  const [categoryPlacements, setCategoryPlacements] = useState<Record<string, "indoor" | "outdoor" | "skip">>({});
+  const [categoryPlacements, setCategoryPlacements] = useState<Record<string, "add" | "skip">>({});
+  // Per-category parent assignment chosen in the confirm modal: which Parent
+  // Category (if any) each newly-created category should be filed under.
+  // Keyed by lowercased category name, value is a parentCategories._id ("" = unassigned).
+  const [categoryParentAssignment, setCategoryParentAssignment] = useState<Record<string, string>>({});
+  // Per-category canonical mapping — same idea as brandMappings: merge variant
+  // category names (e.g. "Slaapkamers" → "Slaapkamer") into one before import.
+  // Keyed by lowercased category name.
+  const [categoryMappings, setCategoryMappings] = useState<Record<string, string>>({});
+  // Per-child-category canonical mapping, scoped to its original parent category
+  // (merging only makes sense within the same category). Keyed by
+  // `${category}|${childName}`.toLowerCase().
+  const [childCategoryMappings, setChildCategoryMappings] = useState<Record<string, string>>({});
   const [importing, setImporting] = useState(false);
   const [importStage, setImportStage] = useState("");
   const [importProgress, setImportProgress] = useState({ done: 0, total: 0 });
@@ -157,6 +227,12 @@ export default function FurnitureProductsAdmin() {
     fetchProducts();
   }, [fetchProducts]);
 
+  // Selections don't carry across a changed page or filter — avoids deleting
+  // items the admin can no longer see.
+  useEffect(() => {
+    setSelectedIds(new Set());
+  }, [page, pageSize, sort, search, brand, category, minPrice, maxPrice]);
+
   useEffect(() => {
     adminFetch("/api/products/filters")
       .then((r) => r.json())
@@ -166,7 +242,7 @@ export default function FurnitureProductsAdmin() {
       })
       .catch(() => {});
 
-    // Brands & categories/subcategories for the form dropdowns (from admin config).
+    // Brands & categories/childCategories for the form dropdowns (from admin config).
     adminFetch(`/api/furniture-brands?t=${Date.now()}`)
       .then((r) => r.json())
       .then((d) => {
@@ -181,13 +257,41 @@ export default function FurnitureProductsAdmin() {
         setCatalogs(arr);
       })
       .catch((e) => console.error("category-catalog fetch failed:", e));
+    adminFetch(`/api/parent-categories?t=${Date.now()}`)
+      .then((r) => r.json())
+      .then((d) => {
+        const arr = Array.isArray(d) ? d : Array.isArray(d?.parentCategories) ? d.parentCategories : [];
+        setParentCategories(arr);
+      })
+      .catch((e) => console.error("parent-categories fetch failed:", e));
   }, []);
 
-  // Subcategories for the currently selected category in the form.
+  // ChildCategories for the currently selected category in the form.
   const selectedCatalog = catalogs.find(
     (c) => c.name === form.category_name || c.slug === form.category_name
   );
-  const subOptions = selectedCatalog?.subcategories ?? [];
+  const subOptions = selectedCatalog?.childCategories ?? [];
+
+  // Parent category shown for a CSV row's "category" (sub category) value in the
+  // import confirm table. Existing categories already carry a parentCategoryId;
+  // brand-new ones (not in `catalogs` yet) use whatever the admin picked in the
+  // "New categories" parent-assignment dropdown below.
+  const parentCategoryLabel = (categoryName: string): string => {
+    if (!categoryName) return "—";
+    const key = categoryName.toLowerCase();
+    const existing = catalogs.find(
+      (c) =>
+        c.name.toLowerCase() === key ||
+        c.slug.toLowerCase() === key ||
+        (c.aliases || []).some((a) => a.toLowerCase() === key)
+    );
+    if (existing) {
+      const parent = parentCategories.find((p) => p._id === existing.parentCategoryId);
+      return parent?.name ?? "Unassigned";
+    }
+    const parent = parentCategories.find((p) => p._id === categoryParentAssignment[key]);
+    return parent?.name ?? "Not set yet";
+  };
 
   const applyFilters = () => { setSearch(searchInput.trim()); setPage(1); };
   const resetFilters = () => {
@@ -232,10 +336,72 @@ export default function FurnitureProductsAdmin() {
         const d = await res.json().catch(() => ({}));
         throw new Error(d.error || "Delete failed");
       }
+      setSelectedIds((prev) => {
+        if (!prev.has(id)) return prev;
+        const next = new Set(prev);
+        next.delete(id);
+        return next;
+      });
       await fetchProducts();
     } catch (err: any) {
       alert(err.message || "Delete failed");
     }
+  };
+
+  const toggleSelect = (id: string) => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
+
+  const allOnPageSelected = products.length > 0 && products.every((p) => selectedIds.has(p._id));
+  const toggleSelectAll = () => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (allOnPageSelected) {
+        for (const p of products) next.delete(p._id);
+      } else {
+        for (const p of products) next.add(p._id);
+      }
+      return next;
+    });
+  };
+
+  const handleBulkDelete = async () => {
+    if (selectedIds.size === 0) return;
+    if (!confirm(`Delete ${selectedIds.size} selected product(s)? This cannot be undone.`)) return;
+    setBulkDeleting(true);
+    try {
+      const res = await adminFetch("/api/products/bulk-delete", {
+        method: "POST",
+        body: JSON.stringify({ ids: Array.from(selectedIds) }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.error || "Delete failed");
+      setSelectedIds(new Set());
+      await fetchProducts();
+    } catch (err: any) {
+      alert(err.message || "Delete failed");
+    } finally {
+      setBulkDeleting(false);
+    }
+  };
+
+  // Downloadable example feed — same header row (and column meaning) the
+  // parser actually recognizes, so it can be edited and re-imported as-is.
+  const downloadSampleCsv = () => {
+    const header = CSV_FIELDS.map((f) => f.key);
+    const csv = [header, ...SAMPLE_CSV_ROWS]
+      .map((r) => r.map((v) => `"${String(v).replace(/"/g, '""')}"`).join(","))
+      .join("\r\n");
+    const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const a = Object.assign(document.createElement("a"), { href: url, download: "products-sample.csv" });
+    a.click();
+    URL.revokeObjectURL(url);
   };
 
   // 1) Parse the CSV in the browser, compute coverage against the existing
@@ -248,14 +414,14 @@ export default function FurnitureProductsAdmin() {
       const text = await file.text();
       const rows = parseCsvText(text);
       const products = rows.map(rowToFeedProduct).filter((p): p is FeedProduct => p !== null);
-      if (products.length === 0) throw new Error("No valid products found (missing aw_product_id).");
+      if (products.length === 0) throw new Error("No valid products found (missing product_name).");
 
       const existBrands = new Set(furnitureBrands.map((b) => b.toLowerCase()));
       const existCats = new Set<string>();
       const existSubs = new Set<string>();
       for (const c of catalogs) {
         for (const v of [c.name, c.slug, ...((c as any).aliases || [])]) if (v) existCats.add(String(v).toLowerCase());
-        for (const s of c.subcategories || []) { if (s.name) existSubs.add(s.name.toLowerCase()); if (s.slug) existSubs.add(s.slug.toLowerCase()); }
+        for (const s of c.childCategories || []) { if (s.name) existSubs.add(s.name.toLowerCase()); if (s.slug) existSubs.add(s.slug.toLowerCase()); }
       }
 
       const bMap = new Map<string, MissingItem>();
@@ -270,13 +436,14 @@ export default function FurnitureProductsAdmin() {
 
       const missingBrands = Array.from(bMap.values()).filter((x) => !existBrands.has(x.name.toLowerCase())).sort(byCount);
       const missingCategories = Array.from(cMap.values()).filter((x) => !existCats.has(x.name.toLowerCase())).sort(byCount);
+      const missingChildCategories = Array.from(sMap.values()).filter((x) => !existSubs.has(x.name.toLowerCase())).sort(byCount);
 
       setImportData({
         fileName: file.name,
         products,
         missingBrands,
         missingCategories,
-        missingSubcategories: Array.from(sMap.values()).filter((x) => !existSubs.has(x.name.toLowerCase())).sort(byCount),
+        missingChildCategories,
       });
 
       // Default every new brand to map to itself; the admin can point variants at a
@@ -285,10 +452,26 @@ export default function FurnitureProductsAdmin() {
       for (const b of missingBrands) initBrandMap[b.name.toLowerCase()] = b.name;
       setBrandMappings(initBrandMap);
 
-      // Default every new category to Indoor; the admin picks Indoor/Outdoor/skip per row.
-      const initPlacements: Record<string, "indoor" | "outdoor" | "skip"> = {};
-      for (const c of missingCategories) initPlacements[c.name.toLowerCase()] = "indoor";
+      // Default every new category to "add"; the admin can skip individual rows.
+      const initPlacements: Record<string, "add" | "skip"> = {};
+      for (const c of missingCategories) initPlacements[c.name.toLowerCase()] = "add";
       setCategoryPlacements(initPlacements);
+
+      // Default every new category to unassigned; the admin can file it under an
+      // existing Parent Category before import (the CSV feed has no parent data).
+      const initParents: Record<string, string> = {};
+      for (const c of missingCategories) initParents[c.name.toLowerCase()] = "";
+      setCategoryParentAssignment(initParents);
+
+      // Default every new category/child category to map to itself; the admin can
+      // point variants at a canonical name to merge them before import.
+      const initCategoryMap: Record<string, string> = {};
+      for (const c of missingCategories) initCategoryMap[c.name.toLowerCase()] = c.name;
+      setCategoryMappings(initCategoryMap);
+
+      const initChildMap: Record<string, string> = {};
+      for (const s of missingChildCategories) initChildMap[`${s.category}|${s.name}`.toLowerCase()] = s.name;
+      setChildCategoryMappings(initChildMap);
     } catch (err: any) {
       alert(err.message || "Failed to read CSV");
     } finally {
@@ -333,36 +516,78 @@ export default function FurnitureProductsAdmin() {
         }
       }
 
-      // b) Create approved missing categories (with their feed subcategories) and
-      //    queue each for the Indoor/Outdoor grid the admin chose in the modal.
-      type GridItem = { type: "indoor" | "outdoor"; name: string; slug: string; image: string; featured: boolean; showOnHome: boolean };
+      // b) Merge → create approved missing categories (with their merged/deduped
+      //    childCategories) and queue each for the Kategorie Main Page grid unless
+      //    skipped. `categoryCanonical` maps a lowercased original CSV category
+      //    name → the canonical name it should become (defaults to itself), same
+      //    idea as brandMap; `childCategoryCanonical` does the same for child
+      //    categories, scoped to their original parent category.
+      type GridItem = { name: string; slug: string; image: string; featured: boolean; showOnHome: boolean };
       const gridAdd: GridItem[] = [];
       let createdCatCount = 0;
 
-      const catsToCreate = importData.missingCategories.filter(
-        (c) => (categoryPlacements[c.name.toLowerCase()] ?? "skip") !== "skip"
-      );
+      const categoryCanonical = new Map<string, string>();
+      for (const c of importData.missingCategories) {
+        categoryCanonical.set(c.name.toLowerCase(), (categoryMappings[c.name.toLowerCase()] || c.name).trim());
+      }
+      const childCategoryCanonical = new Map<string, string>();
+      for (const s of importData.missingChildCategories) {
+        const key = `${s.category}|${s.name}`.toLowerCase();
+        childCategoryCanonical.set(key, (childCategoryMappings[key] || s.name).trim());
+      }
 
-      if (catsToCreate.length) {
-        setImportStage(`Creating ${catsToCreate.length} categories…`);
-        for (const cat of catsToCreate) {
-          const slug = slugify(cat.name);
-          const placement = categoryPlacements[cat.name.toLowerCase()];
-          const subs = importData.missingSubcategories
-            .filter((s) => s.category.toLowerCase() === cat.name.toLowerCase())
-            .map((s) => ({ name: s.name, slug: slugify(s.name) }));
+      const existCatsLower = new Set<string>();
+      for (const c of catalogs) {
+        for (const v of [c.name, c.slug, ...(c.aliases || [])]) if (v) existCatsLower.add(String(v).toLowerCase());
+      }
+
+      // One creation entry per distinct canonical category name that doesn't
+      // already exist and wasn't skipped. Placement/parent settings come from
+      // whichever row IS the canonical name — the row the others merge into.
+      const catsToCreate = new Map<string, { name: string; slug: string; parentCategoryId?: string }>();
+      for (const c of importData.missingCategories) {
+        const canonical = categoryCanonical.get(c.name.toLowerCase())!;
+        const canonicalLower = canonical.toLowerCase();
+        if (existCatsLower.has(canonicalLower) || catsToCreate.has(canonicalLower)) continue;
+
+        const survivorKey = (
+          importData.missingCategories.find((o) => o.name.toLowerCase() === canonicalLower) || c
+        ).name.toLowerCase();
+        if ((categoryPlacements[survivorKey] ?? "add") === "skip") continue;
+
+        catsToCreate.set(canonicalLower, {
+          name: canonical,
+          slug: slugify(canonical),
+          parentCategoryId: categoryParentAssignment[survivorKey] || undefined,
+        });
+      }
+
+      if (catsToCreate.size) {
+        setImportStage(`Creating ${catsToCreate.size} categories…`);
+        for (const cat of Array.from(catsToCreate.values())) {
+          // Merge + dedupe child categories from every original category that
+          // resolves (after merging) to this canonical category.
+          const subsSeen = new Set<string>();
+          const subs: { name: string; slug: string }[] = [];
+          for (const s of importData.missingChildCategories) {
+            const parentCanonical = categoryCanonical.get(s.category.toLowerCase()) || s.category;
+            if (parentCanonical.toLowerCase() !== cat.name.toLowerCase()) continue;
+            const childCanonical = childCategoryCanonical.get(`${s.category}|${s.name}`.toLowerCase())!;
+            const childKey = childCanonical.toLowerCase();
+            if (subsSeen.has(childKey)) continue;
+            subsSeen.add(childKey);
+            subs.push({ name: childCanonical, slug: slugify(childCanonical) });
+          }
           const res = await adminFetch("/api/category-catalog", {
             method: "POST",
-            body: JSON.stringify({ name: cat.name, slug, aliases: [slug], subcategories: subs }),
+            body: JSON.stringify({ name: cat.name, slug: cat.slug, aliases: [cat.slug], childCategories: subs, parentCategoryId: cat.parentCategoryId }),
           }).catch(() => null);
           if (res && res.ok) createdCatCount++;
 
-          if (placement === "indoor" || placement === "outdoor") {
-            gridAdd.push({ type: placement, name: cat.name, slug, image: "", featured: false, showOnHome: false });
-          }
+          gridAdd.push({ name: cat.name, slug: cat.slug, image: "", featured: false, showOnHome: false });
         }
 
-        // Append the new categories to the Kategorie Main Page's unified
+        // Append the new categories to the Kategorie Main Page's flat
         // categories[] list. We fetch the current settings first and send
         // back the full array (the endpoint uses json_patch, which replaces
         // arrays wholesale), deduping by slug.
@@ -373,12 +598,13 @@ export default function FurnitureProductsAdmin() {
             const kdata = await kres.json().catch(() => ({}));
             const s = (kdata?.settings ?? {}) as Record<string, any>;
             const { _id, ...restSettings } = s;
-            const curCategories: GridItem[] = Array.isArray(s.categories)
+            const curCategories: GridItem[] = (Array.isArray(s.categories)
               ? s.categories
               : [
-                  ...(Array.isArray(s.indoorCategories) ? s.indoorCategories.map((c: any) => ({ ...c, type: "indoor" })) : []),
-                  ...(Array.isArray(s.outdoorCategories) ? s.outdoorCategories.map((c: any) => ({ ...c, type: "outdoor" })) : []),
-                ];
+                  ...(Array.isArray(s.indoorCategories) ? s.indoorCategories : []),
+                  ...(Array.isArray(s.outdoorCategories) ? s.outdoorCategories : []),
+                ]
+            ).map(({ type: _t, ...rest }: any) => rest);
             const mergeUnique = (existing: GridItem[], additions: GridItem[]) => {
               const seen = new Set(existing.map((x) => (x.slug || "").toLowerCase()));
               const merged = [...existing];
@@ -404,14 +630,59 @@ export default function FurnitureProductsAdmin() {
         }
       }
 
-      // c) Upload products in chunks, reassigning brand names per the canonical map.
+      // b2) Attach new child categories to categories that already existed —
+      //    either because their parent was never "missing", or because a whole
+      //    missing category got merged into an existing one above. Categories
+      //    created in step (b) already got their childCategories at creation
+      //    time, so this only needs to PUT-patch the rest.
+      const childrenByExistingParent = new Map<string, Set<string>>(); // existing catalog slug -> canonical child names
+      for (const s of importData.missingChildCategories) {
+        const parentCanonicalLower = (categoryCanonical.get(s.category.toLowerCase()) || s.category).toLowerCase();
+        if (catsToCreate.has(parentCanonicalLower)) continue; // already attached at creation time
+        const targetCatalog = catalogs.find(
+          (c) =>
+            c.name.toLowerCase() === parentCanonicalLower ||
+            c.slug.toLowerCase() === parentCanonicalLower ||
+            (c.aliases || []).some((a) => a.toLowerCase() === parentCanonicalLower)
+        );
+        if (!targetCatalog) continue; // parent category doesn't exist and wasn't created — nothing to attach to
+        const childCanonical = childCategoryCanonical.get(`${s.category}|${s.name}`.toLowerCase())!;
+        const set = childrenByExistingParent.get(targetCatalog.slug) || new Set<string>();
+        set.add(childCanonical);
+        childrenByExistingParent.set(targetCatalog.slug, set);
+      }
+
+      let updatedCatCount = 0;
+      for (const [slug, newNames] of Array.from(childrenByExistingParent)) {
+        const targetCatalog = catalogs.find((c) => c.slug === slug)!;
+        const existingChildren = targetCatalog.childCategories || [];
+        const existingLower = new Set(existingChildren.map((c) => c.name.toLowerCase()));
+        const additions = Array.from(newNames)
+          .filter((name) => !existingLower.has(name.toLowerCase()))
+          .map((name) => ({ name, slug: slugify(name) }));
+        if (!additions.length) continue;
+        const res = await adminFetch(`/api/category-catalog/${slug}`, {
+          method: "PUT",
+          body: JSON.stringify({ childCategories: [...existingChildren, ...additions] }),
+        }).catch(() => null);
+        if (res && res.ok) updatedCatCount++;
+      }
+
+      // c) Upload products in chunks, reassigning brand/category/child-category
+      //    names per the canonical maps.
       const CHUNK = 300;
-      const all = brandMap.size
-        ? importData.products.map((p) => {
-            const canonical = brandMap.get((p.brand_name || "").toLowerCase());
-            return canonical && canonical !== p.brand_name ? { ...p, brand_name: canonical } : p;
-          })
-        : importData.products;
+      const all = importData.products.map((p) => {
+        let next = p;
+        if (brandMap.size) {
+          const canonicalBrand = brandMap.get((p.brand_name || "").toLowerCase());
+          if (canonicalBrand && canonicalBrand !== p.brand_name) next = { ...next, brand_name: canonicalBrand };
+        }
+        const canonicalCategory = categoryCanonical.get((p.category_name || "").toLowerCase());
+        if (canonicalCategory && canonicalCategory !== p.category_name) next = { ...next, category_name: canonicalCategory };
+        const canonicalChild = childCategoryCanonical.get(`${p.category_name}|${p.merchant_category}`.toLowerCase());
+        if (canonicalChild && canonicalChild !== p.merchant_category) next = { ...next, merchant_category: canonicalChild };
+        return next;
+      });
       setImportProgress({ done: 0, total: all.length });
       let inserted = 0, updated = 0;
       for (let i = 0; i < all.length; i += CHUNK) {
@@ -425,7 +696,7 @@ export default function FurnitureProductsAdmin() {
         setImportProgress({ done: Math.min(i + CHUNK, all.length), total: all.length });
       }
 
-      setImportResult({ inserted, updated, total: all.length, createdBrands: createdBrandCount, createdCategories: createdCatCount });
+      setImportResult({ inserted, updated, total: all.length, createdBrands: createdBrandCount, createdCategories: createdCatCount, updatedCategories: updatedCatCount });
       setImportData(null);
       setPage(1);
       await fetchProducts();
@@ -452,10 +723,14 @@ export default function FurnitureProductsAdmin() {
           </p>
         </div>
         <div className="flex items-center gap-2">
-          <label className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold border cursor-pointer transition ${csvBusy ? "opacity-60" : "bg-white hover:bg-gray-50 border-gray-200"}`}>
+          <button
+            type="button"
+            disabled={csvBusy}
+            onClick={() => setShowCsvGuide(true)}
+            className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold border transition ${csvBusy ? "opacity-60" : "bg-white hover:bg-gray-50 border-gray-200"}`}
+          >
             {csvBusy ? <Loader2 size={15} className="animate-spin" /> : <FileSpreadsheet size={15} />} {csvBusy ? "Reading…" : "Import CSV"}
-            <input type="file" accept=".csv,text/csv" disabled={csvBusy} className="hidden" onChange={(e) => { handleCsvFile(e.target.files?.[0] || null); e.currentTarget.value = ""; }} />
-          </label>
+          </button>
           <button onClick={openAdd} className="flex items-center gap-2 bg-primary-600 hover:bg-primary-700 text-white px-4 py-2.5 rounded-xl text-sm font-semibold transition">
             <Plus size={15} /> Add Product
           </button>
@@ -470,6 +745,7 @@ export default function FurnitureProductsAdmin() {
             Imported {importResult.total.toLocaleString("de-DE")} products ({importResult.inserted} added, {importResult.updated} updated)
             {importResult.createdBrands > 0 && ` · ${importResult.createdBrands} brands created`}
             {importResult.createdCategories > 0 && ` · ${importResult.createdCategories} categories created`}
+            {importResult.updatedCategories > 0 && ` · ${importResult.updatedCategories} categories updated with new child categories`}
           </p>
           <button onClick={() => setImportResult(null)} className="text-emerald-500 hover:text-emerald-800"><X size={16} /></button>
         </div>
@@ -521,6 +797,27 @@ export default function FurnitureProductsAdmin() {
 
       {/* LIST */}
       <div className="bg-white border border-gray-200 rounded-xl overflow-hidden">
+        {!loading && products.length > 0 && (
+          <div className="flex items-center justify-between gap-3 px-4 py-2.5 border-b border-gray-100 bg-gray-50/60">
+            <label className="flex items-center gap-2 text-xs font-semibold text-zinc-600 cursor-pointer select-none">
+              <input type="checkbox" checked={allOnPageSelected} onChange={toggleSelectAll} className="w-4 h-4 accent-primary-600" />
+              {selectedIds.size > 0 ? `${selectedIds.size} selected` : "Select all"}
+            </label>
+            {selectedIds.size > 0 && (
+              <div className="flex items-center gap-2">
+                <button onClick={() => setSelectedIds(new Set())} className="text-xs font-semibold text-zinc-500 hover:text-zinc-800">Clear</button>
+                <button
+                  onClick={handleBulkDelete}
+                  disabled={bulkDeleting}
+                  className="flex items-center gap-1.5 bg-red-600 hover:bg-red-700 disabled:opacity-50 text-white px-3 py-1.5 rounded-lg text-xs font-semibold transition"
+                >
+                  {bulkDeleting ? <Loader2 size={13} className="animate-spin" /> : <Trash2 size={13} />}
+                  Delete {selectedIds.size} selected
+                </button>
+              </div>
+            )}
+          </div>
+        )}
         {loading ? (
           <div className="divide-y divide-gray-100">
             {Array.from({ length: 8 }).map((_, i) => (
@@ -540,6 +837,12 @@ export default function FurnitureProductsAdmin() {
           <div className="divide-y divide-gray-100">
             {products.map((p) => (
               <div key={p._id} className="flex items-center gap-4 p-4 hover:bg-gray-50/60 transition">
+                <input
+                  type="checkbox"
+                  checked={selectedIds.has(p._id)}
+                  onChange={() => toggleSelect(p._id)}
+                  className="w-4 h-4 accent-primary-600 flex-shrink-0"
+                />
                 <div className="w-14 h-14 rounded-lg bg-gray-100 overflow-hidden flex-shrink-0 flex items-center justify-center">
                   {(p.merchant_image_url || p.aw_image_url) ? (
                     // eslint-disable-next-line @next/next/no-img-element
@@ -650,14 +953,14 @@ export default function FurnitureProductsAdmin() {
                   </select>
                   {catalogs.length === 0 && <p className="text-[10px] text-amber-600 mt-1">No categories yet — add them under Furniture → Categories Manager.</p>}
                 </Field>
-                <Field label="Subcategory">
+                <Field label="Child Category">
                   <select
                     value={form.merchant_category || ""}
                     onChange={(e) => setField("merchant_category", e.target.value)}
                     className="input"
                     disabled={subOptions.length === 0 && !form.merchant_category}
                   >
-                    <option value="">{subOptions.length > 0 ? "— Select subcategory —" : "Select a category first"}</option>
+                    <option value="">{subOptions.length > 0 ? "— Select child category —" : "Select a category first"}</option>
                     {form.merchant_category && !subOptions.some((s) => s.name === form.merchant_category) && (
                       <option value={form.merchant_category}>{form.merchant_category} (current)</option>
                     )}
@@ -687,6 +990,82 @@ export default function FurnitureProductsAdmin() {
                 <button type="button" onClick={closeForm} className="px-6 border border-gray-200 rounded-xl text-sm hover:bg-gray-50">Cancel</button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* CSV FORMAT GUIDE — shown before the file picker so admins know what
+          columns are recognized before they build/edit a feed export. */}
+      {showCsvGuide && (
+        <div className="fixed inset-0 z-[110] flex items-center justify-center p-4 bg-black/50">
+          <div className="bg-white rounded-xl shadow-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between px-6 py-4 border-b sticky top-0 bg-white z-10">
+              <div>
+                <h3 className="font-semibold text-lg flex items-center gap-2"><Info size={18} className="text-primary-600" /> Import CSV</h3>
+                <p className="text-xs text-gray-500 mt-0.5">Columns the importer recognizes, and a ready-to-edit sample file.</p>
+              </div>
+              <button onClick={() => setShowCsvGuide(false)} className="text-gray-400 hover:text-gray-700"><X size={20} /></button>
+            </div>
+
+            <div className="p-6 space-y-5">
+              <p className="text-sm text-gray-600">
+                Upload an AWIN-style product feed (CSV, comma-separated, first row = headers). Any column not
+                listed below is ignored, and a row without <code className="bg-gray-100 px-1 py-0.5 rounded text-[11px]">product_name</code> is skipped.
+                <code className="bg-gray-100 px-1 py-0.5 rounded text-[11px]">aw_product_id</code> is optional — some merchants don&apos;t provide one.
+                <code className="bg-gray-100 px-1 py-0.5 rounded text-[11px]">category_name</code> maps to the category
+                (&quot;sub category&quot;) tier and <code className="bg-gray-100 px-1 py-0.5 rounded text-[11px]">merchant_category</code> maps
+                to the child category tier — the feed has no parent-category column, so that&apos;s assigned in the next step.
+              </p>
+
+              <div className="border border-gray-100 rounded-lg overflow-hidden">
+                <table className="w-full text-xs">
+                  <thead className="bg-gray-50 text-gray-500">
+                    <tr>
+                      <th className="text-left px-3 py-2 font-semibold w-[190px]">Column</th>
+                      <th className="text-left px-3 py-2 font-semibold">What it&apos;s for</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-50">
+                    {CSV_FIELDS.map((f) => (
+                      <tr key={f.key}>
+                        <td className="px-3 py-2 align-top">
+                          <code className="text-[11px] text-gray-800">{f.key}</code>
+                          {f.required && <span className="block mt-1 text-[10px] font-semibold text-amber-600 uppercase tracking-wide">Required</span>}
+                        </td>
+                        <td className="px-3 py-2 text-gray-500">{f.label}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+
+              <button
+                type="button"
+                onClick={downloadSampleCsv}
+                className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold border border-gray-200 bg-white hover:bg-gray-50 transition"
+              >
+                <Download size={15} /> Download sample CSV
+              </button>
+
+              <div className="flex gap-3 pt-4 border-t">
+                <label className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-xl text-sm font-semibold text-white transition cursor-pointer ${csvBusy ? "opacity-60 bg-primary-600" : "bg-primary-600 hover:bg-primary-700"}`}>
+                  {csvBusy ? <Loader2 size={15} className="animate-spin" /> : <FileSpreadsheet size={15} />} {csvBusy ? "Reading…" : "Choose CSV file…"}
+                  <input
+                    type="file"
+                    accept=".csv,text/csv"
+                    disabled={csvBusy}
+                    className="hidden"
+                    onChange={(e) => {
+                      const file = e.target.files?.[0] || null;
+                      e.currentTarget.value = "";
+                      setShowCsvGuide(false);
+                      handleCsvFile(file);
+                    }}
+                  />
+                </label>
+                <button type="button" onClick={() => setShowCsvGuide(false)} className="px-6 border border-gray-200 rounded-xl text-sm hover:bg-gray-50">Cancel</button>
+              </div>
+            </div>
           </div>
         </div>
       )}
@@ -727,7 +1106,37 @@ export default function FurnitureProductsAdmin() {
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                     <MissingCard title="New brands" items={importData.missingBrands} accent="bg-amber-50 border-amber-100 text-amber-800" />
                     <MissingCard title="New categories" items={importData.missingCategories} accent="bg-amber-50 border-amber-100 text-amber-800" />
-                    <MissingCard title="New subcategories" items={importData.missingSubcategories} accent="bg-amber-50 border-amber-100 text-amber-800" />
+                    <MissingCard title="New child categories" items={importData.missingChildCategories} accent="bg-amber-50 border-amber-100 text-amber-800" />
+                  </div>
+
+                  <div className="space-y-2 border-t pt-4">
+                    <p className="text-sm font-semibold text-gray-800">
+                      Products in this file ({importData.products.length.toLocaleString("de-DE")})
+                    </p>
+                    <div className="max-h-72 overflow-y-auto border border-gray-100 rounded-lg">
+                      <table className="w-full text-xs">
+                        <thead className="sticky top-0 bg-gray-50 text-gray-500 z-[1]">
+                          <tr>
+                            <th className="text-left px-3 py-2 font-semibold">Name</th>
+                            <th className="text-left px-3 py-2 font-semibold">Brand</th>
+                            <th className="text-left px-3 py-2 font-semibold">Parent category</th>
+                            <th className="text-left px-3 py-2 font-semibold">Sub category</th>
+                            <th className="text-left px-3 py-2 font-semibold">Child category</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-gray-50">
+                          {importData.products.map((p, i) => (
+                            <tr key={p.aw_product_id || i} className="hover:bg-gray-50">
+                              <td className="px-3 py-2 text-gray-700 truncate max-w-[220px]" title={p.product_name}>{p.product_name || "(no name)"}</td>
+                              <td className="px-3 py-2 text-gray-500 truncate max-w-[140px]" title={p.brand_name}>{p.brand_name || "—"}</td>
+                              <td className="px-3 py-2 text-gray-500 truncate max-w-[140px]">{parentCategoryLabel(p.category_name)}</td>
+                              <td className="px-3 py-2 text-gray-500 truncate max-w-[160px]" title={p.category_name}>{p.category_name || "—"}</td>
+                              <td className="px-3 py-2 text-gray-500 truncate max-w-[160px]" title={p.merchant_category}>{p.merchant_category || "—"}</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
                   </div>
 
                   <div className="space-y-2 border-t pt-4">
@@ -793,32 +1202,131 @@ export default function FurnitureProductsAdmin() {
                   {importData.missingCategories.length > 0 && (
                     <div className="space-y-2 border-t pt-4">
                       <p className="text-sm font-semibold text-gray-800">
-                        New categories — choose where to add each
+                        New categories — choose which to create
                       </p>
                       <p className="text-[11px] text-gray-400">
-                        Each selected category gets a catalog page (with its subcategories) and is added to the chosen Kategorie grid.
-                        Pick <strong>Don&apos;t create</strong> to skip it — its products still import.
+                        Merge variants (e.g. <em>Slaapkamers</em> → <em>Slaapkamer</em>) into one category — the target row&apos;s
+                        placement and parent apply. Pick <strong>Don&apos;t create</strong> to skip a row entirely — its products still import.
+                        The CSV feed has no parent category of its own, so pick one per row or leave it unassigned (it can be set later
+                        in Categories → Parent Categories).
                       </p>
-                      <div className="max-h-56 overflow-y-auto divide-y divide-gray-50 border border-gray-100 rounded-lg">
+                      <div className="max-h-64 overflow-y-auto divide-y divide-gray-50 border border-gray-100 rounded-lg">
                         {importData.missingCategories.map((cat) => {
                           const key = cat.name.toLowerCase();
-                          const val = categoryPlacements[key] ?? "indoor";
+                          const val = categoryPlacements[key] ?? "add";
+                          const parentVal = categoryParentAssignment[key] ?? "";
+                          const mergeVal = categoryMappings[key] ?? cat.name;
+                          const merged = mergeVal.toLowerCase() !== key;
                           return (
-                            <div key={key} className="flex items-center justify-between gap-3 px-3 py-2">
-                              <span className="text-xs text-gray-700 truncate" title={cat.name}>
+                            <div key={key} className="px-3 py-2 space-y-1.5">
+                              <span className="text-xs text-gray-700 truncate block" title={cat.name}>
                                 {cat.name || "(empty)"}{" "}
                                 <span className="text-gray-400">· {cat.count.toLocaleString("de-DE")}</span>
+                                {merged && <span className="text-indigo-600 font-semibold"> → {mergeVal}</span>}
+                              </span>
+                              <div className="flex flex-wrap items-center gap-2">
+                                <select
+                                  value={mergeVal}
+                                  onChange={(e) => setCategoryMappings((prev) => ({ ...prev, [key]: e.target.value }))}
+                                  className="text-xs border border-gray-200 rounded-lg px-2 py-1.5 bg-white max-w-[160px] focus:outline-none focus:ring-2 focus:ring-primary-500"
+                                >
+                                  <option value={cat.name}>Keep as “{cat.name}”</option>
+                                  {importData.missingCategories.filter((o) => o.name.toLowerCase() !== key).length > 0 && (
+                                    <optgroup label="Merge into new category">
+                                      {importData.missingCategories
+                                        .filter((o) => o.name.toLowerCase() !== key)
+                                        .map((o) => (
+                                          <option key={o.name} value={o.name}>{o.name}</option>
+                                        ))}
+                                    </optgroup>
+                                  )}
+                                  {catalogs.length > 0 && (
+                                    <optgroup label="Merge into existing category">
+                                      {catalogs.map((c) => (
+                                        <option key={c.slug} value={c.name}>{c.name}</option>
+                                      ))}
+                                    </optgroup>
+                                  )}
+                                </select>
+                                <select
+                                  value={parentVal}
+                                  onChange={(e) =>
+                                    setCategoryParentAssignment((prev) => ({ ...prev, [key]: e.target.value }))
+                                  }
+                                  disabled={merged}
+                                  className="text-xs border border-gray-200 rounded-lg px-2 py-1.5 bg-white max-w-[160px] disabled:opacity-50 focus:outline-none focus:ring-2 focus:ring-primary-500"
+                                >
+                                  <option value="">No parent</option>
+                                  {parentCategories.map((p) => (
+                                    <option key={p._id} value={p._id}>{p.name}</option>
+                                  ))}
+                                </select>
+                                <select
+                                  value={val}
+                                  onChange={(e) =>
+                                    setCategoryPlacements((prev) => ({ ...prev, [key]: e.target.value as "add" | "skip" }))
+                                  }
+                                  disabled={merged}
+                                  className="text-xs border border-gray-200 rounded-lg px-2 py-1.5 bg-white disabled:opacity-50 focus:outline-none focus:ring-2 focus:ring-primary-500"
+                                >
+                                  <option value="add">Add to category grid</option>
+                                  <option value="skip">Don&apos;t create</option>
+                                </select>
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Per-child-category merge — same idea as brands/categories: point
+                      variant child-category names (within the same category) at one canonical name. */}
+                  {importData.missingChildCategories.length > 0 && (
+                    <div className="space-y-2 border-t pt-4">
+                      <p className="text-sm font-semibold text-gray-800">
+                        New child categories — merge duplicates
+                      </p>
+                      <p className="text-[11px] text-gray-400">
+                        Merge variants within the same category (e.g. <em>Kinderbedden</em> → <em>Kinderbed</em>) into one.
+                      </p>
+                      <div className="max-h-56 overflow-y-auto divide-y divide-gray-50 border border-gray-100 rounded-lg">
+                        {importData.missingChildCategories.map((sub) => {
+                          const key = `${sub.category}|${sub.name}`.toLowerCase();
+                          const mergeVal = childCategoryMappings[key] ?? sub.name;
+                          const merged = mergeVal.toLowerCase() !== sub.name.toLowerCase();
+                          const existingSubs =
+                            catalogs.find((c) => c.name.toLowerCase() === sub.category.toLowerCase())?.childCategories ?? [];
+                          const siblings = importData.missingChildCategories.filter(
+                            (o) => o.category.toLowerCase() === sub.category.toLowerCase() && o.name.toLowerCase() !== sub.name.toLowerCase()
+                          );
+                          return (
+                            <div key={key} className="flex items-center justify-between gap-3 px-3 py-2">
+                              <span className="text-xs text-gray-700 truncate" title={sub.name}>
+                                {sub.name || "(empty)"}{" "}
+                                <span className="text-gray-400">· {sub.count.toLocaleString("de-DE")} · under {sub.category}</span>
+                                {merged && <span className="text-indigo-600 font-semibold"> → {mergeVal}</span>}
                               </span>
                               <select
-                                value={val}
-                                onChange={(e) =>
-                                  setCategoryPlacements((prev) => ({ ...prev, [key]: e.target.value as "indoor" | "outdoor" | "skip" }))
-                                }
-                                className="text-xs border border-gray-200 rounded-lg px-2 py-1.5 bg-white shrink-0 focus:outline-none focus:ring-2 focus:ring-primary-500"
+                                value={mergeVal}
+                                onChange={(e) => setChildCategoryMappings((prev) => ({ ...prev, [key]: e.target.value }))}
+                                className="text-xs border border-gray-200 rounded-lg px-2 py-1.5 bg-white shrink-0 max-w-[45%] focus:outline-none focus:ring-2 focus:ring-primary-500"
                               >
-                                <option value="indoor">Indoor (Innenbereich)</option>
-                                <option value="outdoor">Outdoor (Außenbereich)</option>
-                                <option value="skip">Don&apos;t create</option>
+                                <option value={sub.name}>Keep as “{sub.name}”</option>
+                                {siblings.length > 0 && (
+                                  <optgroup label="Merge into new child category">
+                                    {siblings.map((o) => (
+                                      <option key={o.name} value={o.name}>{o.name}</option>
+                                    ))}
+                                  </optgroup>
+                                )}
+                                {existingSubs.length > 0 && (
+                                  <optgroup label="Merge into existing child category">
+                                    {existingSubs.map((o) => (
+                                      <option key={o.slug} value={o.name}>{o.name}</option>
+                                    ))}
+                                  </optgroup>
+                                )}
                               </select>
                             </div>
                           );

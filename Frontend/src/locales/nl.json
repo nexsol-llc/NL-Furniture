@@ -88,7 +88,7 @@
     "uploadHint": "JPG, PNG – direct vanaf je telefoon of pc",
     "searchCta": "Vind vergelijkbare meubels"
   },
-  "subcategorySlider": {
+  "childCategorySlider": {
     "priceTileFallbackAlt": "Categorie"
   },
   "cookieConsent": {
@@ -156,15 +156,6 @@
     "imageAlt": "Nieuwsbrief",
     "privacyLinkText": "Privacybeleid"
   },
-  "categoryTabsSection": {
-    "indoorLabel": "Binnen",
-    "indoorSubtitle": "Meubels voor in huis",
-    "outdoorLabel": "Buiten",
-    "outdoorSubtitle": "Meubels voor tuin, terras en balkon"
-  },
-  "parentCategorySlider": {
-    "allLabel": "Alles"
-  },
   "listingPage": {
     "breadcrumbHome": "Home",
     "breadcrumbFurniture": "Meubels",
@@ -194,7 +185,7 @@
     "noResultsHeading": "Geen resultaten",
     "noResultsText": "We hebben geen producten gevonden die aan je filters voldoen.",
     "endOfResults": "Einde van de resultaten • {{count}} artikelen",
-    "subcategoriesHeading": "Subcategorieën",
+    "childCategoriesHeading": "Subcategorieën",
     "categoriesHeading": "Categorieën",
     "categoriesCountSuffix": "{{count}} categorieën",
     "brandsFilterMobileHeading": "Merkfilter",
@@ -701,7 +692,7 @@
     "breadcrumbLiving": "Wonen",
     "breadcrumbFurniture": "Meubels",
     "breadcrumbTables": "Tafels",
-    "subcategoriesHeading": "Tafels",
+    "childCategoriesHeading": "Tafels",
     "showMore": "Toon meer",
     "priceHeading": "Prijs",
     "save": "Besparen",
@@ -757,8 +748,8 @@
     "redirecting": "Bezig met doorsturen...",
     "searchingCategory": "Categorie zoeken...",
     "loadingPage": "Pagina laden...",
-    "subcategoryNotFoundHeading": "Subcategorie niet gevonden",
-    "subcategoryNotFoundText": "De opgevraagde subcategorie bestaat niet.",
+    "childCategoryNotFoundHeading": "Subcategorie niet gevonden",
+    "childCategoryNotFoundText": "De opgevraagde subcategorie bestaat niet.",
     "toCategory": "Naar categorie"
   },
   "kategoriePage": {

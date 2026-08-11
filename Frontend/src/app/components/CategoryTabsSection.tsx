@@ -1,37 +1,20 @@
 "use client";
 
-import { useState } from "react";
 import CategoryPhotoCardsGrid from "./CategoryPhotoCardsGrid";
-import IndoorOutdoorToggle, { type IndoorOutdoorValue } from "./IndoorOutdoorToggle";
 import type { HomeCategoryItem } from "@/lib/homeCategoryGroups";
 import { useLanguage } from "@/providers/languageContext";
 
 type CategoryTabsSectionProps = {
-  indoor: HomeCategoryItem[];
-  outdoor: HomeCategoryItem[];
+  categories: HomeCategoryItem[];
 };
 
-// Single section that switches between the indoor and outdoor category grids
-// via the pill toggle. Tiles link to /binnen/[slug] or /buiten/[slug] to match
-// whichever tab is active.
-export default function CategoryTabsSection({
-  indoor,
-  outdoor,
-}: CategoryTabsSectionProps) {
+// Parent Category grid. Parent categories are one flat, untyped list, so there
+// is no Indoor/Outdoor split here — each tile carries its own href
+// (the flat /[slug] page).
+export default function CategoryTabsSection({ categories }: CategoryTabsSectionProps) {
   const { t } = useLanguage();
-  const [active, setActive] = useState<IndoorOutdoorValue>(
-    indoor.length > 0 ? "indoor" : "outdoor"
-  );
 
-  if (indoor.length === 0 && outdoor.length === 0) return null;
-
-  // Guard against a tab that lost its categories after the fetch resolved.
-  const current: IndoorOutdoorValue =
-    (active === "indoor" ? indoor : outdoor).length > 0
-      ? active
-      : active === "indoor"
-        ? "outdoor"
-        : "indoor";
+  if (categories.length === 0) return null;
 
   return (
     <section className="section-pattern-1 py-8">
@@ -41,27 +24,11 @@ export default function CategoryTabsSection({
             {t("categoryGroupGrid.heading")}
           </h2>
           <p className="text-sm text-gray-500 mt-1">
-            {current === "indoor"
-              ? t("categoryTabsSection.indoorSubtitle")
-              : t("categoryTabsSection.outdoorSubtitle")}
+            {t("categoryGroupGrid.subheading")}
           </p>
-
-          <div className="mt-5 flex justify-center">
-            <IndoorOutdoorToggle
-              value={current}
-              onChange={setActive}
-              indoorLabel={t("categoryTabsSection.indoorLabel")}
-              outdoorLabel={t("categoryTabsSection.outdoorLabel")}
-              indoorDisabled={indoor.length === 0}
-              outdoorDisabled={outdoor.length === 0}
-            />
-          </div>
         </div>
 
-        <CategoryPhotoCardsGrid
-          categories={current === "indoor" ? indoor : outdoor}
-          hrefBase={current === "indoor" ? "/binnen" : "/buiten"}
-        />
+        <CategoryPhotoCardsGrid categories={categories} />
       </div>
     </section>
   );

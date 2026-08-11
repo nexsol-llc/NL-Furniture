@@ -5,12 +5,12 @@ import type { HomeCategoryItem } from "@/lib/homeCategoryGroups";
 
 // The responsive grid of category tiles (desktop grid + mobile horizontal
 // scroller). Shared by CategoryGroupGrid and the indoor/outdoor tab switcher.
-// `hrefBase` controls what each tile links to — defaults to individual
-// category pages (/categorie/[slug]); pass "/categorie/parent" when
-// `categories` holds Parent Categories instead.
+// `hrefBase` controls what each tile links to — defaults to "" so tiles link
+// to /[slug], the Parent Category group page (these grids show parent tiles).
+// Individual categories live one level deeper and carry their own `href`.
 export default function CategoryCardsGrid({
   categories,
-  hrefBase = "/categorie",
+  hrefBase = "",
 }: {
   categories: HomeCategoryItem[];
   hrefBase?: string;
@@ -21,7 +21,7 @@ export default function CategoryCardsGrid({
         {categories.map((cat) => (
           <RevealItem key={cat.slug}>
             <Link
-              href={`${hrefBase}/${cat.slug}`}
+              href={cat.href ?? `${hrefBase}/${cat.slug}`}
               className="flex flex-col items-center text-center group"
             >
               <div className="w-24 h-24 sm:w-28 sm:h-28 bg-white shadow-soft group-hover:shadow-depth-3 transition-all flex items-center justify-center overflow-hidden rounded-2xl">
@@ -40,7 +40,7 @@ export default function CategoryCardsGrid({
           {categories.map((cat) => (
             <Link
               key={cat.slug}
-              href={`${hrefBase}/${cat.slug}`}
+              href={cat.href ?? `${hrefBase}/${cat.slug}`}
               className="flex-shrink-0 flex flex-col items-center text-center group snap-start w-[100px]"
             >
               <div className="w-24 h-24 bg-white shadow-soft group-hover:shadow-depth-3 transition-all flex items-center justify-center overflow-hidden rounded-2xl">
