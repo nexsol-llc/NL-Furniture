@@ -7,7 +7,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import ProductCard from "@/app/components/ProductCard";
 import ChildCategorySlider from "@/app/components/ChildCategorySlider";
-import { categoryHref, childCategoryHref } from "@/lib/categoryCatalog";
+import { categoryHref, childCategoryHref, sortChildCategories } from "@/lib/categoryCatalog";
 import CategorySeoSections from "@/app/components/CategorySeoSections";
 import TopsellerCarousel from "@/app/components/TopsellerCarousel";
 import { Filter, X, Search, ChevronDown, Check } from "lucide-react";
@@ -100,7 +100,7 @@ export default function CategoryListingPage({
           if (data.success && data.category) {
             setDbCategory(data.category);
             if (Array.isArray(data.category.childCategories) && data.category.childCategories.length > 0) {
-              setDynamicChildCategories(data.category.childCategories);
+              setDynamicChildCategories(sortChildCategories(data.category.childCategories));
             }
           }
         }

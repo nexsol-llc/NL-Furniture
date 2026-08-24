@@ -27,7 +27,6 @@ export const PERMISSION_MODULES: PermissionModule[] = [
   { key: "coupons", label: "Coupons", group: "Shop" },
   { key: "coupon-stores", label: "Coupon Stores", group: "Shop" },
   { key: "sonderangebote", label: "Sonder Angebote", group: "Shop" },
-  { key: "upload", label: "Upload CSV", group: "Shop" },
   // Settings
   { key: "media", label: "Media Library", group: "Settings" },
   { key: "cookie-consent", label: "Cookie Consent", group: "Settings" },

@@ -344,6 +344,7 @@ export default function HomePage() {
     subtitle={t('categoryGroupGrid.subheading')}
     categories={homeCatTiles}
     moreCategoriesHref="/categorie"
+    collapsibleRows={2}
   />
 )}
 {/* ================= INDOOR / OUTDOOR SECTION (admin-managed) ================= */}

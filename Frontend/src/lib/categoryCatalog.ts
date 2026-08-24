@@ -19,6 +19,9 @@ export type ChildCategoryDef = {
   description?: string;
   faqs?: CategoryFAQ[];
   searchTerms?: string[];
+  // Display position among its siblings, ascending (unset counts as 0).
+  // See `sortChildCategories` — the one place that order is applied.
+  sortOrder?: number;
 };
 
 export type CategoryDef = {
@@ -55,6 +58,16 @@ export type ParentCategoryDef = {
   description?: string;
   faqs?: CategoryFAQ[];
 };
+
+// Order a category's childCategories for display: `sortOrder` ascending, with
+// the stored array order as the tiebreaker (sort is stable), so catalogs that
+// never set one keep looking exactly as they were entered.
+export const sortChildCategories = <T extends { sortOrder?: number }>(
+  childCategories: T[]
+): T[] =>
+  [...childCategories].sort(
+    (a, b) => (Number(a.sortOrder) || 0) - (Number(b.sortOrder) || 0)
+  );
 
 const COMBINING_MARKS = /[̀-ͯ]/g;
 

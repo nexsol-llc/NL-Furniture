@@ -314,6 +314,29 @@ export default function FurnitureProductsAdmin() {
     return parent?.name ?? "Not set yet";
   };
 
+  // Child-category rows as the import will actually apply them. When a category
+  // is merged away in the step above (Unknown SC → Betten) it never gets created,
+  // so its children belong to the merge target and fold together with the
+  // target's own children of the same name — listing them under the old parent
+  // would promise a category the import doesn't produce, and would show one child
+  // twice. `sourceKeys` are the childCategoryMappings keys a row stands for, so
+  // editing a folded row rewrites every original it was built from.
+  const childCategoryRows = useMemo(() => {
+    if (!importData) return [];
+    type Row = { name: string; parent: string; count: number; sourceKeys: string[]; foldedFrom: string[] };
+    const rows = new Map<string, Row>();
+    for (const s of importData.missingChildCategories) {
+      const parent = (categoryMappings[s.category.toLowerCase()] || s.category).trim();
+      const key = `${parent}|${s.name}`.toLowerCase();
+      const row = rows.get(key) ?? { name: s.name, parent, count: 0, sourceKeys: [], foldedFrom: [] };
+      row.count += s.count;
+      row.sourceKeys.push(`${s.category}|${s.name}`.toLowerCase());
+      if (parent.toLowerCase() !== s.category.toLowerCase()) row.foldedFrom.push(s.category);
+      rows.set(key, row);
+    }
+    return Array.from(rows.values()).sort((a, b) => b.count - a.count);
+  }, [importData, categoryMappings]);
+
   const applyFilters = () => { setSearch(searchInput.trim()); setPage(1); };
   const resetFilters = () => {
     setSearchInput(""); setSearch(""); setBrand(""); setCategory("");
@@ -551,10 +574,13 @@ export default function FurnitureProductsAdmin() {
       for (const c of importData.missingCategories) {
         categoryCanonical.set(c.name.toLowerCase(), (categoryMappings[c.name.toLowerCase()] || c.name).trim());
       }
+      // Keyed by the ORIGINAL `category|child` pair (that is what the product
+      // rows carry), but valued from the folded row, so every original that folds
+      // into one row gets the single name the dialog displayed for it.
       const childCategoryCanonical = new Map<string, string>();
-      for (const s of importData.missingChildCategories) {
-        const key = `${s.category}|${s.name}`.toLowerCase();
-        childCategoryCanonical.set(key, (childCategoryMappings[key] || s.name).trim());
+      for (const row of childCategoryRows) {
+        const chosen = (childCategoryMappings[row.sourceKeys[0]] || row.name).trim();
+        for (const key of row.sourceKeys) childCategoryCanonical.set(key, chosen);
       }
 
       const existCatsLower = new Set<string>();
@@ -1318,34 +1344,53 @@ export default function FurnitureProductsAdmin() {
 
                   {/* Per-child-category merge — same idea as brands/categories: point
                       variant child-category names (within the same category) at one canonical name. */}
-                  {importData.missingChildCategories.length > 0 && (
+                  {childCategoryRows.length > 0 && (
                     <div className="space-y-2 border-t pt-4">
                       <p className="text-sm font-semibold text-gray-800">
                         New child categories — merge duplicates
                       </p>
                       <p className="text-[11px] text-gray-400">
                         Merge variants within the same category (e.g. <em>Kinderbedden</em> → <em>Kinderbed</em>) into one.
+                        Children of a category you merged above have already moved to its target and are listed there.
                       </p>
                       <div className="max-h-56 overflow-y-auto divide-y divide-gray-50 border border-gray-100 rounded-lg">
-                        {importData.missingChildCategories.map((sub) => {
-                          const key = `${sub.category}|${sub.name}`.toLowerCase();
+                        {childCategoryRows.map((sub) => {
+                          const key = sub.sourceKeys[0];
                           const mergeVal = childCategoryMappings[key] ?? sub.name;
                           const merged = mergeVal.toLowerCase() !== sub.name.toLowerCase();
+                          const parentLower = sub.parent.toLowerCase();
                           const existingSubs =
-                            catalogs.find((c) => c.name.toLowerCase() === sub.category.toLowerCase())?.childCategories ?? [];
-                          const siblings = importData.missingChildCategories.filter(
-                            (o) => o.category.toLowerCase() === sub.category.toLowerCase() && o.name.toLowerCase() !== sub.name.toLowerCase()
+                            catalogs.find(
+                              (c) =>
+                                c.name.toLowerCase() === parentLower ||
+                                c.slug.toLowerCase() === parentLower ||
+                                (c.aliases || []).some((a) => a.toLowerCase() === parentLower)
+                            )?.childCategories ?? [];
+                          // Siblings span the whole canonical parent, so a child that
+                          // arrived with a merged category can merge into one that was
+                          // already under the target.
+                          const siblings = childCategoryRows.filter(
+                            (o) => o.parent.toLowerCase() === parentLower && o.name.toLowerCase() !== sub.name.toLowerCase()
                           );
                           return (
-                            <div key={key} className="flex items-center justify-between gap-3 px-3 py-2">
+                            <div key={`${sub.parent}|${sub.name}`.toLowerCase()} className="flex items-center justify-between gap-3 px-3 py-2">
                               <span className="text-xs text-gray-700 truncate" title={sub.name}>
                                 {sub.name || "(empty)"}{" "}
-                                <span className="text-gray-400">· {sub.count.toLocaleString("de-DE")} · under {sub.category}</span>
+                                <span className="text-gray-400">· {sub.count.toLocaleString("de-DE")} · under {sub.parent}</span>
+                                {sub.foldedFrom.length > 0 && (
+                                  <span className="text-indigo-600"> · moved from {Array.from(new Set(sub.foldedFrom)).join(", ")}</span>
+                                )}
                                 {merged && <span className="text-indigo-600 font-semibold"> → {mergeVal}</span>}
                               </span>
                               <select
                                 value={mergeVal}
-                                onChange={(e) => setChildCategoryMappings((prev) => ({ ...prev, [key]: e.target.value }))}
+                                onChange={(e) =>
+                                  setChildCategoryMappings((prev) => {
+                                    const next = { ...prev };
+                                    for (const k of sub.sourceKeys) next[k] = e.target.value;
+                                    return next;
+                                  })
+                                }
                                 className="text-xs border border-gray-200 rounded-lg px-2 py-1.5 bg-white shrink-0 max-w-[45%] focus:outline-none focus:ring-2 focus:ring-primary-500"
                               >
                                 <option value={sub.name}>Keep as “{sub.name}”</option>

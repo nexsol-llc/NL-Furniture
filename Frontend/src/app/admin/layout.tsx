@@ -25,7 +25,6 @@ import {
   Cookie,
   Globe,
   Mail,
-  Upload,
   Users,
   ShieldCheck,
   Palette,
@@ -149,7 +148,6 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         { name: "Categories Manager", href: "/admin/categories", icon: <FolderOpen size={16} /> },
         { name: "Brands", href: "/admin/furniture-brands", icon: <Building2 size={16} /> },
         { name: "Products", href: "/admin/furniture-products", icon: <Package size={16} /> },
-        { name: "Upload CSV", href: "/admin/upload", icon: <Upload size={16} /> },
       ],
     },
     {

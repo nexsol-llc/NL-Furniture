@@ -26,6 +26,7 @@ import {
 } from "lucide-react";
 import MediaPicker, { type MediaItem } from "@/app/components/MediaPicker";
 import PlaceholderImage from "@/app/components/PlaceholderImage";
+import { sortChildCategories } from "@/lib/categoryCatalog";
 
 type Faq = { question: string; answer: string };
 
@@ -246,9 +247,13 @@ export default function CategoriesAdmin() {
     seoDescription: "",
     description: "",
     searchTerms: "",
+    sortOrder: "",
   });
   const [subImagePreview, setSubImagePreview] = useState("");
   const [subFaqs, setSubFaqs] = useState<{ question: string; answer: string }[]>([]);
+  // ChildCategory drag reordering — same shape as the Category Lists grid.
+  const [draggedChildCategory, setDraggedChildCategory] = useState<{ index: number } | null>(null);
+  const [dragOverChildCategory, setDragOverChildCategory] = useState<{ index: number } | null>(null);
 
   // ==========================================
   // GENERAL INITIALIZATION
@@ -346,7 +351,7 @@ export default function CategoriesAdmin() {
             priceUnder: cat.priceUnder ? String(cat.priceUnder) : "",
             featured: cat.featured === true || cat.featured === "true",
             faqs: Array.isArray(cat.faqs) ? cat.faqs : [],
-            childCategories: Array.isArray(cat.childCategories) ? cat.childCategories : [],
+            childCategories: Array.isArray(cat.childCategories) ? sortChildCategories(cat.childCategories) : [],
           };
           setSelectedCatalog(cat);
           setCatalogName(loaded.name);
@@ -808,8 +813,11 @@ export default function CategoriesAdmin() {
       .map(t => t.trim())
       .filter(Boolean);
 
+    const parsedOrder = parseInt(subForm.sortOrder, 10);
+
     const formattedSub = {
       ...subForm,
+      sortOrder: Number.isFinite(parsedOrder) ? parsedOrder : 0,
       searchTerms: termsArray,
       faqs: subFaqs,
     };
@@ -821,7 +829,9 @@ export default function CategoriesAdmin() {
       list.push(formattedSub);
     }
 
-    setCatalogChildCategories(list);
+    // Persist in display order, so the admin list, the saved catalog and the
+    // public child category slider all agree on what the order is.
+    setCatalogChildCategories(sortChildCategories(list));
     setEditingSubIndex(null);
     setSubForm({
       slug: "",
@@ -832,9 +842,34 @@ export default function CategoriesAdmin() {
       seoDescription: "",
       description: "",
       searchTerms: "",
+      sortOrder: "",
     });
     setSubImagePreview("");
     setSubFaqs([]);
+  };
+
+  // dragover fires continuously, so reuse the previous state object when the
+  // hovered card hasn't changed — a fresh object would re-render on every event.
+  const handleDragOverChildCategory = (idx: number) => {
+    setDragOverChildCategory((prev) => (prev && prev.index === idx ? prev : { index: idx }));
+  };
+
+  // Move a dragged card into the slot it was dropped on, then renumber every
+  // sortOrder to 1..n so the badges and the Sort Order field agree with the new
+  // order. Staged locally until "Save Catalog", like every other catalog edit.
+  const handleDropChildCategory = (targetIdx: number) => {
+    const dragged = draggedChildCategory;
+    setDraggedChildCategory(null);
+    setDragOverChildCategory(null);
+
+    if (!dragged || dragged.index === targetIdx) return;
+    if (dragged.index < 0 || dragged.index >= catalogChildCategories.length) return;
+    if (targetIdx < 0 || targetIdx >= catalogChildCategories.length) return;
+
+    const next = [...catalogChildCategories];
+    const [moved] = next.splice(dragged.index, 1);
+    next.splice(targetIdx, 0, moved);
+    setCatalogChildCategories(next.map((sub, i) => ({ ...sub, sortOrder: i + 1 })));
   };
 
   const deleteChildCategory = (idx: number) => {
@@ -2101,10 +2136,15 @@ export default function CategoriesAdmin() {
                 {/* 2. ChildCategories Manager */}
                 <div className="bg-white rounded-xl border border-zinc-150 p-6 md:p-6 shadow-sm space-y-6">
                   <div className="flex justify-between items-center border-b pb-3">
-                    <h3 className="font-semibold text-zinc-950 text-xl flex items-center gap-2">
-                      <Layers className="w-5 h-5 text-primary-600" />
-                      ChildCategories List
-                    </h3>
+                    <div className="space-y-0.5">
+                      <h3 className="font-semibold text-zinc-950 text-xl flex items-center gap-2">
+                        <Layers className="w-5 h-5 text-primary-600" />
+                        ChildCategories List
+                      </h3>
+                      <p className="text-[11px] text-zinc-400">
+                        Drag the cards to reorder — this is the order they appear in on the category page.
+                      </p>
+                    </div>
                     <button
                       type="button"
                       onClick={() => {
@@ -2118,6 +2158,7 @@ export default function CategoriesAdmin() {
                           seoDescription: "",
                           description: "",
                           searchTerms: "",
+                          sortOrder: "",
                         });
                         setSubImagePreview("");
                         setSubFaqs([]);
@@ -2131,12 +2172,35 @@ export default function CategoriesAdmin() {
                   {/* List childCategories */}
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     {catalogChildCategories.map((sub, idx) => (
-                      <div key={sub.slug + idx} className="relative group border border-zinc-100 rounded-lg p-4 bg-zinc-50/50 flex gap-3.5 items-start">
+                      <div
+                        key={sub.slug + idx}
+                        draggable
+                        onDragStart={() => setDraggedChildCategory({ index: idx })}
+                        onDragEnd={() => { setDraggedChildCategory(null); setDragOverChildCategory(null); }}
+                        onDragOver={(e) => { e.preventDefault(); handleDragOverChildCategory(idx); }}
+                        onDrop={(e) => { e.preventDefault(); handleDropChildCategory(idx); }}
+                        className={`relative group border rounded-lg p-4 bg-zinc-50/50 flex gap-3.5 items-start cursor-grab active:cursor-grabbing transition ${
+                          draggedChildCategory?.index === idx
+                            ? "opacity-40 border-zinc-100"
+                            : dragOverChildCategory?.index === idx && draggedChildCategory
+                            ? "border-primary-500 ring-2 ring-primary-500/30"
+                            : "border-zinc-100"
+                        }`}
+                      >
                         <div className="w-14 h-14 bg-white rounded-xl border border-zinc-100 overflow-hidden flex-shrink-0 flex items-center justify-center">
-                          <PlaceholderImage src={sub.imageUrl} alt={sub.name} width={56} height={56} className="object-contain w-full h-full p-1" iconClassName="w-1/2 h-1/2" />
+                          <PlaceholderImage src={sub.imageUrl} alt={sub.name} width={56} height={56} className="object-contain w-full h-full p-1 pointer-events-none" iconClassName="w-1/2 h-1/2" />
                         </div>
                         <div className="space-y-0.5">
-                          <h5 className="font-semibold text-zinc-900 text-xs uppercase tracking-wider">{sub.name}</h5>
+                          <h5 className="font-semibold text-zinc-900 text-xs uppercase tracking-wider flex items-center gap-1.5">
+                            <span
+                              className="flex items-center gap-0.5 rounded bg-zinc-900/80 text-white text-[9px] font-bold pl-0.5 pr-1.5 py-0.5 tabular-nums"
+                              title="Drag the card to reorder — this number is the child category's sort order"
+                            >
+                              <GripVertical className="w-3 h-3" />
+                              {sub.sortOrder ?? 0}
+                            </span>
+                            {sub.name}
+                          </h5>
                           <p className="text-[10px] text-zinc-500">Slug: <span className="font-semibold text-primary-600">/{sub.slug}</span></p>
                           <p className="text-[10px] text-zinc-400 line-clamp-1">{sub.description}</p>
                         </div>
@@ -2148,6 +2212,7 @@ export default function CategoriesAdmin() {
                               setSubForm({
                                 ...sub,
                                 searchTerms: Array.isArray(sub.searchTerms) ? sub.searchTerms.join(", ") : "",
+                                sortOrder: sub.sortOrder == null ? "" : String(sub.sortOrder),
                               });
                               setSubImagePreview(sub.imageUrl);
                               setSubFaqs(Array.isArray(sub.faqs) ? sub.faqs : []);
@@ -2204,6 +2269,18 @@ export default function CategoriesAdmin() {
                               placeholder="e.g. etagenbetten"
                               className="w-full border border-zinc-200 rounded-xl p-3 text-xs focus:outline-none focus:ring-2"
                             />
+                          </div>
+
+                          <div className="space-y-1">
+                            <label className="text-[10px] font-semibold text-zinc-500 uppercase tracking-wider">Sort Order</label>
+                            <input
+                              type="number"
+                              value={subForm.sortOrder}
+                              onChange={(e) => setSubForm(prev => ({ ...prev, sortOrder: e.target.value }))}
+                              placeholder="e.g. 1"
+                              className="w-full border border-zinc-200 rounded-xl p-3 text-xs focus:outline-none focus:ring-2"
+                            />
+                            <p className="text-[10px] text-zinc-400">Lowest first in the child category slider on the category page. Leave empty (0) to keep the current position — dragging the cards renumbers this for you.</p>
                           </div>
 
                           <div className="space-y-1">
