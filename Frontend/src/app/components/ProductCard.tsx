@@ -1,13 +1,13 @@
 "use client";
 
 import { Heart } from "lucide-react";
-import Link from "next/link";
 import Image from "next/image";
 import { useState, useEffect } from "react";
 import useSWR from "swr";
 import { useRouter } from "next/navigation";
 import toast from "react-hot-toast";
 import { getUser, userFetch, type UserPayload } from "@/lib/userAuth";
+import ShopLink from "./ShopLink";
 import { useLanguage } from "@/providers/languageContext";
 import { Tilt } from "./motion/Tilt";
 
@@ -19,7 +19,8 @@ const formatPrice = (priceStr: string | null | undefined): string => {
 
 interface ProductCardProps {
   id: string;
-  slug?: string;
+  /** Merchant/affiliate target. Missing or "#" leaves the card unlinked. */
+  link?: string;
   name: string;
   price: string;
   image: string;
@@ -32,7 +33,7 @@ interface ProductCardProps {
 
 export default function ProductCard({
   id,
-  slug,
+  link,
   name,
   price,
   image,
@@ -106,7 +107,7 @@ export default function ProductCard({
     <div className="group relative flex h-full flex-col bg-white hover:bg-white overflow-hidden transition-all duration-300 hover:shadow-depth-3 hover:-translate-y-1 hover:ring-2 hover:ring-primary-400/50 rounded-2xl border border-gray-200/80 shadow-soft">
       {/* Product Image Container */}
       <div className="relative aspect-square overflow-hidden bg-gray-50">
-        <Link href={`/product/${slug || id}`} className="relative block h-full w-full">
+        <ShopLink href={link} className="relative block h-full w-full">
           <Image
             src={image || "https://placehold.co/400x400?text=No+Image"}
             alt={name}
@@ -114,7 +115,7 @@ export default function ProductCard({
             sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 280px"
             className="object-contain p-2 mix-blend-multiply group-hover:scale-105 transition-transform duration-500"
           />
-        </Link>
+        </ShopLink>
 
         {/* Favorite Button */}
         <button
@@ -143,11 +144,11 @@ export default function ProductCard({
               {brand}
             </p>
           )}
-          <Link href={`/product/${slug || id}`}>
+          <ShopLink href={link}>
             <h3 className="line-clamp-2 text-sm font-medium text-gray-800 leading-tight group-hover:text-black transition-colors">
               {name}
             </h3>
-          </Link>
+          </ShopLink>
         </div>
 
         <div className="mt-auto pt-3 flex flex-col">

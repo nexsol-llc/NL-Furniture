@@ -70,6 +70,7 @@ export interface Product {
   display_price?: string;
   data_feed_id?: number;
   brand_name?: string;
+  brand_id?: string;
   colour?: string;
   product_short_description?: string;
   aw_thumb_url?: string;

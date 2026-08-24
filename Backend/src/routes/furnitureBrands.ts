@@ -107,8 +107,22 @@ furnitureBrands.post("/", authMiddleware, requireStaff, async (c) => {
     .bind(id, slug, doc.title, doc.sortOrder, now, JSON.stringify(doc))
     .run();
 
-  await logActivity(db, user.email, "Furniture brand created", `${doc.title} (${slug})`);
-  return c.json({ _id: id, ...doc }, 201);
+  // Adopt products that already carry this name as free text — the CSV importer
+  // creates brands for feed names it has seen, and earlier imports may have
+  // landed before the brand existed.
+  const adopted = await db
+    .prepare("UPDATE products SET brand_id = ?, brand_name = ?, updated_at = ? WHERE brand_id = '' AND brand_name = ? COLLATE NOCASE")
+    .bind(id, doc.title, now, doc.title)
+    .run();
+  const adoptedProducts = adopted.meta.changes ?? 0;
+
+  await logActivity(
+    db,
+    user.email,
+    "Furniture brand created",
+    `${doc.title} (${slug})${adoptedProducts ? ` — ${adoptedProducts} products linked` : ""}`
+  );
+  return c.json({ _id: id, ...doc, adoptedProducts }, 201);
 });
 
 // ── POST /api/furniture-brands/merge ──────────────────────────────────────────
@@ -139,10 +153,15 @@ furnitureBrands.post("/merge", authMiddleware, requireAdmin, async (c) => {
   if (!target) return c.json({ error: "Target brand not found" }, 404);
 
   const now = nowIso();
-  // Reassign products from the source brand name to the target brand name.
+  // Reassign products to the target brand. Matching on brand_id catches everything
+  // linked to the source; the name clause also sweeps up rows still unlinked
+  // (imported before the brand existed, or before the brand_id migration).
   const updateRes = await db
-    .prepare("UPDATE products SET brand_name = ?, updated_at = ? WHERE brand_name = ? COLLATE NOCASE")
-    .bind(target.title, now, source.title)
+    .prepare(
+      `UPDATE products SET brand_id = ?, brand_name = ?, updated_at = ?
+       WHERE brand_id = ? OR (brand_id = '' AND brand_name = ? COLLATE NOCASE)`
+    )
+    .bind(targetId, target.title, now, sourceId, source.title)
     .run();
   const movedProducts = updateRes.meta.changes ?? 0;
 
@@ -196,8 +215,32 @@ furnitureBrands.put("/:id", authMiddleware, requireStaff, async (c) => {
     .bind(slug, doc.title, doc.sortOrder, JSON.stringify(doc), id)
     .run();
 
-  await logActivity(db, user.email, "Furniture brand updated", `ID: ${id}`);
-  return c.json({ _id: id, ...doc });
+  // A rename has to reach the products: brand_name is denormalized onto every
+  // product row so listings need no join. Without this the brand page would go
+  // empty and the old name would linger in the product list and filters.
+  const previousTitle = String(existingDoc.title ?? "").trim();
+  let renamedProducts = 0;
+  if (previousTitle && previousTitle.toLowerCase() !== doc.title.toLowerCase()) {
+    const now = nowIso();
+    // Rows still unlinked under the old name join the brand at the same time.
+    await db
+      .prepare("UPDATE products SET brand_id = ? WHERE brand_id = '' AND brand_name = ? COLLATE NOCASE")
+      .bind(id, previousTitle)
+      .run();
+    const res = await db
+      .prepare("UPDATE products SET brand_name = ?, updated_at = ? WHERE brand_id = ? AND brand_name != ?")
+      .bind(doc.title, now, id, doc.title)
+      .run();
+    renamedProducts = res.meta.changes ?? 0;
+  }
+
+  await logActivity(
+    db,
+    user.email,
+    "Furniture brand updated",
+    `ID: ${id}${renamedProducts ? ` — ${renamedProducts} products renamed` : ""}`
+  );
+  return c.json({ _id: id, ...doc, renamedProducts });
 });
 
 // ── DELETE /api/furniture-brands/:id ──────────────────────────────────────────
@@ -209,8 +252,21 @@ furnitureBrands.delete("/:id", authMiddleware, requireAdmin, async (c) => {
   const res = await db.prepare("DELETE FROM furniture_brands WHERE id = ?").bind(id).run();
   if (res.meta.changes === 0) return c.json({ error: "Brand not found" }, 404);
 
-  await logActivity(db, user.email, "Furniture brand deleted", `ID: ${id}`);
-  return c.json({ success: true });
+  // Products outlive the directory entry: drop the dangling link but keep the
+  // name as free text so nothing vanishes from listings or search.
+  const unlinked = await db
+    .prepare("UPDATE products SET brand_id = '' WHERE brand_id = ?")
+    .bind(id)
+    .run();
+  const unlinkedProducts = unlinked.meta.changes ?? 0;
+
+  await logActivity(
+    db,
+    user.email,
+    "Furniture brand deleted",
+    `ID: ${id}${unlinkedProducts ? ` — ${unlinkedProducts} products unlinked` : ""}`
+  );
+  return c.json({ success: true, unlinkedProducts });
 });
 
 export default furnitureBrands;

@@ -9,6 +9,8 @@ import NewsletterSection from "../components/NewsletterSection";
 import CategoryTabsSection from "../components/CategoryTabsSection";
 import CategoryImage from "../components/CategoryImage";
 import PlaceholderImage from "../components/PlaceholderImage";
+import ShopLink from "../components/ShopLink";
+import { shopLink } from "@/lib/productFormat";
 import { useLanguage } from "@/providers/languageContext";
 // ── Shimmer skeletons that mirror the real layout ─────────────────────────────
 function CategoryGridSkeleton() {
@@ -196,9 +198,9 @@ function CategorySection({
               const price = product.display_price || (product.price ? `€${product.price}` : "");
 
               return (
-                <Link
+                <ShopLink
                   key={product._id}
-                  href={`/product/${product.slug || product._id}`}
+                  href={shopLink(product)}
                   className="group my-2 flex-shrink-0 w-[190px] sm:w-[220px] snap-start bg-white rounded-2xl border border-gray-200/80 shadow-soft overflow-hidden hover:shadow-soft-lg hover:-translate-y-1 hover:border-primary-200 transition-all duration-300 flex flex-col cursor-pointer"
                 >
                   {/* IMAGE */}
@@ -233,7 +235,7 @@ function CategorySection({
                       </span>
                     </div>
                   </div>
-                </Link>
+                </ShopLink>
               );
             })}
           </HScroller>

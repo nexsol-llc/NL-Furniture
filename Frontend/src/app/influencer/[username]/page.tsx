@@ -108,7 +108,8 @@ function ProductCard({ product, lookId, username }: { product: LookProduct; look
     }
   };
 
-  // If there's a custom affiliate link, open in new tab; else go to product page
+  // The shop link always opens in a new tab. Without one there is nowhere
+  // external to send the visitor, so the card falls back to its own look.
   const handleClick = (e: React.MouseEvent) => {
     if (product.link) {
       e.preventDefault();
@@ -116,7 +117,7 @@ function ProductCard({ product, lookId, username }: { product: LookProduct; look
     }
   };
 
-  const href = product.link || (product.productId ? `/product/${product.productId}` : `/influencer/${username}/posts/${lookId}`);
+  const href = product.link || `/influencer/${username}/posts/${lookId}`;
 
   return (
     <div className="group relative bg-white border border-gray-100 rounded-2xl overflow-hidden shadow-soft hover:shadow-soft-lg transition-all duration-300 hover:-translate-y-0.5">

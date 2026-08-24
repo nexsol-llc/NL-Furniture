@@ -79,6 +79,8 @@ export type ProductRow = {
   display_price: string;
   data_feed_id: number | null;
   brand_name: string;
+  /** furniture_brands.id, or '' for a feed brand that isn't in the directory. */
+  brand_id: string;
   colour: string;
   product_short_description: string;
   aw_thumb_url: string;

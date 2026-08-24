@@ -18,11 +18,14 @@ import ProductCard from "@/app/components/ProductCard";
 import TopsellerCarousel from "@/app/components/TopsellerCarousel";
 import { Reveal } from "@/app/components/motion/Reveal";
 import { useLanguage } from "@/providers/languageContext";
+import { shopLink } from "@/lib/productFormat";
 
 // Raw product shape returned by /api/brands/:slug/products
 interface RawProduct {
   _id: string;
   slug?: string;
+  aw_deep_link?: string;
+  merchant_deep_link?: string;
   product_name?: string;
   aw_image_url?: string;
   merchant_image_url?: string;
@@ -40,7 +43,8 @@ interface RawProduct {
 // Normalized shape consumed by the shared ProductCard / TopsellerCarousel
 type Product = {
   id: string;
-  slug?: string;
+  /** Merchant/affiliate target, resolved once here so the cards stay dumb. */
+  link?: string;
   name: string;
   price: string;
   image: string;
@@ -67,7 +71,7 @@ type SortOption = "popular" | "price-asc" | "price-desc";
 // Mirrors the mapping used on the category listing page so both look identical.
 const mapProduct = (item: RawProduct, t: (key: string) => string): Product => ({
   id: item._id,
-  slug: item.slug || "",
+  link: shopLink(item),
   name: item.product_name || t('common.unnamedProduct'),
   price:
     item.display_price ||
@@ -644,7 +648,7 @@ export default function BrandProductsPage() {
                     <ProductCard
                       key={`${product.id}-${index}`}
                       id={product.id}
-                      slug={product.slug}
+                      link={product.link}
                       name={product.name}
                       price={product.price}
                       image={product.image}

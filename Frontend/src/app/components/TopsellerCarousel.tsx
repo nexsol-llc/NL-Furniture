@@ -8,7 +8,7 @@ import { useLanguage } from "@/providers/languageContext";
 
 type FeaturedProduct = {
   id: string;
-  slug?: string;
+  link?: string;
   name: string;
   price: string;
   image: string;
@@ -69,7 +69,7 @@ export default function TopsellerCarousel({
           <div key={p.id} className="w-[200px] flex-shrink-0 snap-start sm:w-[230px]">
             <ProductCard
               id={p.id}
-              slug={p.slug}
+              link={p.link}
               name={p.name}
               price={p.price}
               image={p.image}

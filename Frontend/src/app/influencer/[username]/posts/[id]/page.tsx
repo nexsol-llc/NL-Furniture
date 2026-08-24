@@ -12,6 +12,8 @@ import { useRouter } from "next/navigation";
 import toast from "react-hot-toast";
 import { getUser, userFetch, type UserPayload } from "@/lib/userAuth";
 import PlaceholderImage from "@/app/components/PlaceholderImage";
+import ShopLink from "@/app/components/ShopLink";
+import { shopLink } from "@/lib/productFormat";
 import { useLanguage } from "@/providers/languageContext";
 
 type ApiProduct = {
@@ -24,6 +26,7 @@ type ApiProduct = {
   aw_image_url?: string;
   display_price?: string;
   aw_deep_link?: string;
+  merchant_deep_link?: string;
 };
 
 function formatPrice(price: string): string {
@@ -40,13 +43,10 @@ function ShopProductCard({
   onToggleFavorite: () => void;
 }) {
   const { t } = useLanguage();
-  // Use custom affiliate link if set, else fall back to internal product page
+  // Products open at the merchant in a new tab. A look product saved without
+  // a shop link has nowhere to go, so its tile stays unlinked.
   const hasExternalLink = !!(product as any).link;
-  const href = hasExternalLink
-    ? (product as any).link
-    : product.productId
-    ? `/product/${product.productId}`
-    : "#";
+  const href = hasExternalLink ? (product as any).link : "#";
 
   return (
     <a
@@ -166,7 +166,7 @@ function SimilarProductCard({ product }: { product: ApiProduct }) {
   const price = product.display_price?.replace(/EUR\s?/gi, "€") || "";
 
   return (
-    <Link href={`/product/${product.slug || product._id}`} className="group cursor-pointer">
+    <ShopLink href={shopLink(product)} className="group block cursor-pointer">
       <div className="relative bg-white border border-gray-100 rounded-xl overflow-hidden shadow-soft hover:shadow-soft-lg transition-all duration-300">
         <div className="relative aspect-square bg-[#f5f5f5]">
           <PlaceholderImage
@@ -193,7 +193,7 @@ function SimilarProductCard({ product }: { product: ApiProduct }) {
           <p className="text-sm font-bold text-primary-600 mt-1.5">{price}</p>
         </div>
       </div>
-    </Link>
+    </ShopLink>
   );
 }
 

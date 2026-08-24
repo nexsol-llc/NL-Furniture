@@ -51,6 +51,7 @@ CREATE TABLE IF NOT EXISTS products (
   display_price TEXT NOT NULL DEFAULT '',
   data_feed_id INTEGER,
   brand_name TEXT NOT NULL DEFAULT '',
+  brand_id TEXT NOT NULL DEFAULT '',
   colour TEXT NOT NULL DEFAULT '',
   product_short_description TEXT NOT NULL DEFAULT '',
   aw_thumb_url TEXT NOT NULL DEFAULT '',
@@ -67,6 +68,7 @@ CREATE TABLE IF NOT EXISTS products (
 CREATE UNIQUE INDEX IF NOT EXISTS idx_products_aw_product_id ON products(aw_product_id);
 CREATE INDEX IF NOT EXISTS idx_products_slug ON products(slug);
 CREATE INDEX IF NOT EXISTS idx_products_brand_name ON products(brand_name COLLATE NOCASE);
+CREATE INDEX IF NOT EXISTS idx_products_brand_id ON products(brand_id);
 CREATE INDEX IF NOT EXISTS idx_products_category_name ON products(category_name COLLATE NOCASE);
 CREATE INDEX IF NOT EXISTS idx_products_merchant_category ON products(merchant_category COLLATE NOCASE);
 CREATE INDEX IF NOT EXISTS idx_products_search_price ON products(search_price);

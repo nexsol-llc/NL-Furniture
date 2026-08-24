@@ -121,9 +121,12 @@ brands.get("/:slug/products", async (c) => {
     .first<D1Row>();
 
   let brand: Record<string, any> | null = null;
+  // Set for a furniture brand: products are matched by this id, not by name.
+  let brandId = "";
   if (furnitureRow) {
     const doc = fromRow(furnitureRow)!;
     brand = { ...doc, name: doc.title };
+    brandId = furnitureRow.id;
   } else {
     const brandRow = await db
       .prepare("SELECT id, data FROM brands WHERE slug = ? LIMIT 1")
@@ -144,10 +147,16 @@ brands.get("/:slug/products", async (c) => {
   const onSale = q.onSale === "true";
   const categoriesParam = q.categories;
 
-  // Base filter: products belonging to this brand. Exact, case-insensitive match
-  // so it uses idx_products_brand_name (COLLATE NOCASE) instead of a full scan.
-  const whereParts: string[] = ["brand_name = ? COLLATE NOCASE"];
-  const binds: any[] = [brand.name];
+  // Base filter: products belonging to this brand. Prefer the brand_id link
+  // (survives renames, uses idx_products_brand_id) and keep the name match for
+  // rows that were never linked — feed brands not in the directory, and coupon
+  // brands, which have no furniture_brands row at all.
+  const brandFilter = brandId
+    ? "(brand_id = ? OR (brand_id = '' AND brand_name = ? COLLATE NOCASE))"
+    : "brand_name = ? COLLATE NOCASE";
+  const brandBinds = brandId ? [brandId, brand.name] : [brand.name];
+  const whereParts: string[] = [brandFilter];
+  const binds: any[] = [...brandBinds];
 
   // Category filter — comma-separated, matched against category_name/merchant_category, OR-combined.
   if (categoriesParam) {
@@ -179,7 +188,9 @@ brands.get("/:slug/products", async (c) => {
     db.prepare(`SELECT COUNT(*) as n FROM products ${where}`).bind(...binds),
     db.prepare(`SELECT * FROM products ${where} ORDER BY ${orderBy} LIMIT ? OFFSET ?`).bind(...binds, limit, offset),
     // Distinct categories for this brand (brand-scoped only, so the list stays stable).
-    db.prepare("SELECT DISTINCT category_name FROM products WHERE brand_name = ? COLLATE NOCASE AND category_name != '' ORDER BY category_name ASC").bind(brand.name),
+    db
+      .prepare(`SELECT DISTINCT category_name FROM products WHERE ${brandFilter} AND category_name != '' ORDER BY category_name ASC`)
+      .bind(...brandBinds),
   ]);
 
   const total = (countRes.results[0] as any).n;

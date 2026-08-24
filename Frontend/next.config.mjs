@@ -21,6 +21,14 @@ const nextConfig = {
         destination: "/:slug",
         permanent: true,
       },
+      // The product detail page is gone — products link straight out to the
+      // merchant now. Indexed /product/* URLs land on the category overview
+      // rather than a 404.
+      {
+        source: "/product/:id",
+        destination: "/categorie",
+        permanent: true,
+      },
     ];
   },
   async rewrites() {

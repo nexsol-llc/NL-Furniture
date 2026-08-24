@@ -4,6 +4,7 @@ import { fromRow, fromRows, productFromRow, productsFromRows, newId, nowIso, typ
 import { authMiddleware, requireStaff } from "../middleware/auth.js";
 import { logActivity } from "../lib/logger.js";
 import { slugify, ensureUniqueSlug } from "../lib/slug.js";
+import { loadBrandIndex, resolveBrand, type BrandIndex } from "../lib/brandIndex.js";
 
 const products = new Hono<{ Bindings: Env }>();
 
@@ -182,22 +183,44 @@ const toNumOrNull = (v: any): number | null => {
 const PRODUCT_COLUMNS = [
   "aw_product_id", "product_name", "aw_deep_link", "merchant_deep_link", "merchant_product_id",
   "merchant_image_url", "description", "merchant_category", "search_price", "merchant_name",
-  "merchant_id", "category_name", "aw_image_url", "display_price", "data_feed_id", "brand_name",
+  "merchant_id", "category_name", "aw_image_url", "display_price", "data_feed_id", "brand_name", "brand_id",
   "colour", "product_short_description", "aw_thumb_url", "delivery_cost", "alternate_image",
   "alternate_image_two", "alternate_image_three", "alternate_image_four", "is_sponsored", "slug",
 ] as const;
 
 // Normalize a request body (optionally merged over an existing row) into column values.
-function buildProductValues(body: Record<string, any>, existing?: ProductRow): Record<string, any> {
+// `brands` is the directory used to settle brand_id/brand_name; without it the
+// row keeps whatever brand name it was given and stays unlinked.
+function buildProductValues(
+  body: Record<string, any>,
+  existing?: ProductRow,
+  brands?: BrandIndex
+): Record<string, any> {
   const pick = (k: string) => (body[k] !== undefined ? body[k] : existing ? (existing as any)[k] : undefined);
   const textFields = [
     "product_name", "aw_deep_link", "merchant_deep_link", "merchant_product_id", "merchant_image_url",
     "description", "merchant_category", "merchant_name", "category_name", "aw_image_url", "display_price",
-    "brand_name", "colour", "product_short_description", "aw_thumb_url", "delivery_cost",
+    "brand_name", "brand_id", "colour", "product_short_description", "aw_thumb_url", "delivery_cost",
     "alternate_image", "alternate_image_two", "alternate_image_three", "alternate_image_four",
   ];
   const v: Record<string, any> = {};
   for (const f of textFields) v[f] = toStr(pick(f));
+  // brand_id is the link to the furniture brand directory; brand_name is the
+  // denormalized label kept in step with it. Only what the request actually sent
+  // is resolved — reading brand_id back off `existing` would pin the product to
+  // its old brand and make "change the brand by name" impossible. When the body
+  // mentions neither, the pair carried over by pick() stands.
+  const sentBrandId = body.brand_id !== undefined;
+  const sentBrandName = body.brand_name !== undefined;
+  if (brands && (sentBrandId || sentBrandName)) {
+    const brand = resolveBrand(
+      brands,
+      sentBrandId ? toStr(body.brand_id) : "",
+      sentBrandName ? toStr(body.brand_name) : toStr(existing?.brand_name)
+    );
+    v.brand_id = brand.brand_id;
+    v.brand_name = brand.brand_name;
+  }
   v.aw_product_id = toNumOrNull(pick("aw_product_id"));
   v.merchant_id = toNumOrNull(pick("merchant_id"));
   v.data_feed_id = toNumOrNull(pick("data_feed_id"));
@@ -346,7 +369,7 @@ productsAdmin.post("/", authMiddleware, requireStaff, async (c) => {
 
   if (!toStr(body.product_name)) return c.json({ error: "product_name is required" }, 400);
 
-  const v = buildProductValues(body);
+  const v = buildProductValues(body, undefined, await loadBrandIndex(db));
   v.slug = await ensureUniqueSlug(db, v.slug);
   const id = newId();
   const now = nowIso();
@@ -383,6 +406,8 @@ productsAdmin.post("/bulk", authMiddleware, requireStaff, async (c) => {
   if (rows.length > 1000) return c.json({ error: "Chunk too large (max 1000 per request)" }, 400);
 
   const now = nowIso();
+  // Loaded once for the whole chunk — brand resolution is a map lookup per row.
+  const brands = await loadBrandIndex(db);
   const insertCols = ["id", ...PRODUCT_COLUMNS, "created_at", "updated_at"];
   const placeholders = insertCols.map(() => "?").join(", ");
   const updateSet =
@@ -398,7 +423,7 @@ productsAdmin.post("/bulk", authMiddleware, requireStaff, async (c) => {
   const CHUNK = 50;
   for (let i = 0; i < rows.length; i += CHUNK) {
     const chunk = rows.slice(i, i + CHUNK);
-    const values = chunk.map((r) => buildProductValues(r));
+    const values = chunk.map((r) => buildProductValues(r, undefined, brands));
 
     // De-duplicate the chunk's slugs against the DB and this request. Rows that
     // update an existing product keep their old slug anyway (see updateSet), so
@@ -502,7 +527,7 @@ productsAdmin.put("/:id", authMiddleware, requireStaff, async (c) => {
   if (!existing) return c.json({ error: "Product not found" }, 404);
 
   const body = await c.req.json();
-  const v = buildProductValues(body, existing);
+  const v = buildProductValues(body, existing, await loadBrandIndex(db));
   if (v.slug !== existing.slug) v.slug = await ensureUniqueSlug(db, v.slug, id);
   const now = nowIso();
   const setClause = PRODUCT_COLUMNS.map((k) => `${k} = ?`).join(", ");

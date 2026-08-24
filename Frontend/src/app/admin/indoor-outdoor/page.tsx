@@ -703,7 +703,7 @@ export default function IndoorOutdoorAdmin() {
                         </label>
                         <input
                           type="text" value={prodLink} onChange={(e) => setProdLink(e.target.value)}
-                          placeholder="https://... or /productdetail?id=..."
+                          placeholder="https://www.shop.de/produkt"
                           className="w-full border border-zinc-200 rounded-xl p-3 text-sm focus:outline-none focus:ring-2 focus:ring-zinc-900/5 focus:border-zinc-900 font-medium"
                         />
                       </div>

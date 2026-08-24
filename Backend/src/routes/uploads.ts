@@ -3,6 +3,7 @@ import { Env } from "../types.js";
 import { newId, nowIso } from "../db.js";
 import { authMiddleware, requireStaff } from "../middleware/auth.js";
 import { logActivity } from "../lib/logger.js";
+import { loadBrandIndex } from "../lib/brandIndex.js";
 import { parseCsv, buildCanonicalCategory, buildMerchantCategory, str, num } from "../lib/csvParser.js";
 
 const uploads = new Hono<{ Bindings: Env }>();
@@ -74,6 +75,7 @@ uploads.post("/upload-csv", authMiddleware, requireStaff, async (c) => {
     display_price: string | null;
     data_feed_id: number | null;
     brand_name: string | null;
+    brand_id: string;
     colour: string | null;
     product_short_description: string | null;
     aw_thumb_url: string | null;
@@ -84,10 +86,20 @@ uploads.post("/upload-csv", authMiddleware, requireStaff, async (c) => {
     alternate_image_four: string | null;
   };
 
+  // The furniture brand directory, loaded once: every row's brand name is
+  // resolved to a brand_id here rather than with a lookup per product.
+  const brandIndex = await loadBrandIndex(db);
+
   const products: ProductRecord[] = rawRows
     .map((row) => {
       const aw_product_id = Number((row.aw_product_id ?? "").trim());
       if (!aw_product_id || Number.isNaN(aw_product_id)) return null;
+      // Feeds without a brand column (most AWIN exports) fall back to the
+      // merchant/shop name, matching the admin CSV importer. A name already in
+      // the directory adopts its spelling and id; anything else stays free text
+      // with brand_id = '' until someone creates the brand.
+      const brandName = str(row.brand_name) ?? str(row.merchant_name);
+      const knownBrand = brandName ? brandIndex.byName.get(brandName.toLowerCase()) : undefined;
       return {
         aw_product_id,
         aw_deep_link: str(row.aw_deep_link),
@@ -104,7 +116,8 @@ uploads.post("/upload-csv", authMiddleware, requireStaff, async (c) => {
         merchant_deep_link: str(row.merchant_deep_link),
         display_price: str(row.display_price),
         data_feed_id: num(row.data_feed_id),
-        brand_name: str(row.brand_name),
+        brand_name: knownBrand?.title ?? brandName,
+        brand_id: knownBrand?.id ?? "",
         colour: str(row.colour),
         product_short_description: str(row.product_short_description),
         aw_thumb_url: str(row.aw_thumb_url),
@@ -131,7 +144,7 @@ uploads.post("/upload-csv", authMiddleware, requireStaff, async (c) => {
       const id = newId();
       return db.prepare(`
         INSERT INTO products (
-          id, aw_product_id, product_name, merchant_name, brand_name, merchant_category,
+          id, aw_product_id, product_name, merchant_name, brand_name, brand_id, merchant_category,
           category_name, search_price, display_price, aw_deep_link, merchant_deep_link,
           aw_image_url, merchant_image_url, aw_thumb_url, alternate_image,
           alternate_image_two, alternate_image_three, alternate_image_four,
@@ -139,7 +152,7 @@ uploads.post("/upload-csv", authMiddleware, requireStaff, async (c) => {
           merchant_product_id, merchant_id, data_feed_id,
           is_sponsored, created_at, updated_at
         ) VALUES (
-          ?, ?, ?, ?, ?, ?,
+          ?, ?, ?, ?, ?, ?, ?,
           ?, ?, ?, ?, ?,
           ?, ?, ?, ?,
           ?, ?, ?,
@@ -151,6 +164,7 @@ uploads.post("/upload-csv", authMiddleware, requireStaff, async (c) => {
           product_name = excluded.product_name,
           merchant_name = excluded.merchant_name,
           brand_name = excluded.brand_name,
+          brand_id = excluded.brand_id,
           merchant_category = excluded.merchant_category,
           category_name = excluded.category_name,
           search_price = excluded.search_price,
@@ -173,7 +187,7 @@ uploads.post("/upload-csv", authMiddleware, requireStaff, async (c) => {
           data_feed_id = excluded.data_feed_id,
           updated_at = excluded.updated_at
       `).bind(
-        id, p.aw_product_id, p.product_name, p.merchant_name, p.brand_name, p.merchant_category,
+        id, p.aw_product_id, p.product_name, p.merchant_name, p.brand_name, p.brand_id, p.merchant_category,
         p.category_name, p.search_price, p.display_price, p.aw_deep_link, p.merchant_deep_link,
         p.aw_image_url, p.merchant_image_url, p.aw_thumb_url, p.alternate_image,
         p.alternate_image_two, p.alternate_image_three, p.alternate_image_four,

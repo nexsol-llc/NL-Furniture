@@ -1,7 +1,7 @@
 "use client";
 import { adminFetch } from "@/lib/adminAuth";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import {
   Plus, Trash2, Edit2, X, Search, ImagePlus, Loader2,
   Package, ExternalLink, FileSpreadsheet, AlertTriangle, CheckCircle2, Info, Download,
@@ -12,17 +12,22 @@ import { parseCsvText, rowToFeedProduct, slugify, type FeedProduct } from "@/lib
 
 type MissingItem = { name: string; count: number };
 
+// Selected in the product form when a product carries a brand name that has no
+// furniture_brands row (an imported feed brand). Needs its own value so it isn't
+// confused with the empty "— Select brand —" placeholder.
+const UNLINKED_BRAND = "__unlinked__";
+
 // Every column `rowToFeedProduct` (in parseCsvClient.ts) recognizes. Anything
 // else in the CSV header row is simply ignored. Keep this list in sync with
 // that function — it drives both the format guide and the sample download.
 const CSV_FIELDS: { key: string; required?: boolean; label: string }[] = [
   { key: "aw_product_id", label: "Unique product ID from the feed. Optional — used to match/update the same product on re-import; without it, each import adds a new product." },
   { key: "product_name", required: true, label: "Product title. Rows without this are skipped entirely." },
-  { key: "brand_name", label: "Brand name — new brands are offered for creation in the confirm step." },
+  { key: "brand_name", label: "Brand name. Falls back to merchant_name when the feed has no brand column — new brands can be created or merged in the confirm step." },
   { key: "category_name", label: "Category (the \"sub category\" tier). Falls back to merchant_category when empty." },
   { key: "merchant_category", label: "Child category tier. Overridden by merchant_product_second_category when present." },
   { key: "merchant_product_second_category", label: "Optional, more specific child category — takes priority over merchant_category." },
-  { key: "merchant_name", label: "Store / merchant name." },
+  { key: "merchant_name", label: "Store / merchant name. Doubles as the brand when brand_name is empty." },
   { key: "search_price", label: "Numeric price. store_price is used instead when this is empty." },
   { key: "store_price", label: "Fallback numeric price, used only when search_price is empty." },
   { key: "display_price", label: "Pre-formatted price text (e.g. \"€249,99\"), shown as-is." },
@@ -96,6 +101,7 @@ type Product = {
   slug?: string;
   product_name?: string;
   brand_name?: string;
+  brand_id?: string;
   category_name?: string;
   merchant_category?: string;
   merchant_name?: string;
@@ -116,6 +122,7 @@ const EMPTY: Partial<Product> = {
   product_name: "",
   slug: "",
   brand_name: "",
+  brand_id: "",
   category_name: "",
   merchant_category: "",
   merchant_name: "",
@@ -154,7 +161,10 @@ export default function FurnitureProductsAdmin() {
   const [categoryOptions, setCategoryOptions] = useState<string[]>([]);
 
   // Dropdown sources — the brands & category catalog configured elsewhere in admin.
-  const [furnitureBrands, setFurnitureBrands] = useState<string[]>([]);
+  // Brands are kept as full rows: the product form posts brand_id (the durable
+  // link), while the CSV import still matches feed values by name.
+  const [furnitureBrandRows, setFurnitureBrandRows] = useState<{ _id: string; title: string }[]>([]);
+  const furnitureBrands = useMemo(() => furnitureBrandRows.map((b) => b.title), [furnitureBrandRows]);
   const [catalogs, setCatalogs] = useState<{ _id?: string; name: string; slug: string; aliases?: string[]; parentCategoryId?: string; childCategories?: { name: string; slug: string }[] }[]>([]);
   const [parentCategories, setParentCategories] = useState<{ _id: string; name: string }[]>([]);
 
@@ -233,6 +243,23 @@ export default function FurnitureProductsAdmin() {
     setSelectedIds(new Set());
   }, [page, pageSize, sort, search, brand, category, minPrice, maxPrice]);
 
+  // Furniture brands power the form dropdown, the CSV import's "new brands"
+  // coverage and its merge targets — reloaded after an import creates some.
+  const loadFurnitureBrands = useCallback(async () => {
+    try {
+      const res = await adminFetch(`/api/furniture-brands?t=${Date.now()}`);
+      const d = await res.json();
+      const arr = Array.isArray(d) ? d : Array.isArray(d?.brands) ? d.brands : [];
+      setFurnitureBrandRows(
+        arr
+          .map((b: any) => ({ _id: String(b._id || b.id || ""), title: String(b.title || b.name || "") }))
+          .filter((b: { _id: string; title: string }) => b._id && b.title)
+      );
+    } catch (e) {
+      console.error("furniture-brands fetch failed:", e);
+    }
+  }, []);
+
   useEffect(() => {
     adminFetch("/api/products/filters")
       .then((r) => r.json())
@@ -243,13 +270,7 @@ export default function FurnitureProductsAdmin() {
       .catch(() => {});
 
     // Brands & categories/childCategories for the form dropdowns (from admin config).
-    adminFetch(`/api/furniture-brands?t=${Date.now()}`)
-      .then((r) => r.json())
-      .then((d) => {
-        const arr = Array.isArray(d) ? d : Array.isArray(d?.brands) ? d.brands : [];
-        setFurnitureBrands(arr.map((b: any) => b.title || b.name).filter(Boolean));
-      })
-      .catch((e) => console.error("furniture-brands fetch failed:", e));
+    loadFurnitureBrands();
     adminFetch(`/api/category-catalog?t=${Date.now()}`)
       .then((r) => r.json())
       .then((d) => {
@@ -264,7 +285,7 @@ export default function FurnitureProductsAdmin() {
         setParentCategories(arr);
       })
       .catch((e) => console.error("parent-categories fetch failed:", e));
-  }, []);
+  }, [loadFurnitureBrands]);
 
   // ChildCategories for the currently selected category in the form.
   const selectedCatalog = catalogs.find(
@@ -699,6 +720,9 @@ export default function FurnitureProductsAdmin() {
       setImportResult({ inserted, updated, total: all.length, createdBrands: createdBrandCount, createdCategories: createdCatCount, updatedCategories: updatedCatCount });
       setImportData(null);
       setPage(1);
+      // Brands created above must count as existing for the next import (and show
+      // up in the form dropdown) without a page reload.
+      if (createdBrandCount) await loadFurnitureBrands();
       await fetchProducts();
     } catch (err: any) {
       alert(err.message || "Import failed");
@@ -929,12 +953,22 @@ export default function FurnitureProductsAdmin() {
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <Field label="Brand">
-                  <select value={form.brand_name || ""} onChange={(e) => setField("brand_name", e.target.value)} className="input">
+                  <select
+                    value={form.brand_id || (form.brand_name ? UNLINKED_BRAND : "")}
+                    onChange={(e) => {
+                      const picked = furnitureBrandRows.find((b) => b._id === e.target.value);
+                      // Send both: the id is the link, the name is what listings render.
+                      setForm((prev) => ({ ...prev, brand_id: picked?._id ?? "", brand_name: picked?.title ?? "" }));
+                    }}
+                    className="input"
+                  >
                     <option value="">— Select brand —</option>
-                    {form.brand_name && !furnitureBrands.includes(form.brand_name) && (
-                      <option value={form.brand_name}>{form.brand_name} (current)</option>
+                    {!form.brand_id && form.brand_name && (
+                      // An imported brand with no directory row: shown so it isn't
+                      // silently dropped, but not selectable as a target.
+                      <option value={UNLINKED_BRAND} disabled>{form.brand_name} (not in brand list)</option>
                     )}
-                    {furnitureBrands.map((b) => <option key={b} value={b}>{b}</option>)}
+                    {furnitureBrandRows.map((b) => <option key={b._id} value={b._id}>{b.title}</option>)}
                   </select>
                   {furnitureBrands.length === 0 && <p className="text-[10px] text-amber-600 mt-1">No brands yet — add them under Furniture → Brands.</p>}
                 </Field>
@@ -1101,6 +1135,8 @@ export default function FurnitureProductsAdmin() {
                 <>
                   <p className="text-sm text-gray-600">
                     Review what will be created before importing. Items below aren&apos;t in your catalog yet.
+                    Feeds without a <code className="bg-gray-100 px-1 py-0.5 rounded text-[11px]">brand_name</code> column
+                    use the merchant / shop name as the brand — merge the variants below before importing.
                   </p>
 
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4">

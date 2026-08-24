@@ -83,7 +83,11 @@ export function rowToFeedProduct(row: Record<string, string>): FeedProduct | nul
   return {
     aw_product_id,
     product_name,
-    brand_name: row.brand_name || "",
+    // Most AWIN exports ship no brand_name column at all — there the merchant
+    // (shop) name is the closest thing to a brand, so fall back to it. Keeps the
+    // import's brand column, "new brands" coverage and merge step working for
+    // those feeds instead of importing every product brand-less.
+    brand_name: row.brand_name || row.merchant_name || "",
     category_name: row.category_name || row.merchant_category || "",
     merchant_category: childCategory,
     merchant_name: row.merchant_name || "",

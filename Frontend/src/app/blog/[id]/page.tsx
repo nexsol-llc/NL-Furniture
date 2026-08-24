@@ -9,6 +9,7 @@ import { Heart } from "lucide-react";
 import FAQSection from "../../components/FAQSection";
 import { SOCIAL_PLATFORMS } from "../../components/Footer";
 import PlaceholderImage from "@/app/components/PlaceholderImage";
+import { shopLink } from "@/lib/productFormat";
 import { Reveal } from "@/app/components/motion/Reveal";
 import { useLanguage } from "@/providers/languageContext";
 
@@ -110,8 +111,9 @@ const renderRichText = (text: string) => {
   });
 };
 
-const getProductUrl = (product: Product) =>
-  product.aw_deep_link || product.merchant_deep_link || `/product/${product.slug || product._id}`;
+// Products link straight out to the merchant; there is no product page of our
+// own to fall back to, so a product with neither deep link stays unclickable.
+const getProductUrl = (product: Product) => shopLink(product);
 
 const setMetaTag = (selector: string, attrs: Record<string, string>) => {
   let tag = document.head.querySelector(selector) as HTMLMetaElement | HTMLLinkElement | null;
@@ -370,7 +372,10 @@ export default function BlogDetailPage({ params }: { params: { id: string } }) {
                     return (
                       <div
                         key={product._id}
-                        onClick={() => window.open(productUrl, "_blank", "noopener,noreferrer")}
+                        onClick={() =>
+                          productUrl !== "#" &&
+                          window.open(productUrl, "_blank", "noopener,noreferrer")
+                        }
                         className="cursor-pointer group flex flex-col justify-between"
                       >
                         <div>

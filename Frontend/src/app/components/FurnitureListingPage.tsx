@@ -23,11 +23,13 @@ import {
   type ParentCategoryDef,
 } from "@/lib/categoryCatalog";
 import { useLanguage } from "@/providers/languageContext";
+import { shopLink } from "@/lib/productFormat";
 import { LOCALE_TAG } from "@/lib/languageDefaults";
 
 type Product = {
   id: string;
-  slug?: string;
+  /** Merchant/affiliate target, resolved once here so the cards stay dumb. */
+  link?: string;
   name: string;
   price: string;
   image: string;
@@ -39,6 +41,8 @@ type Product = {
 type RawProduct = {
   _id: string;
   slug?: string;
+  aw_deep_link?: string;
+  merchant_deep_link?: string;
   product_name?: string;
   display_price?: string;
   price?: string;
@@ -53,7 +57,7 @@ type RawProduct = {
 
 const mapProduct = (item: RawProduct, t: (key: string) => string): Product => ({
   id: item._id,
-  slug: item.slug || "",
+  link: shopLink(item),
   name: item.product_name || t('common.unnamedProduct'),
   price: item.display_price || item.price || "0",
   image: item.merchant_image_url || item.aw_image_url || item.image || "",
@@ -739,7 +743,7 @@ export default function FurnitureListingPage({
                     <div key={`${product.id}-${index}`} ref={index === gridProducts.length - 1 ? lastProductRef : null}>
                       <ProductCard
                         id={product.id}
-                        slug={product.slug}
+                        link={product.link}
                         name={product.name}
                         price={product.price}
                         image={product.image}

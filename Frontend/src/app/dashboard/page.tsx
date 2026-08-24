@@ -7,13 +7,16 @@ import { Heart, LogOut, ShoppingBag, Trash2 } from "lucide-react";
 import toast, { Toaster } from "react-hot-toast";
 import { getUser, clearUserToken, userFetch, type UserPayload } from "@/lib/userAuth";
 import PlaceholderImage from "@/app/components/PlaceholderImage";
+import ShopLink from "@/app/components/ShopLink";
+import { shopLink } from "@/lib/productFormat";
 import { Tilt } from "@/app/components/motion/Tilt";
 import { Reveal, RevealGroup, RevealItem } from "@/app/components/motion/Reveal";
 import { useLanguage } from "@/providers/languageContext";
 
 type Product = {
   _id: string;
-  slug?: string;
+  aw_deep_link?: string;
+  merchant_deep_link?: string;
   product_name: string;
   display_price: string;
   merchant_image_url?: string;
@@ -174,6 +177,7 @@ export default function CustomerDashboard() {
               {wishlist.map((item) => {
                 const img = item.merchant_image_url || item.aw_image_url || null;
                 const price = item.display_price ? item.display_price.replace(/EUR\s?/g, "€") : "";
+                const href = shopLink(item);
 
                 return (
                   <RevealItem key={item._id}>
@@ -182,14 +186,14 @@ export default function CustomerDashboard() {
                     className="group bg-white border border-gray-200 rounded-2xl overflow-hidden hover:shadow-depth-3 transition-all duration-300 flex flex-col h-full"
                   >
                     <div className="relative aspect-square bg-gray-50 flex items-center justify-center p-4">
-                      <Link href={`/product/${item.slug || item._id}`} className="relative w-full h-full block">
+                      <ShopLink href={href} className="relative w-full h-full block">
                         <PlaceholderImage
                           src={img}
                           alt={item.product_name}
                           fill
                           className="object-contain p-2 group-hover:scale-105 transition duration-500"
                         />
-                      </Link>
+                      </ShopLink>
 
                       <button
                         onClick={() => handleRemove(item._id)}
@@ -207,22 +211,22 @@ export default function CustomerDashboard() {
                         </span>
                       )}
 
-                      <Link href={`/product/${item.slug || item._id}`} className="mt-1">
+                      <ShopLink href={href} className="mt-1">
                         <h3 className="text-sm font-semibold text-gray-900 leading-snug line-clamp-2 hover:text-primary-600 transition">
                           {item.product_name}
                         </h3>
-                      </Link>
+                      </ShopLink>
 
                       <div className="mt-auto pt-4 flex items-center justify-between border-t border-gray-50">
                         <span className="text-base font-extrabold text-primary-600">
                           {price}
                         </span>
-                        <Link
-                          href={`/product/${item.slug || item._id}`}
+                        <ShopLink
+                          href={href}
                           className="text-xs bg-primary-600 text-white font-bold px-3 py-1.5 rounded-lg shadow-cta hover:bg-primary-700 transition"
                         >
                           {t('dashboard.view')}
-                        </Link>
+                        </ShopLink>
                       </div>
                     </div>
                   </div>
