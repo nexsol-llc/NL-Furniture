@@ -1,5 +1,6 @@
 "use client";
 import { adminFetch } from "@/lib/adminAuth";
+import RichDescriptionEditor from "@/app/components/RichDescriptionEditor";
 
 import { useState, useEffect } from "react";
 import { Plus, Trash2, Edit2, Star, Link2, ImagePlus, ExternalLink, GitMerge, X } from "lucide-react";
@@ -254,11 +255,12 @@ export default function FurnitureBrandsAdmin() {
             {/* Description */}
             <div className="space-y-1">
               <label className="text-[11px] font-semibold text-zinc-500 uppercase tracking-wider">Description</label>
-              <textarea
-                value={form.description}
-                onChange={(e) => setForm({ ...form, description: e.target.value })}
+              <RichDescriptionEditor
+                value={form.description || ""}
+                onChange={(html) => setForm({ ...form, description: html })}
                 placeholder="Short brand description…"
-                className="w-full border border-zinc-200 rounded-xl p-3 text-sm h-24 resize-y focus:outline-none focus:ring-2 focus:ring-primary-300"
+                minHeight={140}
+                headings={false}
               />
             </div>
 

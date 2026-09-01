@@ -7,6 +7,7 @@ import PlaceholderImage from '../../components/PlaceholderImage';
 import { Reveal } from '../../components/motion/Reveal';
 import useSWR from 'swr';
 import { useLanguage } from '@/providers/languageContext';
+import RichContent from "@/app/components/RichContent";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 type Coupon = {
@@ -226,9 +227,7 @@ const SpringDealsBanner: React.FC = () => {
                 <h3 className="text-sm md:text-base font-semibold text-gray-950 mb-2">
                   {faq.question}
                 </h3>
-                <p className="text-gray-600 text-xs sm:text-sm md:text-base leading-relaxed">
-                  {faq.answer}
-                </p>
+                <RichContent content={faq.answer} className="text-gray-600 text-xs sm:text-sm md:text-base leading-relaxed" />
               </div>
             ))}
           </div>

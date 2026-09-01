@@ -3,13 +3,14 @@
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname, useRouter } from "next/navigation";
-import { Heart, User, X, Camera } from "lucide-react";
+import { Heart, User, X, Camera, Scale } from "lucide-react";
 import { useState, useEffect, useRef } from "react";
 import useSWR from "swr";
 import { getUser, userFetch, type UserPayload } from "@/lib/userAuth";
 import VisualSearchModal from "./VisualSearchModal";
 import { Spotlight } from "./motion/Spotlight";
 import { useLanguage } from "@/providers/languageContext";
+import { useCompare } from "@/providers/compareContext";
 
 function DSearchIcon({ size = 20 }: { size?: number }) {
   return (
@@ -99,8 +100,8 @@ export default function Header() {
     return () => window.removeEventListener("resize", measure);
   }, []);
 
-  // The home page shows its own big AI search bar in the hero,
-  // so the header search is hidden there.
+  // `isHome` only picks the header's surface treatment now — the search bar
+  // renders on every page, including home (the comparison hero has none).
   const isHome = pathname === "/";
   const headerSurfaceClass = isHome
     ? "glass-panel"
@@ -118,6 +119,8 @@ export default function Header() {
   const accountIconClass = isHome ? "group-hover:text-primary-600" : "group-hover:text-white";
   const headerDividerClass = isHome ? "border-gray-100" : "border-white/20";
   const logoSrc = isHome ? "/nl-furniture_logo_dark.png" : "/nl-furniture_logo_light.png";
+
+  const { count: compareCount } = useCompare();
 
   const [user, setUser] = useState<UserPayload | null>(null);
   useEffect(() => {
@@ -221,8 +224,7 @@ export default function Header() {
                 ))}
               </nav>
 
-              {/* Mobile Search — inline bar (hidden on home, hero has its own) */}
-              {!isHome && (
+              {/* Mobile Search — inline bar */}
               <div className="flex md:hidden flex-1 max-w-[130px] min-w-[95px] ml-auto relative rounded-full p-[2px] bg-gradient-to-r from-primary-400 via-primary-600 to-primary-400 shadow-md shadow-primary-500/25">
                 <form onSubmit={handleSearch} className="relative w-full bg-gray-100 rounded-full flex items-center">
                   <button type="submit" className="ml-3 mr-1.5 shrink-0 transition-opacity hover:opacity-80 flex items-center justify-center">
@@ -247,10 +249,8 @@ export default function Header() {
                   )}
                 </form>
               </div>
-              )}
 
-              {/* Desktop Search (hidden on home, hero has its own) */}
-              {!isHome ? (
+              {/* Desktop Search */}
               <div className="hidden md:flex flex-1 max-w-xl mx-4 lg:mx-6 relative group rounded-full p-[2px] bg-gradient-to-r from-primary-400 via-primary-600 to-primary-400 shadow-lg shadow-primary-500/30">
                 <Spotlight size={220} className="from-white/70 via-white/25" />
                 <form onSubmit={handleSearch} className="relative w-full bg-gray-100 rounded-full flex items-center">
@@ -290,12 +290,24 @@ export default function Header() {
                   </button>
                 </form>
               </div>
-              ) : (
-                <div className="flex-1" />
-              )}
 
-              {/* Wishlist + Account Icons (Mobile & Desktop) */}
-              <div className="flex items-center gap-2 md:gap-6 shrink-0">
+              {/* Compare + Wishlist + Account Icons (Mobile & Desktop) */}
+              <div className="flex items-center gap-2 md:gap-4 shrink-0">
+                {/* Comparison tray counter — only once something is in it, so it
+                    never sits in the bar as a dead control. */}
+                {compareCount > 0 && (
+                  <Link
+                    href="/#vergelijken"
+                    className={`hidden sm:inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-semibold transition ${
+                      isHome
+                        ? "bg-white/70 text-gray-700 ring-1 ring-gray-200 hover:bg-white"
+                        : "bg-white/15 text-white ring-1 ring-white/25 hover:bg-white/25"
+                    }`}
+                  >
+                    <Scale size={15} />
+                    {t('homeCompare.compareTray.headerLabel', { count: compareCount })}
+                  </Link>
+                )}
                 <Link
                   href={user ? "/dashboard" : "/login"}
                   className={`p-1.5 md:p-2 ${iconLinkClass} rounded-full transition group relative flex items-center justify-center`}

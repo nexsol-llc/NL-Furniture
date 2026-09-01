@@ -3,6 +3,7 @@
 import FAQSection from "@/app/components/FAQSection";
 import type { CategoryFAQ } from "@/lib/categoryCatalog";
 import { useLanguage } from "@/providers/languageContext";
+import RichContent from "@/app/components/RichContent";
 
 type CategorySeoSectionsProps = {
   title: string;
@@ -58,9 +59,10 @@ export default function CategorySeoSections({
           <h2 className="text-xl md:text-2xl font-black text-gray-900 uppercase tracking-tight mb-4">
             {t('categorySeoSections.aboutHeading', { title })}
           </h2>
-          <p className="text-sm md:text-base text-gray-600 leading-relaxed max-w-4xl">
-            {description}
-          </p>
+          <RichContent
+            content={description}
+            className="text-sm md:text-base text-gray-600 leading-relaxed max-w-4xl"
+          />
         </div>
       </section>
 

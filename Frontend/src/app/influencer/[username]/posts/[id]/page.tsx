@@ -15,6 +15,7 @@ import PlaceholderImage from "@/app/components/PlaceholderImage";
 import ShopLink from "@/app/components/ShopLink";
 import { shopLink } from "@/lib/productFormat";
 import { useLanguage } from "@/providers/languageContext";
+import { toPlainText } from "@/lib/richText";
 
 type ApiProduct = {
   _id: string;
@@ -412,7 +413,7 @@ export default function InfluencerPostPage() {
             <div className="mt-4">
               <p className="text-sm text-gray-800 leading-relaxed">
                 <span className="font-bold">{post.title}!</span>{" "}
-                {(post.caption || "").replace(`${post.title}!`, "").trim() || post.caption}
+                {toPlainText(post.caption).replace(`${post.title}!`, "").trim() || toPlainText(post.caption)}
               </p>
             </div>
           </div>

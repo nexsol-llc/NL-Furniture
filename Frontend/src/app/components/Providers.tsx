@@ -3,6 +3,7 @@
 import React from "react";
 import { ThemeProvider } from "@/providers/themeContext";
 import { LanguageProvider } from "@/providers/languageContext";
+import { CompareProvider } from "@/providers/compareContext";
 
 // Monkeypatch to prevent React crashes when Google Translate or other extensions mutate the DOM
 if (typeof window !== "undefined") {
@@ -60,7 +61,12 @@ export default function Providers({ children }: { children: React.ReactNode }) {
   // as the admin panel.
   return (
     <LanguageProvider>
-      <ThemeProvider>{children}</ThemeProvider>
+      <ThemeProvider>
+        {/* CompareProvider holds the home page's comparison tray selection
+            (localStorage-backed) — the header's Compare pill reads the same
+            count, so it has to sit above both. */}
+        <CompareProvider>{children}</CompareProvider>
+      </ThemeProvider>
     </LanguageProvider>
   );
 }

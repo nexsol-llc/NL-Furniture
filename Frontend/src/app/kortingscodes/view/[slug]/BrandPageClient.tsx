@@ -14,6 +14,7 @@ import { getVisitorId } from "@/lib/visitorId";
 import { useTurnstileToken } from "@/lib/useTurnstileToken";
 import { useLanguage } from "@/providers/languageContext";
 import { LOCALE_TAG } from "@/lib/languageDefaults";
+import RichContent from "@/app/components/RichContent";
 
 const fetcher = (url: string) => fetch(url).then((res) => res.json());
 
@@ -553,9 +554,10 @@ export default function BrandPage() {
                 </h1>
 
                 {safeBrand.description && (
-                  <p className="text-base sm:text-lg text-gray-600 mt-3 max-w-2xl">
-                    {safeBrand.description}
-                  </p>
+                  <RichContent
+                    content={safeBrand.description}
+                    className="text-base sm:text-lg text-gray-600 mt-3 max-w-2xl"
+                  />
                 )}
 
                 <p className="mt-3 text-sm sm:text-base text-gray-700 font-semibold">
@@ -668,7 +670,10 @@ export default function BrandPage() {
                   </div>
                 </div>
                 {authorBox.bio && (
-                  <p className="text-sm text-gray-600 mt-3 leading-relaxed line-clamp-4">{authorBox.bio}</p>
+                  <RichContent
+                    content={authorBox.bio}
+                    className="text-sm text-gray-600 mt-3 leading-relaxed line-clamp-4"
+                  />
                 )}
                 {(authorBox.socialLinks?.twitter || authorBox.socialLinks?.instagram || authorBox.socialLinks?.linkedin || authorBox.socialLinks?.website) && (
                   <div className="flex items-center gap-3 mt-3 text-gray-400">
@@ -915,7 +920,7 @@ export default function BrandPage() {
                     {t('brandPage.moreAboutBrand', { name: safeBrand.name })}
                   </h2>
                   <div className="text-gray-600 leading-relaxed space-y-4">
-                    <p>{safeBrand.description}</p>
+                    <RichContent content={safeBrand.description} />
                     <p>
                       {t('brandPage.brandDescriptionExtra', { name: safeBrand.name })}
                     </p>

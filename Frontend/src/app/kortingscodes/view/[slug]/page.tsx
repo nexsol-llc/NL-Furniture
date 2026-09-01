@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import BrandPageClient from "./BrandPageClient";
+import { toPlainText } from "@/lib/richText";
 
 type PageProps = {
   params: { slug: string };
@@ -24,7 +25,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   const title = brand?.seoTitle || `${brandName} Gutscheine & Rabattcodes`;
   const description =
     brand?.seoDescription ||
-    brand?.description ||
+    toPlainText(brand?.description) ||
     `Aktuelle ${brandName} Gutscheine, Rabattcodes und Angebote entdecken.`;
   const keywords =
     typeof brand?.seoKeywords === "string" && brand.seoKeywords.trim()

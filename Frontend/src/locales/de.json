@@ -238,6 +238,168 @@
       }
     ]
   },
+  "homeCompare": {
+    "adLabel": "Anzeige",
+    "sponsoredLabel": "Gesponsert",
+    "compareLabel": "Vergleichen",
+    "ratingCount": "({{count}})",
+    "sidebar": {
+      "heading": "Menü",
+      "home": "Startseite",
+      "categories": "Kategorien",
+      "compare": "Vergleichen",
+      "brands": "Marken",
+      "deals": "Angebote",
+      "coupons": "Gutscheine",
+      "inspiration": "Inspiration",
+      "reviews": "Bewertungen",
+      "guides": "Tipps & Ratgeber",
+      "proKicker": "Upgrade auf",
+      "proTitle": "Pro-Mitglied",
+      "proPerks": [
+        "Unbegrenzt vergleichen",
+        "Preisalarm bei Preissenkungen",
+        "Exklusive Rabatte",
+        "Früher Zugang zu Angeboten"
+      ],
+      "proCta": "Jetzt upgraden"
+    },
+    "hero": {
+      "titleLine1": "Finden. Vergleichen.",
+      "titleLine2": "Richte deinen perfekten Raum ein.",
+      "subtitle": "Vergleiche Preise, Stile und Bewertungen von Top-Marken — alles an einem Ort.",
+      "ctaPrimary": "Jetzt vergleichen",
+      "ctaSecondary": "Kategorien entdecken",
+      "slideAria": "Zu Slide {{index}} springen"
+    },
+    "compareTray": {
+      "title": "Möbel vergleichen",
+      "subtitle": "Direkter Vergleich",
+      "emptySlot": "Hinzufügen",
+      "vs": "vs",
+      "cta": "Jetzt vergleichen",
+      "viewList": "Vergleichsliste ansehen",
+      "hint": "Wähle bis zu {{max}} Produkte für den direkten Vergleich.",
+      "remove": "Aus dem Vergleich entfernen",
+      "added": "Zum Vergleich hinzugefügt",
+      "removed": "Aus dem Vergleich entfernt",
+      "full": "Du kannst maximal {{max}} Produkte vergleichen",
+      "headerLabel": "Vergleich ({{count}})",
+      "clear": "Zurücksetzen",
+      "oldPriceLabel": "Vorher",
+      "brandLabel": "Marke",
+      "toShop": "Zum Shop",
+      "discountLabel": "Rabatt"
+    },
+    "categories": {
+      "title": "Nach Kategorie shoppen",
+      "viewAll": "Alle Kategorien",
+      "itemCount": "{{count}}+ Artikel"
+    },
+    "deals": {
+      "title": "Top-Angebote",
+      "viewAll": "Alle Angebote",
+      "empty": "Noch keine Angebote."
+    },
+    "rooms": {
+      "title": "Gestalte deine Traumräume",
+      "subtitle": "Lass dich von kompletten Einrichtungen inspirieren, für dich zusammengestellt.",
+      "cta": "Räume entdecken"
+    },
+    "why": {
+      "title": "Warum vergleichen?",
+      "priceTitle": "Beste Preise",
+      "priceText": "Finde den günstigsten Preis aus hunderten Shops.",
+      "reviewsTitle": "Ehrliche Bewertungen",
+      "reviewsText": "Echte Bewertungen von verifizierten Käufern.",
+      "choiceTitle": "Kluge Entscheidungen",
+      "choiceText": "Kaufe mit Sicherheit, ohne zu zweifeln."
+    },
+    "brands": {
+      "title": "Marken, denen du vertrauen kannst",
+      "viewAll": "Alle Marken",
+      "prev": "Vorherige Marken",
+      "next": "Nächste Marken"
+    },
+    "featuredBrand": {
+      "label": "Empfohlene Marke",
+      "cta": "Kollektion entdecken"
+    },
+    "railNewsletter": {
+      "title": "Updates & exklusive Angebote",
+      "subtitle": "Schließe dich tausenden smarten Shoppern an."
+    },
+    "trust": {
+      "shippingTitle": "Kostenloser Versand",
+      "shippingText": "Ab einem Bestellwert von 499 €",
+      "priceTitle": "Bestpreisgarantie",
+      "priceText": "Wir unterbieten jeden Preis",
+      "returnsTitle": "30 Tage Rückgabe",
+      "returnsText": "Rückgabe ohne Aufwand",
+      "paymentTitle": "Sichere Zahlung",
+      "paymentText": "100 % sicherer Checkout",
+      "supportTitle": "24/7 Support",
+      "supportText": "Wir sind für dich da"
+    },
+    "inspiration": {
+      "title": "Lass dich inspirieren",
+      "viewAll": "Alle Inspirationen",
+      "allFilter": "Alle Räume",
+      "ideasCount": "{{count}} Ideen",
+      "prev": "Vorherige Inspiration",
+      "next": "Nächste Inspiration",
+      "empty": "Bald mehr Inspiration."
+    },
+    "compareCta": {
+      "title": "Starker Vergleich. Klügere Entscheidungen.",
+      "subtitle": "Vergleiche bis zu {{max}} Produkte direkt nebeneinander und finde den perfekten Treffer.",
+      "priceTitle": "Preis",
+      "priceText": "Finde das beste Angebot",
+      "featuresTitle": "Merkmale",
+      "featuresText": "Worauf es ankommt",
+      "reviewsTitle": "Bewertungen",
+      "reviewsText": "Was Käufer sagen",
+      "warrantyTitle": "Garantie",
+      "warrantyText": "Leistungen vergleichen",
+      "cta": "Jetzt vergleichen"
+    },
+    "bestSellers": {
+      "title": "Meistverkaufte Produkte",
+      "viewAll": "Alle Produkte",
+      "empty": "Noch keine Produkte verfügbar."
+    },
+    "sponsoredPicks": {
+      "title": "Gesponserte Auswahl für dich",
+      "viewAll": "Alle ansehen"
+    },
+    "testimonials": {
+      "title": "Was Kunden sagen",
+      "viewAll": "Alle Bewertungen",
+      "verifiedBuyer": "Verifizierter Käufer",
+      "items": [
+        {
+          "name": "Sanne de Vries",
+          "text": "Tolle Erfahrung! Ich habe dasselbe Sofa nach dem Vergleich mehrerer Shops über hundert Euro günstiger gefunden.",
+          "product": "Modernes 3-Sitzer-Sofa"
+        },
+        {
+          "name": "Bram Jansen",
+          "text": "Die Vergleichsfunktion hat mir Stunden an Recherche erspart. Absolute Empfehlung.",
+          "product": "Ergonomischer Bürostuhl"
+        },
+        {
+          "name": "Fatima Noor",
+          "text": "Starke Angebote und ehrliche Bewertungen. Mein fester Startpunkt für Möbel.",
+          "product": "Esstisch aus Massivholz"
+        }
+      ]
+    },
+    "newsletterBand": {
+      "titleLine1": "Die besten Möbel-Deals",
+      "titleLine2": "direkt in dein Postfach",
+      "subtitle": "Melde dich an für exklusive Angebote, Preissenkungen und Neuheiten."
+    }
+  },
   "impressum": {
     "heroTitle": "Impressum | Rechtliche Hinweise",
     "heroSubtitle": "Angaben gemäß Artikel 3:15d des niederländischen Bürgerlichen Gesetzbuchs",
@@ -470,7 +632,20 @@
     "defaultFaq3A": "Ja, für alle Produkte gilt das gesetzliche Widerrufsrecht von 14 Tagen. Bitte beachten Sie die jeweiligen Rückgabebedingungen des Händlers."
   },
   "brandPage": {
-    "months": ["Januar", "Februar", "März", "April", "Mai", "Juni", "Juli", "August", "September", "Oktober", "November", "Dezember"],
+    "months": [
+      "Januar",
+      "Februar",
+      "März",
+      "April",
+      "Mai",
+      "Juni",
+      "Juli",
+      "August",
+      "September",
+      "Oktober",
+      "November",
+      "Dezember"
+    ],
     "defaultFaq1Q": "Wie kann ich bei Möbelkäufen Geld sparen?",
     "defaultFaq1A": "Sie können bei Möbelkäufen Geld sparen, indem Sie unsere exklusiven Gutscheincodes nutzen, Cashback-Angebote aktivieren und während großer saisonaler Ausverkäufe einkaufen.",
     "defaultFaq2Q": "Welche Möbelgeschäfte bieten die besten Cashback-Angebote?",

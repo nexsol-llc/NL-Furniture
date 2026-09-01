@@ -1,5 +1,6 @@
 "use client";
 import { adminFetch } from "@/lib/adminAuth";
+import RichDescriptionEditor from "@/app/components/RichDescriptionEditor";
 
 import { useState, useEffect } from "react";
 import RichTextEditor from "@/app/components/RichTextEditor";
@@ -577,7 +578,13 @@ export default function CouponsHomeAdmin() {
             </div>
             <div>
               <label className="block text-xs font-semibold text-gray-500 mb-1">Right Description</label>
-              <textarea value={settingsForm.designerSection.rightDescription} onChange={(e) => updateDesigner({ rightDescription: e.target.value })} rows={2} placeholder="Exklusive Sparmöglichkeiten bei Premium-Möbeln freischalten" className={`${inputCls} resize-y`} />
+              <RichDescriptionEditor
+                value={settingsForm.designerSection.rightDescription}
+                onChange={(html) => updateDesigner({ rightDescription: html })}
+                placeholder="Exklusive Sparmöglichkeiten bei Premium-Möbeln freischalten"
+                minHeight={110}
+                headings={false}
+              />
             </div>
           </div>
 
@@ -742,7 +749,13 @@ export default function CouponsHomeAdmin() {
                   </div>
                   <div>
                     <label className="block text-xs font-semibold text-gray-500 mb-1">Answer</label>
-                    <textarea value={faq.answer} onChange={(e) => listUpdate("faqs", i, { answer: e.target.value })} rows={3} placeholder="Answer..." className={`${inputCls} resize-y`} />
+                    <RichDescriptionEditor
+                      value={faq.answer}
+                      onChange={(html) => listUpdate("faqs", i, { answer: html })}
+                      placeholder="Answer..."
+                      minHeight={120}
+                      headings={false}
+                    />
                   </div>
                 </div>
               ))}

@@ -15,6 +15,7 @@ import type { CategoryFAQ } from "@/lib/categoryCatalog";
 import { shopLink } from "@/lib/productFormat";
 import { useLanguage } from "@/providers/languageContext";
 import { LOCALE_TAG } from "@/lib/languageDefaults";
+import { toPlainText } from "@/lib/richText";
 
 type Product = {
   id: string;
@@ -166,7 +167,8 @@ export default function CategoryListingPage({
     }
     const metaDesc = document.querySelector('meta[name="description"]');
     if (metaDesc && activeSeoDescription) {
-      metaDesc.setAttribute("content", activeSeoDescription);
+      // The description may now be rich HTML; meta tags take plain text only.
+      metaDesc.setAttribute("content", toPlainText(activeSeoDescription));
     }
   }, [activeSeoTitle, activeSeoDescription]);
 

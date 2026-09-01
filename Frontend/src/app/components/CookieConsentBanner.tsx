@@ -9,6 +9,7 @@ import {
   defaultCookieConsent,
 } from "@/lib/cookieConsentDefaults";
 import { useLanguage } from "@/providers/languageContext";
+import RichContent from "@/app/components/RichContent";
 
 export default function CookieConsentBanner() {
   const { t } = useLanguage();
@@ -133,9 +134,10 @@ export default function CookieConsentBanner() {
         </h2>
 
         {/* Body */}
-        <p className="text-sm text-gray-700 leading-relaxed mb-2">
-          {settings.bodyText}
-        </p>
+        <RichContent
+          content={settings.bodyText}
+          className="text-sm text-gray-700 leading-relaxed mb-2"
+        />
 
         <Link
           href={settings.detailsLinkUrl}

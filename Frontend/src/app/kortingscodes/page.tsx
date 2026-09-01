@@ -8,6 +8,7 @@ import NewsletterSection from "../components/NewsletterSection";
 import { Reveal, RevealGroup, RevealItem } from "../components/motion/Reveal";
 import type { HomeCategoryItem } from "@/lib/homeCategoryGroups";
 import { useLanguage } from "@/providers/languageContext";
+import RichContent from "@/app/components/RichContent";
 
 const fetcher = (url: string) => fetch(url).then((r) => r.json());
 
@@ -261,7 +262,7 @@ export default function CouponsHome() {
               </div>
               <div className="flex w-full flex-col justify-center px-4 sm:px-6 md:px-8 lg:px-10 py-4 sm:py-6 md:py-8 bg-white md:w-1/3">
                 {ds.rightHeading && <h2 className="text-base sm:text-lg md:text-xl font-bold text-gray-900">{ds.rightHeading}</h2>}
-                {ds.rightDescription && <p className="mt-2 sm:mt-3 text-xs sm:text-sm md:text-base text-gray-600">{ds.rightDescription}</p>}
+                {ds.rightDescription && <RichContent content={ds.rightDescription} className="mt-2 sm:mt-3 text-xs sm:text-sm md:text-base text-gray-600" />}
                 {ds.buttonText && (
                   ds.buttonLink ? (
                     <a href={ds.buttonLink} target="_blank" rel="noopener noreferrer" className="mt-3 sm:mt-4 w-fit border-b-2 border-black font-semibold text-black hover:opacity-70 transition text-xs sm:text-sm md:text-base">{ds.buttonText}</a>
@@ -407,7 +408,7 @@ export default function CouponsHome() {
                         <span className="text-lg sm:text-xl md:text-2xl font-bold text-gray-500 shrink-0">{openFaqIndex === index ? "−" : "+"}</span>
                       </button>
                       {openFaqIndex === index && (
-                        <div className="mt-1 sm:mt-2 px-1 sm:px-2 pb-2 sm:pb-3 md:pb-4 text-gray-700 text-xs sm:text-sm md:text-base leading-relaxed">{item.answer}</div>
+                        <RichContent content={item.answer} className="mt-1 sm:mt-2 px-1 sm:px-2 pb-2 sm:pb-3 md:pb-4 text-gray-700 text-xs sm:text-sm md:text-base leading-relaxed" />
                       )}
                     </div>
                   ))}

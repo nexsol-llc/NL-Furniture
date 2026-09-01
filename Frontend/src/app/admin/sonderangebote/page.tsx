@@ -1,11 +1,12 @@
 "use client";
 import { adminFetch } from "@/lib/adminAuth";
+import RichDescriptionEditor from "@/app/components/RichDescriptionEditor";
 
 import useSWR from "swr";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import {
   FileText, HelpCircle, Plus, Trash2, Save, CheckCircle,
-  Link2, Image as ImageIcon, Loader2, Star, Tag, Store, ExternalLink,
+  Loader2, Star, Tag, Store, ExternalLink,
   ChevronDown, ChevronUp, Search, ChevronLeft, ChevronRight, Globe,
 } from "lucide-react";
 
@@ -15,112 +16,6 @@ const PAGE_KEY = "sonderangebote";
 
 interface Faq { question: string; answer: string; }
 
-// ─── Rich Text Toolbar (mirrors the coupon-stores editor) ─────────────────────
-function RichToolbar({ editorRef }: { editorRef: React.RefObject<HTMLDivElement | null> }) {
-  const imageInputRef = useRef<HTMLInputElement | null>(null);
-  const [uploadingImage, setUploadingImage] = useState(false);
-
-  const syncEditor = () => {
-    editorRef.current?.dispatchEvent(new InputEvent("input", { bubbles: true }));
-  };
-
-  const exec = (cmd: string, value?: string) => {
-    editorRef.current?.focus();
-    document.execCommand(cmd, false, value);
-    syncEditor();
-  };
-
-  const insertLink = () => {
-    const url = prompt("Enter link URL (https://...):");
-    if (url) exec("createLink", url);
-  };
-
-  const uploadImage = async (file: File) => {
-    setUploadingImage(true);
-    try {
-      const fd = new FormData();
-      fd.append("file", file);
-      const res = await adminFetch("/api/upload-image", { method: "POST", body: fd });
-      const data = await res.json();
-      if (!res.ok || !data.url) throw new Error(data.error || "Image upload failed");
-      exec(
-        "insertHTML",
-        `<img src="${data.url}" alt="" style="max-width:100%;height:auto;border-radius:8px;margin:12px 0;display:block;" />`
-      );
-    } catch (error: any) {
-      alert(error.message || "Image upload failed");
-    } finally {
-      setUploadingImage(false);
-      if (imageInputRef.current) imageInputRef.current.value = "";
-    }
-  };
-
-  return (
-    <div className="flex flex-wrap gap-1 p-2 bg-gray-50 border border-gray-200 rounded-t-xl border-b-0">
-      {[
-        { label: "B", cmd: "bold", cls: "font-semibold" },
-        { label: "I", cmd: "italic", cls: "italic" },
-        { label: "U", cmd: "underline", cls: "underline" },
-      ].map(({ label, cmd, cls }) => (
-        <button
-          key={cmd}
-          type="button"
-          onMouseDown={(e) => { e.preventDefault(); exec(cmd); }}
-          className={`w-8 h-8 text-sm rounded-lg hover:bg-primary-100 hover:text-primary-700 transition ${cls}`}
-          title={cmd}
-        >
-          {label}
-        </button>
-      ))}
-      <div className="w-px h-8 bg-gray-200 mx-1" />
-      {(["h1", "h2", "h3", "h4", "h5"] as const).map((tag) => (
-        <button
-          key={tag}
-          type="button"
-          onMouseDown={(e) => { e.preventDefault(); exec("formatBlock", tag); }}
-          className="px-2 h-8 text-xs font-semibold rounded-lg hover:bg-primary-100 hover:text-primary-700 transition"
-        >
-          {tag.toUpperCase()}
-        </button>
-      ))}
-      <div className="w-px h-8 bg-gray-200 mx-1" />
-      <button
-        type="button"
-        onMouseDown={(e) => { e.preventDefault(); exec("insertUnorderedList"); }}
-        className="px-2 h-8 text-xs rounded-lg hover:bg-primary-100 hover:text-primary-700 transition"
-        title="Bullet list"
-      >• List</button>
-      <button
-        type="button"
-        onMouseDown={(e) => { e.preventDefault(); insertLink(); }}
-        className="px-2 h-8 text-xs rounded-lg hover:bg-primary-100 hover:text-primary-700 transition flex items-center gap-1"
-        title="Insert link"
-      >
-        <Link2 size={12} /> Link
-      </button>
-      <button
-        type="button"
-        onMouseDown={(e) => { e.preventDefault(); imageInputRef.current?.click(); }}
-        disabled={uploadingImage}
-        className="px-2 h-8 text-xs rounded-lg hover:bg-primary-100 hover:text-primary-700 transition flex items-center gap-1"
-        title="Upload image"
-      >
-        {uploadingImage ? <Loader2 size={12} className="animate-spin" /> : <ImageIcon size={12} />}
-        Img
-      </button>
-      <input
-        ref={imageInputRef}
-        type="file"
-        accept="image/*"
-        className="hidden"
-        onChange={(e) => {
-          const file = e.target.files?.[0];
-          if (file) uploadImage(file);
-        }}
-      />
-    </div>
-  );
-}
 
 // ─── Collapsible featured browser (paginated + searchable + inline toggle) ────
 function FeaturedBrowser({
@@ -307,8 +202,6 @@ function FeaturedBrowser({
 
 export default function AdminSonderangebotePage() {
   const { data, mutate } = useSWR(`/api/page-seo-settings/${PAGE_KEY}`, fetcher);
-
-  const editorRef = useRef<HTMLDivElement | null>(null);
   const [longContent, setLongContent] = useState("");
   const [faqs, setFaqs] = useState<Faq[]>([]);
   const [seo, setSeo] = useState({
@@ -335,7 +228,6 @@ export default function AdminSonderangebotePage() {
         seoDescription: data.seoDescription || "",
         seoKeywords: data.seoKeywords || "",
       });
-      if (editorRef.current) editorRef.current.innerHTML = html;
       setLoaded(true);
     }
   }, [data, loaded]);
@@ -353,7 +245,7 @@ export default function AdminSonderangebotePage() {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          longContent: editorRef.current?.innerHTML ?? longContent,
+          longContent,
           faqs: faqs.filter((f) => f.question.trim() || f.answer.trim()),
           ...seo,
         }),
@@ -470,24 +362,12 @@ export default function AdminSonderangebotePage() {
         <p className="text-xs text-gray-500 mb-4">
           Add headings (H2/H3), paragraphs, images and links. Shown at the bottom of the page.
         </p>
-        <div className="border border-gray-200 rounded-xl overflow-hidden">
-          <RichToolbar editorRef={editorRef} />
-          <div
-            ref={editorRef}
-            contentEditable
-            suppressContentEditableWarning
-            onInput={() => setLongContent(editorRef.current?.innerHTML || "")}
-            className="min-h-[260px] p-4 text-sm text-gray-800 outline-none prose prose-sm max-w-none
-              [&_h1]:text-2xl [&_h1]:font-semibold [&_h1]:mt-5 [&_h1]:mb-3
-              [&_h2]:text-xl [&_h2]:font-semibold [&_h2]:mt-4 [&_h2]:mb-2
-              [&_h3]:text-base [&_h3]:font-semibold [&_h3]:mt-3 [&_h3]:mb-1
-              [&_h4]:text-sm [&_h4]:font-semibold [&_h4]:mt-3 [&_h4]:mb-1
-              [&_h5]:text-xs [&_h5]:font-semibold [&_h5]:mt-3 [&_h5]:mb-1
-              [&_ul]:list-disc [&_ul]:ml-5 [&_a]:text-primary-600 [&_a]:underline
-              [&_img]:rounded-lg [&_img]:max-w-full [&_img]:my-2"
-            style={{ minHeight: 260 }}
-          />
-        </div>
+        <RichDescriptionEditor
+          value={longContent}
+          onChange={setLongContent}
+          placeholder="Write the long page description..."
+          minHeight={260}
+        />
       </div>
 
       {/* FAQs */}
@@ -527,12 +407,12 @@ export default function AdminSonderangebotePage() {
                 onChange={(e) => updateFaq(i, "question", e.target.value)}
                 className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm mb-2 outline-none focus:ring-2 focus:ring-primary-300"
               />
-              <textarea
-                placeholder="Answer..."
+              <RichDescriptionEditor
                 value={faq.answer}
-                onChange={(e) => updateFaq(i, "answer", e.target.value)}
-                rows={2}
-                className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm resize-none outline-none focus:ring-2 focus:ring-primary-300"
+                onChange={(html) => updateFaq(i, "answer", html)}
+                placeholder="Answer..."
+                minHeight={110}
+                headings={false}
               />
             </div>
           ))}

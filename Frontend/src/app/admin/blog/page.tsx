@@ -1,5 +1,6 @@
 ﻿"use client";
 import { adminFetch } from "@/lib/adminAuth";
+import RichDescriptionEditor from "@/app/components/RichDescriptionEditor";
 
 import { useState, useEffect, lazy, Suspense } from "react";
 import { Edit2, Trash2, X, Save, Rocket, Plus, ImagePlus } from "lucide-react";
@@ -827,10 +828,11 @@ export default function BlogAdminPage() {
                         </div>
                         <div>
                           <label className="block text-sm font-medium text-gray-700 mb-1">Answer</label>
-                          <textarea
+                          <RichDescriptionEditor
                             value={faq.answer}
-                            onChange={(e) => handleUpdateFaq(index, "answer", e.target.value)}
-                            className="w-full border rounded-lg p-2.5 text-sm h-24 focus:outline-none focus:ring-2 focus:ring-primary-300"
+                            onChange={(html) => handleUpdateFaq(index, "answer", html)}
+                            minHeight={120}
+                            headings={false}
                           />
                         </div>
                       </div>

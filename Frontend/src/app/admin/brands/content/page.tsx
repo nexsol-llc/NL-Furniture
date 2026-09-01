@@ -3,6 +3,7 @@
 import useSWR from "swr";
 import { useState } from "react";
 import { Search, Save, Upload, CheckCircle } from "lucide-react";
+import RichDescriptionEditor from "@/app/components/RichDescriptionEditor";
 
 const fetcher = (url: string) => fetch(url).then(res => res.json());
 
@@ -188,12 +189,12 @@ export default function BrandContentAdmin() {
                 <label className="block text-xs font-semibold text-gray-400 uppercase tracking-widest mb-3">
                   Brand Story / Description
                 </label>
-                <textarea 
+                <RichDescriptionEditor
                   value={description}
-                  onChange={(e) => setDescription(e.target.value)}
-                  rows={6}
-                  className="w-full bg-gray-50 border border-gray-200 rounded-lg p-5 text-gray-900 focus:ring-2 focus:ring-primary-500 outline-none transition resize-none leading-relaxed"
+                  onChange={(html) => setDescription(html)}
                   placeholder="Kurze Beschreibung für den Hero-Bereich..."
+                  minHeight={180}
+                  headings={false}
                 />
               </div>
 
@@ -202,14 +203,13 @@ export default function BrandContentAdmin() {
                   Long Description (unter den Coupons)
                 </label>
                 <p className="text-xs text-gray-500 mb-3">
-                  HTML erlaubt: &lt;h2&gt;, &lt;h3&gt;, &lt;p&gt;, &lt;img src=&quot;...&quot;&gt;, &lt;ul&gt;, &lt;li&gt;
+                  Koppen, alinea's, afbeeldingen en links — of plak via &bdquo;HTML&ldquo; direct code.
                 </p>
-                <textarea
+                <RichDescriptionEditor
                   value={longContent}
-                  onChange={(e) => setLongContent(e.target.value)}
-                  rows={18}
-                  className="w-full bg-gray-50 border border-gray-200 rounded-lg p-5 text-gray-900 focus:ring-2 focus:ring-primary-500 outline-none transition resize-y leading-relaxed font-mono text-sm"
-                  placeholder={'<h2>Über IKEA Gutscheine</h2>\n<p>Ihr ausführlicher Text...</p>\n<img src="/uploads/brands/beispiel.jpg" alt="Möbel" />\n<h3>So nutzen Sie den Code</h3>\n<p>Weitere Details...</p>'}
+                  onChange={(html) => setLongContent(html)}
+                  placeholder="Uw uitgebreide tekst..."
+                  minHeight={380}
                 />
               </div>
             </div>

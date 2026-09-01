@@ -238,6 +238,168 @@
       }
     ]
   },
+  "homeCompare": {
+    "adLabel": "Ad",
+    "sponsoredLabel": "Sponsored",
+    "compareLabel": "Compare",
+    "ratingCount": "({{count}})",
+    "sidebar": {
+      "heading": "Menu",
+      "home": "Home",
+      "categories": "Categories",
+      "compare": "Compare",
+      "brands": "Brands",
+      "deals": "Deals",
+      "coupons": "Coupons",
+      "inspiration": "Inspiration",
+      "reviews": "Reviews",
+      "guides": "Tips & guides",
+      "proKicker": "Upgrade to",
+      "proTitle": "Pro Member",
+      "proPerks": [
+        "Unlimited comparisons",
+        "Price drop alerts",
+        "Exclusive discounts",
+        "Early access to deals"
+      ],
+      "proCta": "Upgrade now"
+    },
+    "hero": {
+      "titleLine1": "Find. Compare.",
+      "titleLine2": "Furnish your perfect space.",
+      "subtitle": "Compare prices, styles and reviews from top brands — all in one place.",
+      "ctaPrimary": "Start comparing",
+      "ctaSecondary": "Explore categories",
+      "slideAria": "Go to slide {{index}}"
+    },
+    "compareTray": {
+      "title": "Compare furniture",
+      "subtitle": "Side by side comparison",
+      "emptySlot": "Add",
+      "vs": "vs",
+      "cta": "Compare now",
+      "viewList": "View comparison list",
+      "hint": "Pick up to {{max}} products to line them up side by side.",
+      "remove": "Remove from comparison",
+      "added": "Added to your comparison",
+      "removed": "Removed from your comparison",
+      "full": "You can compare up to {{max}} products",
+      "headerLabel": "Compare ({{count}})",
+      "clear": "Clear",
+      "oldPriceLabel": "Was",
+      "brandLabel": "Brand",
+      "toShop": "Go to shop",
+      "discountLabel": "Discount"
+    },
+    "categories": {
+      "title": "Shop by category",
+      "viewAll": "All categories",
+      "itemCount": "{{count}}+ items"
+    },
+    "deals": {
+      "title": "Top deals",
+      "viewAll": "All deals",
+      "empty": "No deals yet."
+    },
+    "rooms": {
+      "title": "Design your dream rooms",
+      "subtitle": "Get inspired by complete interiors, curated just for you.",
+      "cta": "Explore rooms"
+    },
+    "why": {
+      "title": "Why compare?",
+      "priceTitle": "Best prices",
+      "priceText": "Find the lowest price across hundreds of stores.",
+      "reviewsTitle": "Trusted reviews",
+      "reviewsText": "Real ratings from verified buyers.",
+      "choiceTitle": "Smart choices",
+      "choiceText": "Buy with confidence, without second-guessing."
+    },
+    "brands": {
+      "title": "Top brands you can trust",
+      "viewAll": "All brands",
+      "prev": "Previous brands",
+      "next": "Next brands"
+    },
+    "featuredBrand": {
+      "label": "Featured brand",
+      "cta": "Discover the collection"
+    },
+    "railNewsletter": {
+      "title": "Updates & exclusive deals",
+      "subtitle": "Join thousands of smart shoppers."
+    },
+    "trust": {
+      "shippingTitle": "Free shipping",
+      "shippingText": "On orders over €499",
+      "priceTitle": "Price match guarantee",
+      "priceText": "We beat any price",
+      "returnsTitle": "30-day returns",
+      "returnsText": "Hassle-free returns",
+      "paymentTitle": "Secure payments",
+      "paymentText": "100% secure checkout",
+      "supportTitle": "24/7 support",
+      "supportText": "We are here to help"
+    },
+    "inspiration": {
+      "title": "Get inspired",
+      "viewAll": "All inspiration",
+      "allFilter": "All rooms",
+      "ideasCount": "{{count}} ideas",
+      "prev": "Previous inspiration",
+      "next": "Next inspiration",
+      "empty": "More inspiration coming soon."
+    },
+    "compareCta": {
+      "title": "Powerful comparison. Smarter decisions.",
+      "subtitle": "Compare up to {{max}} products side by side and find the perfect match.",
+      "priceTitle": "Price",
+      "priceText": "Find the best deal",
+      "featuresTitle": "Features",
+      "featuresText": "What matters most",
+      "reviewsTitle": "Reviews",
+      "reviewsText": "See what buyers say",
+      "warrantyTitle": "Warranty",
+      "warrantyText": "Compare coverage",
+      "cta": "Start comparing now"
+    },
+    "bestSellers": {
+      "title": "Best selling products",
+      "viewAll": "All products",
+      "empty": "No products available yet."
+    },
+    "sponsoredPicks": {
+      "title": "Sponsored picks for you",
+      "viewAll": "View all"
+    },
+    "testimonials": {
+      "title": "What people say",
+      "viewAll": "All reviews",
+      "verifiedBuyer": "Verified buyer",
+      "items": [
+        {
+          "name": "Sanne de Vries",
+          "text": "Great experience! I found the same sofa over a hundred euros cheaper after comparing several stores.",
+          "product": "Modern 3-seater sofa"
+        },
+        {
+          "name": "Bram Jansen",
+          "text": "The comparison feature saved me hours of research. Highly recommended.",
+          "product": "Ergonomic office chair"
+        },
+        {
+          "name": "Fatima Noor",
+          "text": "Sharp deals and honest reviews. My go-to starting point for furniture.",
+          "product": "Solid wood dining table"
+        }
+      ]
+    },
+    "newsletterBand": {
+      "titleLine1": "The best furniture deals",
+      "titleLine2": "straight to your inbox",
+      "subtitle": "Subscribe for exclusive offers, price drops and new arrivals."
+    }
+  },
   "impressum": {
     "heroTitle": "Legal Notice | Legal Information",
     "heroSubtitle": "Information pursuant to Article 3:15d of the Dutch Civil Code",
@@ -470,7 +632,20 @@
     "defaultFaq3A": "Yes, the statutory 14-day right of withdrawal applies to all products. Please note the respective retailer's return conditions."
   },
   "brandPage": {
-    "months": ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"],
+    "months": [
+      "January",
+      "February",
+      "March",
+      "April",
+      "May",
+      "June",
+      "July",
+      "August",
+      "September",
+      "October",
+      "November",
+      "December"
+    ],
     "defaultFaq1Q": "How can I save money on furniture purchases?",
     "defaultFaq1A": "You can save money on furniture purchases by using our exclusive voucher codes, activating cashback offers, and shopping during major seasonal sales.",
     "defaultFaq2Q": "Which furniture stores offer the best cashback deals?",

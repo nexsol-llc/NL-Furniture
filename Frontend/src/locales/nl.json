@@ -238,6 +238,168 @@
       }
     ]
   },
+  "homeCompare": {
+    "adLabel": "Advertentie",
+    "sponsoredLabel": "Gesponsord",
+    "compareLabel": "Vergelijk",
+    "ratingCount": "({{count}})",
+    "sidebar": {
+      "heading": "Menu",
+      "home": "Home",
+      "categories": "Categorieën",
+      "compare": "Vergelijken",
+      "brands": "Merken",
+      "deals": "Aanbiedingen",
+      "coupons": "Kortingscodes",
+      "inspiration": "Inspiratie",
+      "reviews": "Beoordelingen",
+      "guides": "Tips & gidsen",
+      "proKicker": "Upgrade naar",
+      "proTitle": "Pro-lid",
+      "proPerks": [
+        "Onbeperkt vergelijken",
+        "Prijsdaling-alerts",
+        "Exclusieve kortingen",
+        "Vroege toegang tot deals"
+      ],
+      "proCta": "Nu upgraden"
+    },
+    "hero": {
+      "titleLine1": "Vind. Vergelijk.",
+      "titleLine2": "Richt je perfecte ruimte in.",
+      "subtitle": "Vergelijk prijzen, stijlen en beoordelingen van topmerken — alles op één plek.",
+      "ctaPrimary": "Start met vergelijken",
+      "ctaSecondary": "Ontdek categorieën",
+      "slideAria": "Ga naar slide {{index}}"
+    },
+    "compareTray": {
+      "title": "Meubels vergelijken",
+      "subtitle": "Naast elkaar vergelijken",
+      "emptySlot": "Toevoegen",
+      "vs": "vs",
+      "cta": "Nu vergelijken",
+      "viewList": "Bekijk vergelijkingslijst",
+      "hint": "Selecteer tot {{max}} producten om ze naast elkaar te zetten.",
+      "remove": "Verwijderen uit de vergelijking",
+      "added": "Toegevoegd aan de vergelijking",
+      "removed": "Verwijderd uit de vergelijking",
+      "full": "Je kunt maximaal {{max}} producten vergelijken",
+      "headerLabel": "Vergelijken ({{count}})",
+      "clear": "Wissen",
+      "oldPriceLabel": "Vanafprijs",
+      "brandLabel": "Merk",
+      "toShop": "Naar de winkel",
+      "discountLabel": "Korting"
+    },
+    "categories": {
+      "title": "Winkel per categorie",
+      "viewAll": "Alle categorieën",
+      "itemCount": "{{count}}+ items"
+    },
+    "deals": {
+      "title": "Topaanbiedingen",
+      "viewAll": "Alle deals",
+      "empty": "Nog geen aanbiedingen."
+    },
+    "rooms": {
+      "title": "Ontwerp je droomkamers",
+      "subtitle": "Laat je inspireren door complete interieurs, speciaal voor jou samengesteld.",
+      "cta": "Ontdek kamers"
+    },
+    "why": {
+      "title": "Waarom vergelijken?",
+      "priceTitle": "Beste prijzen",
+      "priceText": "Vind de laagste prijs uit honderden winkels.",
+      "reviewsTitle": "Betrouwbare reviews",
+      "reviewsText": "Echte beoordelingen van geverifieerde kopers.",
+      "choiceTitle": "Slimme keuzes",
+      "choiceText": "Koop met vertrouwen, zonder twijfel."
+    },
+    "brands": {
+      "title": "Merken die je kunt vertrouwen",
+      "viewAll": "Alle merken",
+      "prev": "Vorige merken",
+      "next": "Volgende merken"
+    },
+    "featuredBrand": {
+      "label": "Uitgelicht merk",
+      "cta": "Ontdek de collectie"
+    },
+    "railNewsletter": {
+      "title": "Updates & exclusieve deals",
+      "subtitle": "Sluit je aan bij duizenden slimme shoppers."
+    },
+    "trust": {
+      "shippingTitle": "Gratis verzending",
+      "shippingText": "Bij bestellingen boven € 499",
+      "priceTitle": "Laagsteprijsgarantie",
+      "priceText": "Wij verslaan elke prijs",
+      "returnsTitle": "30 dagen retour",
+      "returnsText": "Retourneren zonder gedoe",
+      "paymentTitle": "Veilig betalen",
+      "paymentText": "100% beveiligde checkout",
+      "supportTitle": "24/7 support",
+      "supportText": "We staan voor je klaar"
+    },
+    "inspiration": {
+      "title": "Doe inspiratie op",
+      "viewAll": "Alle inspiratie",
+      "allFilter": "Alle kamers",
+      "ideasCount": "{{count}} ideeën",
+      "prev": "Vorige inspiratie",
+      "next": "Volgende inspiratie",
+      "empty": "Binnenkort meer inspiratie."
+    },
+    "compareCta": {
+      "title": "Krachtig vergelijken. Slimmere beslissingen.",
+      "subtitle": "Vergelijk tot {{max}} producten naast elkaar en vind de perfecte match.",
+      "priceTitle": "Prijs",
+      "priceText": "Vind de beste deal",
+      "featuresTitle": "Kenmerken",
+      "featuresText": "Wat er echt toe doet",
+      "reviewsTitle": "Reviews",
+      "reviewsText": "Wat kopers zeggen",
+      "warrantyTitle": "Garantie",
+      "warrantyText": "Dekking vergelijken",
+      "cta": "Begin met vergelijken"
+    },
+    "bestSellers": {
+      "title": "Best verkochte producten",
+      "viewAll": "Alle producten",
+      "empty": "Nog geen producten beschikbaar."
+    },
+    "sponsoredPicks": {
+      "title": "Gesponsorde selectie voor jou",
+      "viewAll": "Alles bekijken"
+    },
+    "testimonials": {
+      "title": "Wat mensen zeggen",
+      "viewAll": "Alle reviews",
+      "verifiedBuyer": "Geverifieerde koper",
+      "items": [
+        {
+          "name": "Sanne de Vries",
+          "text": "Fijne ervaring! Ik vond dezelfde bank ruim honderd euro goedkoper na het vergelijken van meerdere winkels.",
+          "product": "Moderne 3-zitsbank"
+        },
+        {
+          "name": "Bram Jansen",
+          "text": "De vergelijkfunctie bespaarde me uren onderzoek. Absolute aanrader.",
+          "product": "Ergonomische bureaustoel"
+        },
+        {
+          "name": "Fatima Noor",
+          "text": "Scherpe aanbiedingen en eerlijke reviews. Mijn vaste startpunt voor meubels.",
+          "product": "Massief houten eettafel"
+        }
+      ]
+    },
+    "newsletterBand": {
+      "titleLine1": "De beste meubeldeals",
+      "titleLine2": "rechtstreeks in je inbox",
+      "subtitle": "Schrijf je in voor exclusieve aanbiedingen, prijsdalingen en nieuwe collecties."
+    }
+  },
   "impressum": {
     "heroTitle": "Colofon | Juridische informatie",
     "heroSubtitle": "Gegevens conform artikel 3:15d van het Burgerlijk Wetboek",
@@ -470,7 +632,20 @@
     "defaultFaq3A": "Ja, op alle producten geldt het wettelijke herroepingsrecht van 14 dagen. Let daarbij op de retourvoorwaarden van de betreffende winkel."
   },
   "brandPage": {
-    "months": ["januari", "februari", "maart", "april", "mei", "juni", "juli", "augustus", "september", "oktober", "november", "december"],
+    "months": [
+      "januari",
+      "februari",
+      "maart",
+      "april",
+      "mei",
+      "juni",
+      "juli",
+      "augustus",
+      "september",
+      "oktober",
+      "november",
+      "december"
+    ],
     "defaultFaq1Q": "Hoe kan ik besparen op de aankoop van meubels?",
     "defaultFaq1A": "Je bespaart op meubels door onze exclusieve kortingscodes te gebruiken, cashbackaanbiedingen te activeren en te kopen tijdens de grote seizoensacties.",
     "defaultFaq2Q": "Welke meubelwinkels bieden de beste cashbackdeals?",

@@ -1,8 +1,10 @@
 ﻿"use client";
 import { adminFetch } from "@/lib/adminAuth";
+import RichDescriptionEditor from "@/app/components/RichDescriptionEditor";
 
 import { useEffect, useState } from "react";
 import { defaultCookieConsent } from "@/lib/cookieConsentDefaults";
+import RichContent from "@/app/components/RichContent";
 
 export default function CookieConsentAdminPage() {
   const [form, setForm] = useState(defaultCookieConsent);
@@ -44,10 +46,11 @@ export default function CookieConsentAdminPage() {
     <div>
       <label className="block text-sm font-medium text-gray-700 mb-1">{label}</label>
       {type === "textarea" ? (
-        <textarea
+        <RichDescriptionEditor
           value={String(form[key])}
-          onChange={(e) => setForm({ ...form, [key]: e.target.value })}
-          className="w-full border rounded-lg px-4 py-2 text-sm h-24"
+          onChange={(html) => setForm({ ...form, [key]: html })}
+          minHeight={120}
+          headings={false}
         />
       ) : (
         <input
@@ -137,7 +140,7 @@ export default function CookieConsentAdminPage() {
             <div className="mt-1 h-[3px] w-[90px] bg-[#F0734C] rounded-full" />
           </div>
           <h3 className="font-semibold text-gray-900 mb-2">{form.heading}</h3>
-          <p className="text-sm text-gray-700 mb-1">{form.bodyText}</p>
+          <RichContent content={form.bodyText} className="text-sm text-gray-700 mb-1" />
           <p className="text-sm underline text-gray-800 mb-4">{form.detailsLinkText}</p>
           <p className="text-xs text-gray-600 mb-4">
             {form.link1Text} | {form.link2Text} | {form.link3Text}

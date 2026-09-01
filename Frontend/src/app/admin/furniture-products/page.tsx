@@ -1,5 +1,6 @@
 "use client";
 import { adminFetch } from "@/lib/adminAuth";
+import RichDescriptionEditor from "@/app/components/RichDescriptionEditor";
 
 import { useState, useEffect, useCallback, useMemo } from "react";
 import {
@@ -1036,7 +1037,11 @@ export default function FurnitureProductsAdmin() {
                 <Field label="AWIN Product ID (optional)"><input type="number" value={form.aw_product_id ?? ""} onChange={(e) => setField("aw_product_id", e.target.value === "" ? null : Number(e.target.value))} placeholder="matches CSV feed" className="input" /></Field>
               </div>
 
-              <Field label="Description"><textarea value={form.description || ""} onChange={(e) => setField("description", e.target.value)} rows={4} className="input resize-y" /></Field>
+              <Field label="Description">                                         <RichDescriptionEditor
+                                           value={form.description || ""}
+                                           onChange={(html) => setField("description", html)}
+                                           minHeight={180}
+                                         /></Field>
 
               <label className="flex items-center gap-2 text-sm text-zinc-700 cursor-pointer">
                 <input type="checkbox" checked={!!form.is_sponsored} onChange={(e) => setField("is_sponsored", e.target.checked)} className="w-4 h-4 accent-primary-600" />

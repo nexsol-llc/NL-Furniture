@@ -4,6 +4,7 @@ import { useState } from "react";
 import { ChevronDown } from "lucide-react";
 import { useLanguage } from "@/providers/languageContext";
 import { Reveal, RevealGroup, RevealItem } from "./motion/Reveal";
+import RichContent from "@/app/components/RichContent";
 
 export interface FAQItem {
   question: string;
@@ -66,9 +67,10 @@ export default function FAQSection({
                   }`}
                 >
                   <div className="overflow-hidden">
-                    <div className="px-5 py-4 border-t border-gray-100 bg-gray-50 text-gray-700 text-sm leading-relaxed">
-                      {faq.answer}
-                    </div>
+                    <RichContent
+                      content={faq.answer}
+                      className="px-5 py-4 border-t border-gray-100 bg-gray-50 text-gray-700 text-sm leading-relaxed"
+                    />
                   </div>
                 </div>
               </RevealItem>

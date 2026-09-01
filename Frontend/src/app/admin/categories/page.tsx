@@ -1,5 +1,6 @@
 ﻿"use client";
 import { adminFetch } from "@/lib/adminAuth";
+import RichDescriptionEditor from "@/app/components/RichDescriptionEditor";
 
 import React, { useState, useEffect, useMemo } from "react";
 import {
@@ -94,12 +95,12 @@ function FaqEditor({
           placeholder="FAQ question…"
           className="w-full border border-zinc-200 rounded-xl p-3 text-xs focus:outline-none focus:ring-2 focus:ring-primary-500 bg-white font-medium"
         />
-        <textarea
+        <RichDescriptionEditor
           value={answer}
-          onChange={(e) => setAnswer(e.target.value)}
+          onChange={(html) => setAnswer(html)}
           placeholder="FAQ answer…"
-          rows={2}
-          className="w-full border border-zinc-200 rounded-xl p-3 text-xs focus:outline-none focus:ring-2 focus:ring-primary-500 bg-white font-medium"
+          minHeight={110}
+          headings={false}
         />
         <button
           type="button"
@@ -1057,12 +1058,11 @@ export default function CategoriesAdmin() {
 
             <div className="space-y-1">
               <label className="text-[11px] font-semibold text-zinc-500 uppercase tracking-wider">Long Content (At bottom of /categorie)</label>
-              <textarea
+              <RichDescriptionEditor
                 value={mainLongContent}
-                onChange={(e) => setMainLongContent(e.target.value)}
+                onChange={(html) => setMainLongContent(html)}
                 placeholder="Write description text..."
-                rows={5}
-                className="w-full border border-zinc-200 rounded-xl p-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 font-medium whitespace-pre-line"
+                minHeight={240}
               />
             </div>
           </div>
@@ -1427,12 +1427,11 @@ export default function CategoriesAdmin() {
 
                   <div className="space-y-1">
                     <label className="text-[11px] font-semibold text-zinc-500 uppercase tracking-wider">Long Content (Displayed at the bottom)</label>
-                    <textarea
+                    <RichDescriptionEditor
                       value={parentCategoryForm.description}
-                      onChange={(e) => setParentCategoryForm(prev => ({ ...prev, description: e.target.value }))}
+                      onChange={(html) => setParentCategoryForm(prev => ({ ...prev, description: html }))}
                       placeholder="Write description/SEO text..."
-                      rows={4}
-                      className="w-full border border-zinc-200 rounded-xl p-3 text-xs focus:outline-none focus:ring-2 font-medium"
+                      minHeight={200}
                     />
                   </div>
 
@@ -2123,12 +2122,11 @@ export default function CategoriesAdmin() {
 
                   <div className="space-y-1">
                     <label className="text-[11px] font-semibold text-zinc-500 uppercase tracking-wider">Long Content (Displayed at the bottom)</label>
-                    <textarea
+                    <RichDescriptionEditor
                       value={catalogDescription}
-                      onChange={(e) => setCatalogDescription(e.target.value)}
+                      onChange={(html) => setCatalogDescription(html)}
                       placeholder="Write description/SEO text..."
-                      rows={5}
-                      className="w-full border border-zinc-200 rounded-xl p-3 text-sm focus:outline-none focus:ring-2 font-medium"
+                      minHeight={240}
                     />
                   </div>
                 </div>
@@ -2318,11 +2316,10 @@ export default function CategoriesAdmin() {
 
                         <div className="space-y-1">
                           <label className="text-[10px] font-semibold text-zinc-500 uppercase tracking-wider">Description (Long content text)</label>
-                          <textarea
+                          <RichDescriptionEditor
                             value={subForm.description}
-                            onChange={(e) => setSubForm(prev => ({ ...prev, description: e.target.value }))}
-                            rows={3}
-                            className="w-full border border-zinc-200 rounded-xl p-3 text-xs focus:outline-none focus:ring-2 font-medium"
+                            onChange={(html) => setSubForm(prev => ({ ...prev, description: html }))}
+                            minHeight={180}
                           />
                         </div>
 

@@ -1,5 +1,6 @@
 ﻿"use client";
 import { adminFetch } from "@/lib/adminAuth";
+import RichDescriptionEditor from "@/app/components/RichDescriptionEditor";
 
 import useSWR from "swr";
 import { useState, useRef, useCallback, useEffect } from "react";
@@ -459,11 +460,12 @@ export default function AdminInfluencersPage() {
               onChange={(e) => setBrandForm({ ...brandForm, displayName: e.target.value })}
               className="w-full border rounded-xl px-4 py-2.5 text-sm outline-none focus:ring-2 focus:ring-primary-400"
             />
-            <textarea
-              placeholder="Bio (optional)"
+            <RichDescriptionEditor
               value={brandForm.bio}
-              onChange={(e) => setBrandForm({ ...brandForm, bio: e.target.value })}
-              className="w-full border rounded-xl px-4 py-2.5 text-sm outline-none focus:ring-2 focus:ring-primary-400 h-20 resize-none"
+              onChange={(html) => setBrandForm({ ...brandForm, bio: html })}
+              placeholder="Bio (optional)"
+              minHeight={120}
+              headings={false}
             />
             <div>
               <label className="text-xs font-medium text-gray-600 block mb-1">Logo</label>
@@ -602,11 +604,12 @@ export default function AdminInfluencersPage() {
                     onChange={(e) => setLookForm({ ...lookForm, title: e.target.value })}
                     className="w-full border rounded-xl px-4 py-2.5 text-sm outline-none focus:ring-2 focus:ring-primary-400"
                   />
-                  <textarea
-                    placeholder="Caption (short description)"
+                  <RichDescriptionEditor
                     value={lookForm.caption}
-                    onChange={(e) => setLookForm({ ...lookForm, caption: e.target.value })}
-                    className="w-full border rounded-xl px-4 py-2.5 text-sm h-16 resize-none outline-none focus:ring-2 focus:ring-primary-400"
+                    onChange={(html) => setLookForm({ ...lookForm, caption: html })}
+                    placeholder="Caption (short description)"
+                    minHeight={110}
+                    headings={false}
                   />
                 </div>
 
@@ -766,11 +769,12 @@ export default function AdminInfluencersPage() {
                           onChange={(e) => updateFaq(i, "question", e.target.value)}
                           className="w-full border rounded-lg px-3 py-2 text-xs mb-2 outline-none focus:ring-2 focus:ring-primary-300"
                         />
-                        <textarea
-                          placeholder="Answer…"
+                        <RichDescriptionEditor
                           value={faq.answer}
-                          onChange={(e) => updateFaq(i, "answer", e.target.value)}
-                          className="w-full border rounded-lg px-3 py-2 text-xs h-16 resize-none outline-none focus:ring-2 focus:ring-primary-300"
+                          onChange={(html) => updateFaq(i, "answer", html)}
+                          placeholder="Answer…"
+                          minHeight={110}
+                          headings={false}
                         />
                       </div>
                     ))}

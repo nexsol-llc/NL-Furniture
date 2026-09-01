@@ -1,10 +1,11 @@
 ﻿"use client";
 import { adminFetch } from "@/lib/adminAuth";
+import RichDescriptionEditor from "@/app/components/RichDescriptionEditor";
 
 export const dynamic = 'force-dynamic';
 
 import useSWR from "swr";
-import { useState, useRef, useCallback, useEffect } from "react";
+import { useState, useCallback, useEffect } from "react";
 import {
   Plus, Search, Edit2, X, ChevronDown, ChevronUp,
   Store, Tag, Link2, Image as ImageIcon, Trash2,
@@ -93,120 +94,6 @@ const toDateInputValue = (raw?: string): string => {
   return "";
 };
 
-// ─── Rich Text Toolbar ────────────────────────────────────────────────────────
-function RichToolbar({ editorRef }: { editorRef: React.RefObject<HTMLDivElement | null> }) {
-  const imageInputRef = useRef<HTMLInputElement | null>(null);
-  const [uploadingImage, setUploadingImage] = useState(false);
-
-  const syncEditor = () => {
-    editorRef.current?.dispatchEvent(new InputEvent("input", { bubbles: true }));
-  };
-
-  const exec = (cmd: string, value?: string) => {
-    editorRef.current?.focus();
-    document.execCommand(cmd, false, value);
-    syncEditor();
-  };
-
-  const insertLink = () => {
-    const url = prompt("Enter link URL (https://...):");
-    if (url) exec("createLink", url);
-  };
-
-  const uploadImage = async (file: File) => {
-    setUploadingImage(true);
-    try {
-      const fd = new FormData();
-      fd.append("file", file);
-
-      const res = await adminFetch("/api/upload-image", {
-        method: "POST",
-        body: fd,
-      });
-      const data = await res.json();
-
-      if (!res.ok || !data.url) {
-        throw new Error(data.error || "Image upload failed");
-      }
-
-      exec(
-        "insertHTML",
-        `<img src="${data.url}" alt="" style="max-width:100%;height:auto;border-radius:8px;margin:12px 0;display:block;" />`
-      );
-    } catch (error: any) {
-      alert(error.message || "Image upload failed");
-    } finally {
-      setUploadingImage(false);
-      if (imageInputRef.current) imageInputRef.current.value = "";
-    }
-  };
-
-  return (
-    <div className="flex flex-wrap gap-1 p-2 bg-gray-50 border border-gray-200 rounded-t-xl border-b-0">
-      {[
-        { label: "B", cmd: "bold", cls: "font-semibold" },
-        { label: "I", cmd: "italic", cls: "italic" },
-        { label: "U", cmd: "underline", cls: "underline" },
-      ].map(({ label, cmd, cls }) => (
-        <button
-          key={cmd}
-          type="button"
-          onMouseDown={(e) => { e.preventDefault(); exec(cmd); }}
-          className={`w-8 h-8 text-sm rounded-lg hover:bg-primary-100 hover:text-primary-700 transition ${cls}`}
-          title={cmd}
-        >
-          {label}
-        </button>
-      ))}
-      <div className="w-px h-8 bg-gray-200 mx-1" />
-      {(["h1", "h2", "h3", "h4", "h5"] as const).map((tag) => (
-        <button
-          key={tag}
-          type="button"
-          onMouseDown={(e) => { e.preventDefault(); exec("formatBlock", tag); }}
-          className="px-2 h-8 text-xs font-semibold rounded-lg hover:bg-primary-100 hover:text-primary-700 transition"
-        >
-          {tag.toUpperCase()}
-        </button>
-      ))}
-      <div className="w-px h-8 bg-gray-200 mx-1" />
-      <button
-        type="button"
-        onMouseDown={(e) => { e.preventDefault(); exec("insertUnorderedList"); }}
-        className="px-2 h-8 text-xs rounded-lg hover:bg-primary-100 hover:text-primary-700 transition"
-        title="Bullet list"
-      >• List</button>
-      <button
-        type="button"
-        onMouseDown={(e) => { e.preventDefault(); insertLink(); }}
-        className="px-2 h-8 text-xs rounded-lg hover:bg-primary-100 hover:text-primary-700 transition flex items-center gap-1"
-        title="Insert link"
-      >
-        <Link2 size={12} /> Link
-      </button>
-      <button
-        type="button"
-        onMouseDown={(e) => { e.preventDefault(); imageInputRef.current?.click(); }}
-        disabled={uploadingImage}
-        className="px-2 h-8 text-xs rounded-lg hover:bg-primary-100 hover:text-primary-700 transition flex items-center gap-1"
-        title="Upload image"
-      >
-        {uploadingImage ? <Loader2 size={12} className="animate-spin" /> : <ImageIcon size={12} />}
-        Img
-      </button>
-      <input
-        ref={imageInputRef}
-        type="file"
-        accept="image/*"
-        className="hidden"
-        onChange={(e) => {
-          const file = e.target.files?.[0];
-          if (file) uploadImage(file);
-        }}
-      />
-    </div>
-  );
-}
 
 // ─── Collapsible Section ──────────────────────────────────────────────────────
 function Section({
@@ -295,9 +182,6 @@ export default function CouponStoresAdmin() {
   const [catalogLoading, setCatalogLoading] = useState(false);
   const [addingProductIds, setAddingProductIds] = useState<Record<string, boolean>>({});
 
-  // ── Rich editor ref
-  const editorRef = useRef<HTMLDivElement | null>(null);
-
   // ── Toast auto-dismiss
   useEffect(() => {
     if (!toast) return;
@@ -354,13 +238,6 @@ export default function CouponStoresAdmin() {
     setSSeo(false); setSSidebar(false); setsSStats(false);
   };
 
-  // sync rich editor on form open
-  useEffect(() => {
-    if (form && editorRef.current) {
-      editorRef.current.innerHTML = form.longContent || "";
-    }
-  }, [form?.slug]); // re-sync only when store changes
-
   // ── Save (Create or Update)
   const handleSave = async () => {
     if (!form) return;
@@ -372,7 +249,7 @@ export default function CouponStoresAdmin() {
       slug: form.slug || slugify(form.name),
       url: form.url,
       description: form.description,
-      longContent: editorRef.current?.innerHTML || form.longContent,
+      longContent: form.longContent,
       seoTitle: form.seoTitle,
       seoDescription: form.seoDescription,
       seoKeywords: form.seoKeywords,
@@ -918,12 +795,12 @@ export default function CouponStoresAdmin() {
                     <label className="block text-xs font-semibold text-gray-600 mb-1.5">
                       Short Description
                     </label>
-                    <textarea
+                    <RichDescriptionEditor
                       value={form.description}
-                      onChange={(e) => setForm({ ...form, description: e.target.value })}
+                      onChange={(html) => setForm({ ...form, description: html })}
                       placeholder="Short store intro — shown in the hero area"
-                      rows={2}
-                      className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm resize-none outline-none focus:ring-2 focus:ring-primary-400"
+                      minHeight={120}
+                      headings={false}
                     />
                   </div>
 
@@ -992,28 +869,12 @@ export default function CouponStoresAdmin() {
                   <p className="text-xs text-gray-500 -mt-1">
                     Add headings (H2/H3), paragraphs, images and internal links here.
                   </p>
-                  <div className="border border-gray-200 rounded-xl overflow-hidden">
-                    <RichToolbar editorRef={editorRef} />
-                    <div
-                      ref={editorRef}
-                      contentEditable
-                      suppressContentEditableWarning
-                      onInput={() => {
-                        if (form && editorRef.current) {
-                          setForm(prev => prev ? { ...prev, longContent: editorRef.current!.innerHTML } : prev);
-                        }
-                      }}
-                      className="min-h-[240px] p-4 text-sm text-gray-800 outline-none prose prose-sm max-w-none
-                        [&_h1]:text-2xl [&_h1]:font-semibold [&_h1]:mt-5 [&_h1]:mb-3
-                        [&_h2]:text-xl [&_h2]:font-semibold [&_h2]:mt-4 [&_h2]:mb-2
-                        [&_h3]:text-base [&_h3]:font-semibold [&_h3]:mt-3 [&_h3]:mb-1
-                        [&_h4]:text-sm [&_h4]:font-semibold [&_h4]:mt-3 [&_h4]:mb-1
-                        [&_h5]:text-xs [&_h5]:font-semibold [&_h5]:mt-3 [&_h5]:mb-1
-                        [&_ul]:list-disc [&_ul]:ml-5 [&_a]:text-primary-600 [&_a]:underline
-                        [&_img]:rounded-lg [&_img]:max-w-full [&_img]:my-2"
-                      style={{ minHeight: 240 }}
-                    />
-                  </div>
+                  <RichDescriptionEditor
+                    value={form.longContent}
+                    onChange={(html) => setForm(prev => prev ? { ...prev, longContent: html } : prev)}
+                    placeholder="Write the long store description..."
+                    minHeight={240}
+                  />
                 </Section>
 
                 {/* ── Section: FAQs ── */}
@@ -1040,12 +901,12 @@ export default function CouponStoresAdmin() {
                           onChange={(e) => updateFaq(i, "question", e.target.value)}
                           className="w-full border border-gray-200 rounded-lg px-3 py-2 text-xs mb-2 outline-none focus:ring-2 focus:ring-primary-300"
                         />
-                        <textarea
-                          placeholder="Answer..."
+                        <RichDescriptionEditor
                           value={faq.answer}
-                          onChange={(e) => updateFaq(i, "answer", e.target.value)}
-                          rows={2}
-                          className="w-full border border-gray-200 rounded-lg px-3 py-2 text-xs resize-none outline-none focus:ring-2 focus:ring-primary-300"
+                          onChange={(html) => updateFaq(i, "answer", html)}
+                          placeholder="Answer..."
+                          minHeight={110}
+                          headings={false}
                         />
                       </div>
                     ))}
@@ -1148,12 +1009,12 @@ export default function CouponStoresAdmin() {
 
                   <div>
                     <label className="block text-xs font-semibold text-gray-600 mb-1.5">Description</label>
-                    <textarea
+                    <RichDescriptionEditor
                       value={form.authorBox.bio}
-                      onChange={(e) => updateAuthorBoxBio(e.target.value)}
+                      onChange={(html) => updateAuthorBoxBio(html)}
                       placeholder="Short description shown in this store's author box..."
-                      rows={3}
-                      className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm resize-none outline-none focus:ring-2 focus:ring-primary-400"
+                      minHeight={130}
+                      headings={false}
                     />
                   </div>
 

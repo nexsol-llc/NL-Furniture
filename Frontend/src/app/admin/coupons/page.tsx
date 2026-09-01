@@ -1,5 +1,6 @@
 ﻿"use client";
 import { adminFetch } from "@/lib/adminAuth";
+import RichDescriptionEditor from "@/app/components/RichDescriptionEditor";
 
 import useSWR from "swr";
 import { useState } from "react";
@@ -362,12 +363,12 @@ export default function AdminCoupons() {
               className="border p-3 w-full rounded-xl"
             />
 
-            <textarea
-              placeholder="Short Description (shown as a quick summary of this coupon)"
+            <RichDescriptionEditor
               value={form.shortDescription}
-              onChange={(e) => setForm({ ...form, shortDescription: e.target.value })}
-              rows={2}
-              className="border p-3 w-full rounded-xl resize-none"
+              onChange={(html) => setForm({ ...form, shortDescription: html })}
+              placeholder="Short Description (shown as a quick summary of this coupon)"
+              minHeight={120}
+              headings={false}
             />
 
             <select

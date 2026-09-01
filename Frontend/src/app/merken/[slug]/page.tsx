@@ -19,6 +19,7 @@ import TopsellerCarousel from "@/app/components/TopsellerCarousel";
 import { Reveal } from "@/app/components/motion/Reveal";
 import { useLanguage } from "@/providers/languageContext";
 import { shopLink } from "@/lib/productFormat";
+import RichContent from "@/app/components/RichContent";
 
 // Raw product shape returned by /api/brands/:slug/products
 interface RawProduct {
@@ -351,9 +352,10 @@ export default function BrandProductsPage() {
                 {safeBrand?.name}
               </h1>
               {brand?.description && (
-                <p className="text-gray-500 text-sm mt-1 max-w-2xl">
-                  {brand.description}
-                </p>
+                <RichContent
+                  content={brand.description}
+                  className="text-gray-500 text-sm mt-1 max-w-2xl"
+                />
               )}
 
               {/* Stats */}

@@ -11,6 +11,7 @@ import toast from "react-hot-toast";
 import { getUser, userFetch, type UserPayload } from "@/lib/userAuth";
 import PlaceholderImage from "@/app/components/PlaceholderImage";
 import { useLanguage } from "@/providers/languageContext";
+import { toPlainText } from "@/lib/richText";
 
 /* ─── Types ─── */
 type LookProduct = {
@@ -256,7 +257,7 @@ export default function InfluencerBrandPage() {
               <div>
                 <h1 className="text-lg font-bold text-gray-900">{brand.displayName}</h1>
                 <p className="text-xs text-gray-400">@{brand.username}</p>
-                {brand.bio && <p className="text-xs text-gray-500 mt-0.5 max-w-md line-clamp-1">{brand.bio}</p>}
+                {brand.bio && <p className="text-xs text-gray-500 mt-0.5 max-w-md line-clamp-1">{toPlainText(brand.bio)}</p>}
               </div>
               <button
                 onClick={() => setFollowing(!following)}

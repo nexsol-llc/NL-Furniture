@@ -1,5 +1,6 @@
 ﻿"use client";
 import { adminFetch } from "@/lib/adminAuth";
+import RichDescriptionEditor from "@/app/components/RichDescriptionEditor";
 
 import { useState, useEffect } from "react";
 import RichTextEditor from "@/app/components/RichTextEditor";
@@ -1022,12 +1023,12 @@ export default function TopAngeboteAdmin() {
                       <label className="block text-xs font-semibold text-gray-500 mb-1">
                         Answer
                       </label>
-                      <textarea
+                      <RichDescriptionEditor
                         value={faq.answer}
-                        onChange={(e) => updateFaq(i, "answer", e.target.value)}
+                        onChange={(html) => updateFaq(i, "answer", html)}
                         placeholder="Answer..."
-                        rows={3}
-                        className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-black resize-y"
+                        minHeight={120}
+                        headings={false}
                       />
                     </div>
                   </div>

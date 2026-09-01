@@ -1,5 +1,6 @@
 ﻿"use client";
 import { adminFetch } from "@/lib/adminAuth";
+import RichDescriptionEditor from "@/app/components/RichDescriptionEditor";
 
 import { useEffect, useState } from "react";
 import { Plus, Save, Trash2, Settings, Globe, Share2 } from "lucide-react";
@@ -424,12 +425,12 @@ export default function SettingsPage() {
                         <Trash2 size={18} />
                       </button>
                     </div>
-                    <textarea
+                    <RichDescriptionEditor
                       value={faq.answer}
-                      onChange={(e) => updateFaq(index, "answer", e.target.value)}
-                      className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-black"
-                      rows={3}
+                      onChange={(html) => updateFaq(index, "answer", html)}
                       placeholder="Answer"
+                      minHeight={120}
+                      headings={false}
                     />
                   </div>
                 ))}
