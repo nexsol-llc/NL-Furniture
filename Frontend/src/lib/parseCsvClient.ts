@@ -54,6 +54,34 @@ function col(row: Record<string, string>, name: string): string {
   return "";
 }
 
+// Read a price out of whatever convention the feed uses: "89.99", "89,99",
+// "1.299,00", "1,299.00", "€ 89,99", "89,99 EUR". Returns 0 when the cell holds
+// no usable number, which the import dialog reports as "no price".
+// Must stay in sync with toPrice() in Backend/src/routes/products.ts — that is
+// the one that decides what actually gets stored.
+export function parsePrice(value: string | number | null | undefined): number {
+  if (typeof value === "number") return Number.isFinite(value) && value > 0 ? value : 0;
+  let s = String(value ?? "").replace(/[^\d.,]/g, "");
+  if (!s) return 0;
+
+  const lastComma = s.lastIndexOf(",");
+  const lastDot = s.lastIndexOf(".");
+  if (lastComma > -1 && lastDot > -1) {
+    if (lastComma > lastDot) s = s.replace(/\./g, "").replace(",", ".");
+    else s = s.replace(/,/g, "");
+  } else if (lastComma > -1) {
+    const decimals = s.length - lastComma - 1;
+    s = decimals >= 1 && decimals <= 2 ? s.replace(",", ".") : s.replace(/,/g, "");
+  } else if (lastDot > -1) {
+    const decimals = s.length - lastDot - 1;
+    if (!(decimals >= 1 && decimals <= 2)) s = s.replace(/\./g, "");
+    else s = s.slice(0, lastDot).replace(/\./g, "") + "." + s.slice(lastDot + 1);
+  }
+
+  const n = Number(s);
+  return Number.isFinite(n) && n > 0 ? n : 0;
+}
+
 export type FeedProduct = {
   product_name: string;
   brand_name: string;
@@ -61,10 +89,11 @@ export type FeedProduct = {
   brand_website: string;
   brand_logo: string;
   merchant_name: string;
-  // Category tiers, already resolved through the parent←sub←child fallback below.
+  // Category tiers, already resolved through the fallback below. Any of them
+  // can end up empty when the CSV gives no category at all.
   parent_category: string;
   category_name: string; // "sub category" tier
-  merchant_category: string; // "child category" tier — required
+  merchant_category: string; // "child category" tier
   search_price: string;
   discount_price: string;
   description: string;
@@ -77,22 +106,22 @@ export type FeedProduct = {
 // Product Discount Price, Product Deep Link, Parent Category, Sub Category,
 // Child Category" format) to a product object matching the backend columns.
 //
-// Category fallback: Child Category is required (rows without one are dropped).
-// A missing Sub Category is filled in from the (required) Child Category; a
-// missing Parent Category is filled in from the Sub Category — after that
-// fallback has already run, so "only Child Category given" resolves all three
-// tiers to the same name.
+// Category fallback: every tier is optional, and each empty one borrows the
+// nearest name the row does carry. Sub Category falls back to Child Category,
+// then to Parent Category; Parent Category falls back to the Sub Category that
+// fallback produced. So a row with only Child Category resolves all three tiers
+// to that name, a row with only Parent Category fills Parent + Sub and leaves
+// Child empty, and a row with no category at all imports uncategorized.
+// Product Name is the only column a row is actually dropped for.
 export function rowToFeedProduct(row: Record<string, string>): FeedProduct | null {
   const product_name = col(row, "Product Name");
   if (!product_name) return null;
 
   const rawChild = col(row, "Child Category");
-  if (!rawChild) return null;
-
   const rawSub = col(row, "Sub Category");
   const rawParent = col(row, "Parent Category");
 
-  const resolvedSub = rawSub || rawChild;
+  const resolvedSub = rawSub || rawChild || rawParent;
   const resolvedParent = rawParent || resolvedSub;
 
   return {

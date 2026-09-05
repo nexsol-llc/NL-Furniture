@@ -253,16 +253,7 @@
       "coupons": "Coupons",
       "inspiration": "Inspiration",
       "reviews": "Reviews",
-      "guides": "Tips & guides",
-      "proKicker": "Upgrade to",
-      "proTitle": "Pro Member",
-      "proPerks": [
-        "Unlimited comparisons",
-        "Price drop alerts",
-        "Exclusive discounts",
-        "Early access to deals"
-      ],
-      "proCta": "Upgrade now"
+      "guides": "Tips & guides"
     },
     "hero": {
       "titleLine1": "Find. Compare.",

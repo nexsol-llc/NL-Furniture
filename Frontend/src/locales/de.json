@@ -253,16 +253,7 @@
       "coupons": "Gutscheine",
       "inspiration": "Inspiration",
       "reviews": "Bewertungen",
-      "guides": "Tipps & Ratgeber",
-      "proKicker": "Upgrade auf",
-      "proTitle": "Pro-Mitglied",
-      "proPerks": [
-        "Unbegrenzt vergleichen",
-        "Preisalarm bei Preissenkungen",
-        "Exklusive Rabatte",
-        "Früher Zugang zu Angeboten"
-      ],
-      "proCta": "Jetzt upgraden"
+      "guides": "Tipps & Ratgeber"
     },
     "hero": {
       "titleLine1": "Finden. Vergleichen.",

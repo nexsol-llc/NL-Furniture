@@ -179,6 +179,42 @@ const toNumOrNull = (v: any): number | null => {
   return Number.isNaN(n) ? null : n;
 };
 
+// Prices arrive as free text from merchant feeds and CSV exports, in whichever
+// convention the shop uses: "89.99", "89,99", "1.299,00", "1,299.00",
+// "€ 89,99", "89,99 EUR". Plain Number() turns every comma-decimal form into
+// NaN (and therefore 0), which is how a Dutch/German feed ends up importing as
+// "0 €" — so normalize the separators before converting. Anything with no
+// usable number in it (empty, "n/a", "-") becomes 0, meaning "no price".
+// Must stay in sync with parsePrice() in Frontend/src/lib/parseCsvClient.ts.
+const toPrice = (v: any): number => {
+  if (typeof v === "number") return Number.isFinite(v) && v > 0 ? v : 0;
+  // Keep digits and separators only — drops currency symbols/codes and spaces.
+  let s = String(v ?? "").replace(/[^\d.,]/g, "");
+  if (!s) return 0;
+
+  const lastComma = s.lastIndexOf(",");
+  const lastDot = s.lastIndexOf(".");
+  if (lastComma > -1 && lastDot > -1) {
+    // Both separators present: the last one is the decimal point, the other
+    // groups thousands ("1.299,00" vs "1,299.00").
+    if (lastComma > lastDot) s = s.replace(/\./g, "").replace(",", ".");
+    else s = s.replace(/,/g, "");
+  } else if (lastComma > -1) {
+    // Commas only: a decimal comma is followed by 1-2 digits ("89,99");
+    // anything else groups thousands ("1,299").
+    const decimals = s.length - lastComma - 1;
+    s = decimals >= 1 && decimals <= 2 ? s.replace(",", ".") : s.replace(/,/g, "");
+  } else if (lastDot > -1) {
+    // Dots only: same rule, so "1.299" reads as 1299 and "89.99" as 89.99.
+    const decimals = s.length - lastDot - 1;
+    if (!(decimals >= 1 && decimals <= 2)) s = s.replace(/\./g, "");
+    else s = s.slice(0, lastDot).replace(/\./g, "") + "." + s.slice(lastDot + 1);
+  }
+
+  const n = Number(s);
+  return Number.isFinite(n) && n > 0 ? n : 0;
+};
+
 // Full ordered column list (excluding id/created_at/updated_at).
 const PRODUCT_COLUMNS = [
   "aw_product_id", "product_name", "aw_deep_link", "merchant_deep_link", "merchant_product_id",
@@ -224,10 +260,10 @@ function buildProductValues(
   v.aw_product_id = toNumOrNull(pick("aw_product_id"));
   v.merchant_id = toNumOrNull(pick("merchant_id"));
   v.data_feed_id = toNumOrNull(pick("data_feed_id"));
-  v.search_price = Number(pick("search_price")) || 0;
+  v.search_price = toPrice(pick("search_price"));
   // Sale price from the CSV's "Product Discount Price" column (or the manual
   // form). 0 means "no discount" — the card then shows just search_price.
-  v.discount_price = Number(pick("discount_price")) || 0;
+  v.discount_price = toPrice(pick("discount_price"));
   v.is_sponsored = pick("is_sponsored") ? 1 : 0;
   // Auto-fill a display price from the numeric price when none is given.
   if (!v.display_price && v.search_price > 0) v.display_price = `EUR${v.search_price}`;
@@ -237,7 +273,7 @@ function buildProductValues(
   return v;
 }
 
-// GET /api/products — filter by category, childCategory, brand and price range.
+// GET /api/products — filter by parent/sub/child category, brand and price range.
 productsAdmin.get("/", async (c) => {
   const db = c.env.DB;
   const q = c.req.query();
@@ -248,8 +284,74 @@ productsAdmin.get("/", async (c) => {
   const whereParts: string[] = [];
   const binds: any[] = [];
 
-  if (q.category) { whereParts.push("(LOWER(category_name) LIKE LOWER(?) OR LOWER(merchant_category) LIKE LOWER(?))"); binds.push(`%${q.category}%`, `%${q.category}%`); }
-  if (q.childCategory) { whereParts.push("(LOWER(merchant_category) LIKE LOWER(?) OR LOWER(product_name) LIKE LOWER(?))"); binds.push(`%${q.childCategory}%`, `%${q.childCategory}%`); }
+  // Parent category (top tier): products don't carry it, so resolve the parent
+  // to the Category Catalog entries filed under it and match those. Every name,
+  // slug and alias counts, since category_name can hold any of the three.
+  if (q.parentCategory) {
+    const parentRow = await db
+      .prepare("SELECT id FROM parent_categories WHERE id = ? OR slug = ? LIMIT 1")
+      .bind(q.parentCategory, q.parentCategory)
+      .first<{ id: string }>();
+
+    const terms: string[] = [];
+    if (parentRow) {
+      const { results } = await db
+        .prepare("SELECT data FROM category_catalogs WHERE json_extract(data, '$.parentCategoryId') = ?")
+        .bind(parentRow.id)
+        .all<{ data: string }>();
+      for (const r of results) {
+        let doc: any = {};
+        try { doc = JSON.parse(r.data); } catch { /* ignore */ }
+        for (const t of [doc.name, doc.slug, ...(Array.isArray(doc.aliases) ? doc.aliases : [])]) {
+          if (t) terms.push(String(t).toLowerCase());
+        }
+      }
+    }
+
+    if (!terms.length) {
+      // Unknown parent, or one with no categories yet — match nothing rather
+      // than silently ignoring the filter.
+      whereParts.push("1 = 0");
+    } else {
+      whereParts.push(`LOWER(category_name) IN (${terms.map(() => "?").join(", ")})`);
+      binds.push(...terms);
+    }
+  }
+
+  // Sub category: a catalog slug from the admin dropdown resolves to its
+  // name/aliases too, so a slug also finds products stored under the catalog's
+  // display name. Free text still matches loosely.
+  if (q.category) {
+    const catalogRow = await db
+      .prepare(
+        `SELECT data FROM category_catalogs
+         WHERE slug = ? OR EXISTS (SELECT 1 FROM json_each(aliases) WHERE value = ?)
+         LIMIT 1`
+      )
+      .bind(q.category, q.category)
+      .first<{ data: string }>();
+
+    const terms: string[] = [];
+    if (catalogRow) {
+      let doc: any = {};
+      try { doc = JSON.parse(catalogRow.data); } catch { /* ignore */ }
+      for (const t of [doc.name, doc.slug, ...(Array.isArray(doc.aliases) ? doc.aliases : [])]) {
+        if (t) terms.push(String(t).toLowerCase());
+      }
+    }
+
+    if (terms.length) {
+      whereParts.push(`LOWER(category_name) IN (${terms.map(() => "?").join(", ")})`);
+      binds.push(...terms);
+    } else {
+      whereParts.push("(LOWER(category_name) LIKE LOWER(?) OR LOWER(merchant_category) LIKE LOWER(?))");
+      binds.push(`%${q.category}%`, `%${q.category}%`);
+    }
+  }
+
+  // Child category — the most specific tier, matched on merchant_category alone
+  // so the dropdown filters instead of doubling as a product-name search.
+  if (q.childCategory) { whereParts.push("LOWER(merchant_category) = LOWER(?)"); binds.push(q.childCategory); }
   if (q.brand) { whereParts.push("LOWER(brand_name) = LOWER(?)"); binds.push(q.brand); }
   if (q.merchant) { whereParts.push("LOWER(merchant_name) = LOWER(?)"); binds.push(q.merchant); }
   if (q.search) { whereParts.push("(LOWER(product_name) LIKE LOWER(?) OR LOWER(brand_name) LIKE LOWER(?))"); binds.push(`%${q.search}%`, `%${q.search}%`); }

@@ -252,14 +252,6 @@ export default function HomePage() {
             {/* ── Full-width below the fold ─────────────────────────────────── */}
             <TrustStrip />
 
-            {inspiration.length > 0 && <InspirationRail items={inspiration} />}
-
-            {midSpotlight && (
-              <PromoBanner slides={[midSpotlight]} tone="light" label={t('homeCompare.adLabel')} />
-            )}
-
-            <ComparisonCta showcase={showcase} />
-
             <ProductRail
               title={t('homeCompare.bestSellers.title')}
               href="/topaanbiedingen"
@@ -278,6 +270,14 @@ export default function HomePage() {
                 emptyLabel={t('homeCompare.bestSellers.empty')}
               />
             )}
+
+            {midSpotlight && (
+              <PromoBanner slides={[midSpotlight]} tone="light" label={t('homeCompare.adLabel')} />
+            )}
+
+            <ComparisonCta showcase={showcase} />
+
+            {inspiration.length > 0 && <InspirationRail items={inspiration} />}
 
             <TestimonialsSection ad={reviewAd} />
 

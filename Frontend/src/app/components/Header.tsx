@@ -264,10 +264,13 @@ export default function Header() {
                       placeholder=""
                       className="w-full bg-transparent border-none py-3 text-sm text-gray-900 outline-none focus:ring-0"
                     />
+                    {/* One line, always. The typed string is longer than the
+                        field on most viewports; without the truncate it wraps
+                        and the centred lines stack on top of each other. */}
                     {!query && (
-                      <span className="pointer-events-none absolute left-0 top-1/2 -translate-y-1/2 text-sm text-gray-500">
-                        {animatedPlaceholder}
-                        <span className="animate-pulse">|</span>
+                      <span className="pointer-events-none absolute inset-y-0 left-0 flex w-full items-center text-sm text-gray-500">
+                        <span className="truncate">{animatedPlaceholder}</span>
+                        <span className="animate-pulse shrink-0">|</span>
                       </span>
                     )}
                   </div>

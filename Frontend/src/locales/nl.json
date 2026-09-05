@@ -253,16 +253,7 @@
       "coupons": "Kortingscodes",
       "inspiration": "Inspiratie",
       "reviews": "Beoordelingen",
-      "guides": "Tips & gidsen",
-      "proKicker": "Upgrade naar",
-      "proTitle": "Pro-lid",
-      "proPerks": [
-        "Onbeperkt vergelijken",
-        "Prijsdaling-alerts",
-        "Exclusieve kortingen",
-        "Vroege toegang tot deals"
-      ],
-      "proCta": "Nu upgraden"
+      "guides": "Tips & gidsen"
     },
     "hero": {
       "titleLine1": "Vind. Vergelijk.",

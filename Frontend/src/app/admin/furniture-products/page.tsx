@@ -9,7 +9,7 @@ import {
 } from "lucide-react";
 import MediaPicker, { type MediaItem } from "@/app/components/MediaPicker";
 import Pagination from "@/app/components/Pagination";
-import { parseCsvText, rowToFeedProduct, slugify, type FeedProduct } from "@/lib/parseCsvClient";
+import { parseCsvText, rowToFeedProduct, slugify, parsePrice, type FeedProduct } from "@/lib/parseCsvClient";
 
 type MissingItem = { name: string; count: number };
 
@@ -39,14 +39,16 @@ const CSV_FIELDS: { key: string; required?: boolean; label: string }[] = [
   { key: "Product Discount Price", label: "Optional sale price. When lower than Product Price, the card shows both (regular price struck through)." },
   { key: "Product Deep Link", label: "Outbound product link. Re-importing a row with the same link updates that product instead of creating a duplicate." },
   { key: "Parent Category", label: "Top-level category. Falls back to Sub Category when empty." },
-  { key: "Sub Category", label: "Mid-level category. Falls back to Child Category when empty." },
-  { key: "Child Category", required: true, label: "Most specific category tier. Rows without this are skipped entirely." },
+  { key: "Sub Category", label: "Mid-level category. Falls back to Child Category when empty, then to Parent Category." },
+  { key: "Child Category", label: "Most specific category tier. Optional — left empty, the product just keeps its Sub Category." },
 ];
 
 // Four realistic Dutch furniture rows, in CSV_FIELDS order, for the
 // downloadable sample file. Products get their own generated id on import —
-// there's no id column. The last row omits Parent/Sub Category to show the
-// cascading fallback (both resolve to "Tuinmeubelen", the Child Category).
+// there's no id column. Every category tier is optional: the third row leaves
+// Child Category empty (the product stays under "Tafels"), and the last row
+// gives only a Child Category, which the fallback copies up into Sub and
+// Parent ("Tuinmeubelen").
 const SAMPLE_CSV_ROWS: string[][] = [
   ["https://www.home24.nl", "Home24", "Home24 NL", "https://images.home24.nl/logo.png",
     "Kinderbed Emma 90x200cm", "Stevig kinderbed van massief grenenhout, inclusief lattenbodem.",
@@ -62,7 +64,7 @@ const SAMPLE_CSV_ROWS: string[][] = [
     "Eettafel Milano 200cm", "Eettafel van massief eikenhout, geschikt voor 8 personen.",
     "https://images.home24.nl/eettafel-milano.jpg", "499.00", "",
     "https://www.home24.nl/product/eettafel-milano-200",
-    "Woonkamer", "Tafels", "Eettafels"],
+    "Woonkamer", "Tafels", ""],
   ["https://www.bouwmarktxl.nl", "Blooma", "Bouwmarkt XL", "https://images.bouwmarktxl.nl/logo.png",
     "Plantenbak Nova 40cm", "Ronde plantenbak van vezelcement, vorstbestendig.",
     "https://images.bouwmarktxl.nl/plantenbak-nova.jpg", "39.95", "",
@@ -152,12 +154,16 @@ export default function FurnitureProductsAdmin() {
   const [search, setSearch] = useState("");
   const [searchInput, setSearchInput] = useState("");
   const [brand, setBrand] = useState("");
+  // The three category tiers, filtered independently: parentCategory holds a
+  // parent_categories._id, category a Category Catalog slug, childCategory a
+  // child category name (what products store in merchant_category).
+  const [parentCategory, setParentCategory] = useState("");
   const [category, setCategory] = useState("");
+  const [childCategory, setChildCategory] = useState("");
   const [minPrice, setMinPrice] = useState("");
   const [maxPrice, setMaxPrice] = useState("");
   const [sort, setSort] = useState("recent");
   const [brandOptions, setBrandOptions] = useState<string[]>([]);
-  const [categoryOptions, setCategoryOptions] = useState<string[]>([]);
 
   // Dropdown sources — the brands & category catalog configured elsewhere in admin.
   // Brands are kept as full rows: the product form posts brand_id (the durable
@@ -221,7 +227,9 @@ export default function FurnitureProductsAdmin() {
       const params = new URLSearchParams({ page: String(page), limit: String(pageSize), sort });
       if (search) params.set("search", search);
       if (brand) params.set("brand", brand);
+      if (parentCategory) params.set("parentCategory", parentCategory);
       if (category) params.set("category", category);
+      if (childCategory) params.set("childCategory", childCategory);
       if (minPrice) params.set("minPrice", minPrice);
       if (maxPrice) params.set("maxPrice", maxPrice);
       const res = await adminFetch(`/api/products?${params.toString()}`);
@@ -235,7 +243,7 @@ export default function FurnitureProductsAdmin() {
     } finally {
       setLoading(false);
     }
-  }, [page, pageSize, sort, search, brand, category, minPrice, maxPrice]);
+  }, [page, pageSize, sort, search, brand, parentCategory, category, childCategory, minPrice, maxPrice]);
 
   useEffect(() => {
     fetchProducts();
@@ -245,7 +253,7 @@ export default function FurnitureProductsAdmin() {
   // items the admin can no longer see.
   useEffect(() => {
     setSelectedIds(new Set());
-  }, [page, pageSize, sort, search, brand, category, minPrice, maxPrice]);
+  }, [page, pageSize, sort, search, brand, parentCategory, category, childCategory, minPrice, maxPrice]);
 
   // Furniture brands power the form dropdown, the CSV import's "new brands"
   // coverage and its merge targets — reloaded after an import creates some.
@@ -265,12 +273,11 @@ export default function FurnitureProductsAdmin() {
   }, []);
 
   useEffect(() => {
+    // Brand names actually present on products (the category tiers come from
+    // the configured catalog instead, so all three stay in sync with each other).
     adminFetch("/api/products/filters")
       .then((r) => r.json())
-      .then((d) => {
-        setBrandOptions(Array.isArray(d.brands) ? d.brands : []);
-        setCategoryOptions(Array.isArray(d.categories) ? d.categories : []);
-      })
+      .then((d) => setBrandOptions(Array.isArray(d.brands) ? d.brands : []))
       .catch(() => {});
 
     // Brands & categories/childCategories for the form dropdowns (from admin config).
@@ -296,6 +303,38 @@ export default function FurnitureProductsAdmin() {
     (c) => c.name === form.category_name || c.slug === form.category_name
   );
   const subOptions = selectedCatalog?.childCategories ?? [];
+
+  // ── Filter-bar category options, cascading parent → category → child ───────
+  // Picking a parent narrows the category list to its catalog entries; picking
+  // a category narrows the child list to that entry's children. With nothing
+  // picked above, each list shows everything it can.
+  const filterCategoryOptions = useMemo(
+    () =>
+      catalogs
+        .filter((c) => !parentCategory || c.parentCategoryId === parentCategory)
+        .slice()
+        .sort((a, b) => a.name.localeCompare(b.name)),
+    [catalogs, parentCategory]
+  );
+
+  const filterChildOptions = useMemo(() => {
+    const source = category
+      ? filterCategoryOptions.filter((c) => c.slug === category)
+      : filterCategoryOptions;
+    // Child names repeat across categories ("Accessoires"), and the filter
+    // matches by name, so one entry per distinct name is enough.
+    const seen = new Set<string>();
+    const names: string[] = [];
+    for (const c of source) {
+      for (const s of c.childCategories ?? []) {
+        const key = (s.name || "").toLowerCase();
+        if (!key || seen.has(key)) continue;
+        seen.add(key);
+        names.push(s.name);
+      }
+    }
+    return names.sort((a, b) => a.localeCompare(b));
+  }, [filterCategoryOptions, category]);
 
   // Parent category shown for a CSV row's "category" (sub category) value in the
   // import confirm table. Existing categories already carry a parentCategoryId;
@@ -343,10 +382,27 @@ export default function FurnitureProductsAdmin() {
     return Array.from(rows.values()).sort((a, b) => b.count - a.count);
   }, [importData, categoryMappings]);
 
+  // How many parsed rows carry no usable price — surfaced in the confirm dialog
+  // so an empty or unreadable price column is caught before importing.
+  const pricelessRowCount = useMemo(
+    () => (importData ? importData.products.filter((p) => !parsePrice(p.search_price)).length : 0),
+    [importData]
+  );
+
   const applyFilters = () => { setSearch(searchInput.trim()); setPage(1); };
   const resetFilters = () => {
-    setSearchInput(""); setSearch(""); setBrand(""); setCategory("");
+    setSearchInput(""); setSearch(""); setBrand("");
+    setParentCategory(""); setCategory(""); setChildCategory("");
     setMinPrice(""); setMaxPrice(""); setSort("recent"); setPage(1);
+  };
+
+  // Picking a broader tier drops the narrower selections under it, so the
+  // filter bar can never ask for a child that isn't in the chosen category.
+  const pickParentCategory = (v: string) => {
+    setParentCategory(v); setCategory(""); setChildCategory(""); setPage(1);
+  };
+  const pickCategory = (v: string) => {
+    setCategory(v); setChildCategory(""); setPage(1);
   };
 
   const openAdd = () => { setEditingId(null); setForm({ ...EMPTY }); setShowForm(true); };
@@ -464,7 +520,7 @@ export default function FurnitureProductsAdmin() {
       const text = await file.text();
       const rows = parseCsvText(text);
       const products = rows.map(rowToFeedProduct).filter((p): p is FeedProduct => p !== null);
-      if (products.length === 0) throw new Error("No valid products found (missing product_name).");
+      if (products.length === 0) throw new Error("No valid products found (every row is missing Product Name).");
 
       const existBrands = new Set(furnitureBrands.map((b) => b.toLowerCase()));
       const existParents = new Set(parentCategories.map((p) => p.name.toLowerCase()));
@@ -930,10 +986,24 @@ export default function FurnitureProductsAdmin() {
           </select>
         </div>
         <div>
+          <label className="text-[10px] font-semibold text-zinc-500 uppercase tracking-wider">Parent Category</label>
+          <select value={parentCategory} onChange={(e) => pickParentCategory(e.target.value)} className="mt-1 block border border-zinc-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-zinc-900 max-w-[160px]">
+            <option value="">All parents</option>
+            {parentCategories.map((p) => <option key={p._id} value={p._id}>{p.name}</option>)}
+          </select>
+        </div>
+        <div>
           <label className="text-[10px] font-semibold text-zinc-500 uppercase tracking-wider">Category</label>
-          <select value={category} onChange={(e) => { setCategory(e.target.value); setPage(1); }} className="mt-1 block border border-zinc-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-zinc-900 max-w-[160px]">
+          <select value={category} onChange={(e) => pickCategory(e.target.value)} className="mt-1 block border border-zinc-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-zinc-900 max-w-[160px]">
             <option value="">All categories</option>
-            {categoryOptions.map((c) => <option key={c} value={c}>{c}</option>)}
+            {filterCategoryOptions.map((c) => <option key={c.slug} value={c.slug}>{c.name}</option>)}
+          </select>
+        </div>
+        <div>
+          <label className="text-[10px] font-semibold text-zinc-500 uppercase tracking-wider">Child Category</label>
+          <select value={childCategory} onChange={(e) => { setChildCategory(e.target.value); setPage(1); }} disabled={filterChildOptions.length === 0} className="mt-1 block border border-zinc-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-zinc-900 max-w-[160px] disabled:bg-zinc-50 disabled:text-zinc-400">
+            <option value="">All child categories</option>
+            {filterChildOptions.map((s) => <option key={s} value={s}>{s}</option>)}
           </select>
         </div>
         <div>
@@ -1188,11 +1258,11 @@ export default function FurnitureProductsAdmin() {
                 Upload a product CSV (comma-separated, first row = headers). Any column not listed below is
                 ignored. Products get their own generated ID — there&apos;s no ID column — and re-importing a row
                 with the same <code className="bg-gray-100 px-1 py-0.5 rounded text-[11px]">Product Deep Link</code> updates
-                that product instead of creating a duplicate. A row without <code className="bg-gray-100 px-1 py-0.5 rounded text-[11px]">Product Name</code> or{" "}
-                <code className="bg-gray-100 px-1 py-0.5 rounded text-[11px]">Child Category</code> is skipped.
-                A missing <code className="bg-gray-100 px-1 py-0.5 rounded text-[11px]">Sub Category</code> is filled in
-                from Child Category, and a missing <code className="bg-gray-100 px-1 py-0.5 rounded text-[11px]">Parent Category</code> from
-                Sub Category — so a feed with only Child Category still resolves all three tiers.
+                that product instead of creating a duplicate. <code className="bg-gray-100 px-1 py-0.5 rounded text-[11px]">Product Name</code> is
+                the only column a row is skipped for. All three category tiers are optional: a missing{" "}
+                <code className="bg-gray-100 px-1 py-0.5 rounded text-[11px]">Sub Category</code> is filled in from Child
+                Category (or from Parent Category), and a missing <code className="bg-gray-100 px-1 py-0.5 rounded text-[11px]">Parent Category</code> from
+                Sub Category — so a feed with only one of the three still resolves the tiers above it.
               </p>
 
               <div className="border border-gray-100 rounded-lg overflow-hidden">
@@ -1288,6 +1358,22 @@ export default function FurnitureProductsAdmin() {
                     <MissingCard title="New categories" items={importData.missingCategories} accent="bg-amber-50 border-amber-100 text-amber-800" />
                     <MissingCard title="New child categories" items={importData.missingChildCategories} accent="bg-amber-50 border-amber-100 text-amber-800" />
                   </div>
+
+                  {/* Rows whose Product Price cell holds no usable number import
+                      with no price at all, which shows as "0 €" on the site —
+                      worth catching before the import rather than after. */}
+                  {pricelessRowCount > 0 && (
+                    <div className="flex items-start gap-2 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2.5 text-[11px] text-amber-800">
+                      <AlertTriangle size={14} className="mt-0.5 shrink-0" />
+                      <span>
+                        <span className="font-semibold">{pricelessRowCount.toLocaleString("de-DE")}</span> of{" "}
+                        {importData.products.length.toLocaleString("de-DE")} rows have no usable{" "}
+                        <code className="bg-amber-100 px-1 py-0.5 rounded">Product Price</code>. They will import with no
+                        price and show as “0 €”. Check that column for empty cells before importing — prices may use a
+                        comma or a dot (“89,99” and “89.99” both work), with or without a currency symbol.
+                      </span>
+                    </div>
+                  )}
 
                   <div className="space-y-2 border-t pt-4">
                     <p className="text-sm font-semibold text-gray-800">
