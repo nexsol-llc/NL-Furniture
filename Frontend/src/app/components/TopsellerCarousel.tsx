@@ -11,6 +11,7 @@ type FeaturedProduct = {
   link?: string;
   name: string;
   price: string;
+  originalPrice?: string;
   image: string;
   brand: string;
   is_sponsored?: boolean;
@@ -72,6 +73,7 @@ export default function TopsellerCarousel({
               link={p.link}
               name={p.name}
               price={p.price}
+              originalPrice={p.originalPrice}
               image={p.image}
               brand={p.brand}
               is_sponsored={p.is_sponsored}

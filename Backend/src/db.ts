@@ -72,6 +72,7 @@ export type ProductRow = {
   description: string;
   merchant_category: string;
   search_price: number;
+  discount_price: number;
   merchant_name: string;
   merchant_id: number | null;
   category_name: string;

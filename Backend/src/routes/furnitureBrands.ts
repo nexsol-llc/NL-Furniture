@@ -32,6 +32,11 @@ function buildDoc(data: Record<string, any>, slug: string) {
     logo: data.logo || "",
     description: data.description || "",
     website: data.website || "",
+    // The merchant/shop actually selling this brand's products (e.g. a brand
+    // sold exclusively through "Home24"). Set from the CSV import's Merchant
+    // Name column when a brand is created from a feed; shown on the public
+    // brand page as "BRAND / powered by MERCHANT".
+    merchantName: data.merchantName || "",
     featured: data.featured === true || data.featured === "true",
     sortOrder: Number(data.sortOrder) || 0,
     seo: {

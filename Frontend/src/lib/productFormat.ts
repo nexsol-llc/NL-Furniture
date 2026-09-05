@@ -29,3 +29,23 @@ export const formatPrice = (raw: unknown): string => {
     .trim();
   return amount ? `${amount}€` : "";
 };
+
+// Resolve what a product card should show as its price(s). Products can carry
+// a regular price (search_price) and an optional sale price (discount_price,
+// from the CSV's "Product Discount Price" column). When both are present and
+// the discount actually undercuts the regular price, show the discount as the
+// headline price with the regular price struck through — otherwise fall back
+// to whichever single price is available, exactly as before discount pricing
+// existed.
+export const priceDisplay = (product: {
+  search_price?: number | string | null;
+  discount_price?: number | string | null;
+  display_price?: string | null;
+}): { price: string; originalPrice?: string } => {
+  const regular = Number(product.search_price) || 0;
+  const discount = Number(product.discount_price) || 0;
+  if (discount > 0 && regular > 0 && discount < regular) {
+    return { price: String(discount), originalPrice: String(regular) };
+  }
+  return { price: product.display_price || (regular > 0 ? String(regular) : "0") };
+};

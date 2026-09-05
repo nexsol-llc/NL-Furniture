@@ -182,7 +182,7 @@ const toNumOrNull = (v: any): number | null => {
 // Full ordered column list (excluding id/created_at/updated_at).
 const PRODUCT_COLUMNS = [
   "aw_product_id", "product_name", "aw_deep_link", "merchant_deep_link", "merchant_product_id",
-  "merchant_image_url", "description", "merchant_category", "search_price", "merchant_name",
+  "merchant_image_url", "description", "merchant_category", "search_price", "discount_price", "merchant_name",
   "merchant_id", "category_name", "aw_image_url", "display_price", "data_feed_id", "brand_name", "brand_id",
   "colour", "product_short_description", "aw_thumb_url", "delivery_cost", "alternate_image",
   "alternate_image_two", "alternate_image_three", "alternate_image_four", "is_sponsored", "slug",
@@ -225,6 +225,9 @@ function buildProductValues(
   v.merchant_id = toNumOrNull(pick("merchant_id"));
   v.data_feed_id = toNumOrNull(pick("data_feed_id"));
   v.search_price = Number(pick("search_price")) || 0;
+  // Sale price from the CSV's "Product Discount Price" column (or the manual
+  // form). 0 means "no discount" — the card then shows just search_price.
+  v.discount_price = Number(pick("discount_price")) || 0;
   v.is_sponsored = pick("is_sponsored") ? 1 : 0;
   // Auto-fill a display price from the numeric price when none is given.
   if (!v.display_price && v.search_price > 0) v.display_price = `EUR${v.search_price}`;
@@ -410,12 +413,14 @@ productsAdmin.post("/bulk", authMiddleware, requireStaff, async (c) => {
   const brands = await loadBrandIndex(db);
   const insertCols = ["id", ...PRODUCT_COLUMNS, "created_at", "updated_at"];
   const placeholders = insertCols.map(() => "?").join(", ");
-  const updateSet =
-    PRODUCT_COLUMNS.filter((col) => col !== "aw_product_id" && col !== "slug")
-      .map((col) => `${col} = excluded.${col}`)
-      // Keep an already-assigned slug stable across re-imports (stable URLs).
-      .join(", ") + ", slug = CASE WHEN products.slug != '' THEN products.slug ELSE excluded.slug END" +
-    ", updated_at = excluded.updated_at";
+  // The current CSV format carries no feed product id — products get their own
+  // generated id, so re-importing the same feed has nothing to key an upsert
+  // off except the outbound product URL. A row whose merchant_deep_link matches
+  // an existing product updates that row in place; everything else (including
+  // every row with no deep link at all) is inserted as new.
+  const updateSet = PRODUCT_COLUMNS.filter((col) => col !== "slug")
+    .map((col) => `${col} = ?`)
+    .join(", ");
 
   let inserted = 0;
   let updated = 0;
@@ -425,10 +430,25 @@ productsAdmin.post("/bulk", authMiddleware, requireStaff, async (c) => {
     const chunk = rows.slice(i, i + CHUNK);
     const values = chunk.map((r) => buildProductValues(r, undefined, brands));
 
+    // Resolve which rows match an already-imported product by deep link.
+    const links = Array.from(new Set(values.map((v) => v.merchant_deep_link).filter(Boolean)));
+    const existingByLink = new Map<string, { id: string; slug: string }>();
+    if (links.length) {
+      const { results } = await db
+        .prepare(
+          `SELECT id, slug, merchant_deep_link FROM products WHERE merchant_deep_link IN (${links.map(() => "?").join(", ")})`
+        )
+        .bind(...links)
+        .all<{ id: string; slug: string; merchant_deep_link: string }>();
+      for (const r of results) existingByLink.set(r.merchant_deep_link, { id: r.id, slug: r.slug });
+    }
+
     // De-duplicate the chunk's slugs against the DB and this request. Rows that
-    // update an existing product keep their old slug anyway (see updateSet), so
-    // a suffix added for those is never written.
-    const bases = Array.from(new Set(values.map((v) => v.slug).filter(Boolean)));
+    // update an existing product keep their old slug (stable URLs), so a
+    // suffix added for those is never written.
+    const bases = Array.from(
+      new Set(values.filter((v) => !(v.merchant_deep_link && existingByLink.has(v.merchant_deep_link))).map((v) => v.slug).filter(Boolean))
+    );
     if (bases.length) {
       const { results } = await db
         .prepare(`SELECT slug FROM products WHERE slug IN (${bases.map(() => "?").join(", ")})`)
@@ -437,6 +457,8 @@ productsAdmin.post("/bulk", authMiddleware, requireStaff, async (c) => {
       for (const r of results) usedSlugs.add(r.slug);
     }
     for (const v of values) {
+      const existing = v.merchant_deep_link ? existingByLink.get(v.merchant_deep_link) : undefined;
+      if (existing) { v.slug = existing.slug || v.slug; continue; }
       if (!v.slug) continue;
       if (usedSlugs.has(v.slug)) {
         let n = 2;
@@ -447,18 +469,22 @@ productsAdmin.post("/bulk", authMiddleware, requireStaff, async (c) => {
     }
 
     const stmts = values.map((v) => {
+      const existing = v.merchant_deep_link ? existingByLink.get(v.merchant_deep_link) : undefined;
+      if (existing) {
+        return db
+          .prepare(`UPDATE products SET ${updateSet}, updated_at = ? WHERE id = ?`)
+          .bind(...PRODUCT_COLUMNS.filter((col) => col !== "slug").map((k) => v[k]), now, existing.id);
+      }
       return db
-        .prepare(
-          `INSERT INTO products (${insertCols.join(", ")}) VALUES (${placeholders})
-           ON CONFLICT(aw_product_id) DO UPDATE SET ${updateSet}`
-        )
+        .prepare(`INSERT INTO products (${insertCols.join(", ")}) VALUES (${placeholders})`)
         .bind(newId(), ...PRODUCT_COLUMNS.map((k) => v[k]), now, now);
     });
     const results = await db.batch(stmts);
-    for (const res of results) {
-      const meta = res.meta as any;
-      if (meta.last_row_id && meta.changes === 1) inserted++;
-      else if (meta.changes === 1) updated++;
+    for (let idx = 0; idx < results.length; idx++) {
+      const meta = results[idx].meta as any;
+      const isUpdate = !!(values[idx].merchant_deep_link && existingByLink.get(values[idx].merchant_deep_link));
+      if (!meta.changes) continue;
+      if (isUpdate) updated++; else inserted++;
     }
   }
 

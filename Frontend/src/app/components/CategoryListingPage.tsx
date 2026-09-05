@@ -12,7 +12,7 @@ import CategorySeoSections from "@/app/components/CategorySeoSections";
 import TopsellerCarousel from "@/app/components/TopsellerCarousel";
 import { Filter, X, Search, ChevronDown, Check } from "lucide-react";
 import type { CategoryFAQ } from "@/lib/categoryCatalog";
-import { shopLink } from "@/lib/productFormat";
+import { shopLink, priceDisplay } from "@/lib/productFormat";
 import { useLanguage } from "@/providers/languageContext";
 import { LOCALE_TAG } from "@/lib/languageDefaults";
 import { toPlainText } from "@/lib/richText";
@@ -23,6 +23,7 @@ type Product = {
   link?: string;
   name: string;
   price: string;
+  originalPrice?: string;
   image: string;
   brand: string;
   is_sponsored?: boolean;
@@ -37,6 +38,8 @@ type RawProduct = {
   product_name?: string;
   display_price?: string;
   price?: string;
+  search_price?: number;
+  discount_price?: number;
   merchant_image_url?: string;
   aw_image_url?: string;
   image?: string;
@@ -51,7 +54,7 @@ const mapProduct = (item: RawProduct, t: (key: string) => string): Product => ({
   id: item._id,
   link: shopLink(item),
   name: item.product_name || t('common.unnamedProduct'),
-  price: item.display_price || item.price || "0",
+  ...priceDisplay(item),
   image: item.merchant_image_url || item.aw_image_url || item.image || "",
   brand: item.brand_name || item.brand || t('common.unknownBrand'),
   is_sponsored: Boolean(item.is_sponsored),
@@ -888,6 +891,7 @@ export default function CategoryListingPage({
                         link={product.link}
                         name={product.name}
                         price={product.price}
+                        originalPrice={product.originalPrice}
                         image={product.image}
                         brand={product.brand}
                         is_sponsored={product.is_sponsored}

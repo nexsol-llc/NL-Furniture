@@ -23,6 +23,8 @@ type Brand = {
   logo?: string;
   description?: string;
   website?: string;
+  /** Merchant/shop actually selling this brand — shown publicly as "BRAND / powered by MERCHANT". */
+  merchantName?: string;
   featured?: boolean;
   sortOrder?: number;
   seo?: Partial<BrandSEO>;
@@ -44,6 +46,7 @@ const EMPTY: Omit<Brand, "_id"> & { seo: BrandSEO } = {
   logo: "",
   description: "",
   website: "",
+  merchantName: "",
   featured: false,
   sortOrder: 0,
   seo: { ...EMPTY_SEO },
@@ -102,6 +105,7 @@ export default function FurnitureBrandsAdmin() {
       logo: b.logo || "",
       description: b.description || "",
       website: b.website || "",
+      merchantName: b.merchantName || "",
       featured: !!b.featured,
       sortOrder: b.sortOrder || 0,
       seo: { ...EMPTY_SEO, ...(b.seo || {}) },
@@ -279,6 +283,19 @@ export default function FurnitureBrandsAdmin() {
               </div>
             </div>
 
+            {/* Merchant name */}
+            <div className="space-y-1">
+              <label className="text-[11px] font-semibold text-zinc-500 uppercase tracking-wider">Merchant Name</label>
+              <input
+                type="text"
+                value={form.merchantName || ""}
+                onChange={(e) => setForm({ ...form, merchantName: e.target.value })}
+                placeholder="e.g. Home24 (shown publicly as “powered by …”)"
+                className="w-full border border-zinc-200 rounded-xl p-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary-300"
+              />
+              <p className="text-[11px] text-zinc-400">Optional. Set automatically from the CSV import&apos;s Merchant Name column for new brands.</p>
+            </div>
+
             {/* Sort order + Featured */}
             <div className="flex items-center gap-4">
               <div className="space-y-1">
@@ -421,6 +438,9 @@ export default function FurnitureBrandsAdmin() {
                           {b.featured && <Star size={12} className="text-amber-500 fill-amber-500 shrink-0" />}
                         </div>
                         <span className="text-[10px] text-zinc-400 block">/{b.slug}</span>
+                        {b.merchantName && (
+                          <span className="text-[10px] text-zinc-400 block">powered by {b.merchantName}</span>
+                        )}
                         {b.description && (
                           <p className="text-[11px] text-zinc-500 line-clamp-2 mt-0.5">{b.description}</p>
                         )}

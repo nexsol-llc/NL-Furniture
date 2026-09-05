@@ -18,58 +18,56 @@ type MissingItem = { name: string; count: number };
 // confused with the empty "— Select brand —" placeholder.
 const UNLINKED_BRAND = "__unlinked__";
 
+// Sentinel value for the "New categories" parent-assignment dropdown: means
+// "create a new Parent Category with this name" rather than pointing at an
+// existing parentCategories._id. Used when the CSV's Parent Category column
+// names a parent that doesn't exist in Categories → Parent Categories yet.
+const NEW_PARENT_PREFIX = "__new_parent__:";
+
 // Every column `rowToFeedProduct` (in parseCsvClient.ts) recognizes. Anything
 // else in the CSV header row is simply ignored. Keep this list in sync with
 // that function — it drives both the format guide and the sample download.
 const CSV_FIELDS: { key: string; required?: boolean; label: string }[] = [
-  { key: "aw_product_id", label: "Unique product ID from the feed. Optional — used to match/update the same product on re-import; without it, each import adds a new product." },
-  { key: "product_name", required: true, label: "Product title. Rows without this are skipped entirely." },
-  { key: "brand_name", label: "Brand name. Falls back to merchant_name when the feed has no brand column — new brands can be created or merged in the confirm step." },
-  { key: "category_name", label: "Category (the \"sub category\" tier). Falls back to merchant_category when empty." },
-  { key: "merchant_category", label: "Child category tier. Overridden by merchant_product_second_category when present." },
-  { key: "merchant_product_second_category", label: "Optional, more specific child category — takes priority over merchant_category." },
-  { key: "merchant_name", label: "Store / merchant name. Doubles as the brand when brand_name is empty." },
-  { key: "search_price", label: "Numeric price. store_price is used instead when this is empty." },
-  { key: "store_price", label: "Fallback numeric price, used only when search_price is empty." },
-  { key: "display_price", label: "Pre-formatted price text (e.g. \"€249,99\"), shown as-is." },
-  { key: "aw_deep_link", label: "Affiliate outbound link." },
-  { key: "merchant_deep_link", label: "Direct merchant product link." },
-  { key: "merchant_image_url", label: "Product image URL." },
-  { key: "aw_image_url", label: "Alternate product image URL." },
-  { key: "aw_thumb_url", label: "Thumbnail image URL." },
-  { key: "description", label: "Long description." },
-  { key: "product_short_description", label: "Short description." },
-  { key: "colour", label: "Colour." },
-  { key: "delivery_cost", label: "Delivery cost text." },
-  { key: "merchant_product_id", label: "Merchant's own product ID (feed bookkeeping)." },
-  { key: "merchant_id", label: "Merchant ID (feed bookkeeping)." },
-  { key: "data_feed_id", label: "Feed ID (feed bookkeeping)." },
-  { key: "slug", label: "URL slug — auto-generated from product_name when left empty." },
+  { key: "Website Link", label: "Brand's website. Only used when this import creates a new brand (sets its Website field)." },
+  { key: "Brand Name", label: "Brand name. New brands can be created or merged with an existing one in the confirm step." },
+  { key: "Merchant Name", label: "Store / merchant name. Saved on a newly created brand too, shown publicly as \"Brand · powered by Merchant\"." },
+  { key: "Brand Logo Url", label: "Brand logo. Only used when this import creates a new brand (sets its Logo field)." },
+  { key: "Product Name", required: true, label: "Product title. Rows without this are skipped entirely." },
+  { key: "Product Description", label: "Product description." },
+  { key: "Product Image Url", label: "Product image URL." },
+  { key: "Product Price", label: "Regular numeric price." },
+  { key: "Product Discount Price", label: "Optional sale price. When lower than Product Price, the card shows both (regular price struck through)." },
+  { key: "Product Deep Link", label: "Outbound product link. Re-importing a row with the same link updates that product instead of creating a duplicate." },
+  { key: "Parent Category", label: "Top-level category. Falls back to Sub Category when empty." },
+  { key: "Sub Category", label: "Mid-level category. Falls back to Child Category when empty." },
+  { key: "Child Category", required: true, label: "Most specific category tier. Rows without this are skipped entirely." },
 ];
 
 // Four realistic Dutch furniture rows, in CSV_FIELDS order, for the
-// downloadable sample file. The last one has no aw_product_id — it's optional
-// (some merchant feeds don't provide one) and still imports fine.
+// downloadable sample file. Products get their own generated id on import —
+// there's no id column. The last row omits Parent/Sub Category to show the
+// cascading fallback (both resolve to "Tuinmeubelen", the Child Category).
 const SAMPLE_CSV_ROWS: string[][] = [
-  ["1001", "Kinderbed Emma 90x200cm", "Home24", "Slaapkamer", "Kinderbed", "", "Home24 NL", "249.99", "", "€249,99",
-    "https://www.awin1.com/cread.php?awinmid=1234&awinaffid=5678&clickref=&p=https%3A%2F%2Fwww.home24.nl%2Fproduct%2F1001",
-    "https://www.home24.nl/product/kinderbed-emma-90x200", "https://images.home24.nl/kinderbed-emma.jpg", "", "",
-    "Stevig kinderbed van massief grenenhout, inclusief lattenbodem.", "Kinderbed 90x200cm, massief grenen", "Wit", "0.00",
-    "M-1001", "12345", "1", ""],
-  ["1002", "Loungeset Bali 5-delig", "Garden Impressions", "Tuin", "Loungesets", "", "Garden Impressions NL", "899.00", "", "€899,00",
-    "https://www.awin1.com/cread.php?awinmid=1234&awinaffid=5678&clickref=&p=https%3A%2F%2Fwww.gardenimpressions.nl%2Fproduct%2F1002",
-    "https://www.gardenimpressions.nl/product/loungeset-bali", "https://images.gardenimpressions.nl/loungeset-bali.jpg", "", "",
-    "5-delige loungeset van gevlochten wicker, inclusief kussens.", "Loungeset Bali, 5-delig", "Zwart", "29.95",
-    "M-1002", "12345", "1", ""],
-  ["1003", "Eettafel Milano 200cm", "Home24", "Woonkamer", "Eettafels", "", "Home24 NL", "499.00", "", "€499,00",
-    "https://www.awin1.com/cread.php?awinmid=1234&awinaffid=5678&clickref=&p=https%3A%2F%2Fwww.home24.nl%2Fproduct%2F1003",
-    "https://www.home24.nl/product/eettafel-milano-200", "https://images.home24.nl/eettafel-milano.jpg", "", "",
-    "Eettafel van massief eikenhout, geschikt voor 8 personen.", "Eettafel Milano 200cm, eiken", "Naturel eiken", "0.00",
-    "M-1003", "12345", "1", ""],
-  ["", "Plantenbak Nova 40cm", "Blooma", "Tuin", "Plantenbakken", "", "Bouwmarkt XL", "39.95", "", "€39,95",
-    "", "https://www.bouwmarktxl.nl/product/plantenbak-nova-40", "https://images.bouwmarktxl.nl/plantenbak-nova.jpg", "", "",
-    "Ronde plantenbak van vezelcement, vorstbestendig.", "Plantenbak Nova 40cm, vezelcement", "Antraciet", "4.95",
-    "", "", "", ""],
+  ["https://www.home24.nl", "Home24", "Home24 NL", "https://images.home24.nl/logo.png",
+    "Kinderbed Emma 90x200cm", "Stevig kinderbed van massief grenenhout, inclusief lattenbodem.",
+    "https://images.home24.nl/kinderbed-emma.jpg", "249.99", "",
+    "https://www.home24.nl/product/kinderbed-emma-90x200",
+    "Slaapkamer", "Bedden", "Kinderbed"],
+  ["https://www.gardenimpressions.nl", "Garden Impressions", "Garden Impressions NL", "https://images.gardenimpressions.nl/logo.png",
+    "Loungeset Bali 5-delig", "5-delige loungeset van gevlochten wicker, inclusief kussens.",
+    "https://images.gardenimpressions.nl/loungeset-bali.jpg", "899.00", "749.00",
+    "https://www.gardenimpressions.nl/product/loungeset-bali",
+    "Tuin", "Tuinmeubelen", "Loungesets"],
+  ["https://www.home24.nl", "Home24", "Home24 NL", "https://images.home24.nl/logo.png",
+    "Eettafel Milano 200cm", "Eettafel van massief eikenhout, geschikt voor 8 personen.",
+    "https://images.home24.nl/eettafel-milano.jpg", "499.00", "",
+    "https://www.home24.nl/product/eettafel-milano-200",
+    "Woonkamer", "Tafels", "Eettafels"],
+  ["https://www.bouwmarktxl.nl", "Blooma", "Bouwmarkt XL", "https://images.bouwmarktxl.nl/logo.png",
+    "Plantenbak Nova 40cm", "Ronde plantenbak van vezelcement, vorstbestendig.",
+    "https://images.bouwmarktxl.nl/plantenbak-nova.jpg", "39.95", "",
+    "https://www.bouwmarktxl.nl/product/plantenbak-nova-40",
+    "", "", "Tuinmeubelen"],
 ];
 
 // A compact card listing "unknown" values (with product counts) inside the confirm modal.
@@ -107,6 +105,7 @@ type Product = {
   merchant_category?: string;
   merchant_name?: string;
   search_price?: number;
+  discount_price?: number;
   display_price?: string;
   aw_deep_link?: string;
   merchant_deep_link?: string;
@@ -115,7 +114,6 @@ type Product = {
   description?: string;
   colour?: string;
   delivery_cost?: string;
-  aw_product_id?: number | null;
   is_sponsored?: boolean;
 };
 
@@ -128,6 +126,7 @@ const EMPTY: Partial<Product> = {
   merchant_category: "",
   merchant_name: "",
   search_price: 0,
+  discount_price: 0,
   display_price: "",
   aw_deep_link: "",
   merchant_deep_link: "",
@@ -136,7 +135,6 @@ const EMPTY: Partial<Product> = {
   description: "",
   colour: "",
   delivery_cost: "",
-  aw_product_id: null,
   is_sponsored: false,
 };
 
@@ -183,8 +181,13 @@ export default function FurnitureProductsAdmin() {
     fileName: string;
     products: FeedProduct[];
     missingBrands: MissingItem[];
+    missingParentCategories: MissingItem[];
     missingCategories: MissingItem[];
     missingChildCategories: { name: string; count: number; category: string }[];
+    // Best-guess Parent Category name for each new Sub Category, taken from the
+    // CSV's own Parent Category column (most common value seen for that sub
+    // category). Empty when the feed never gave one.
+    suggestedParentByCategory: Record<string, string>;
   }>(null);
   const [createBrands, setCreateBrands] = useState(true);
   // Per-brand canonical mapping chosen in the confirm modal: maps each new brand
@@ -311,7 +314,9 @@ export default function FurnitureProductsAdmin() {
       const parent = parentCategories.find((p) => p._id === existing.parentCategoryId);
       return parent?.name ?? "Unassigned";
     }
-    const parent = parentCategories.find((p) => p._id === categoryParentAssignment[key]);
+    const val = categoryParentAssignment[key] ?? "";
+    if (val.startsWith(NEW_PARENT_PREFIX)) return `${val.slice(NEW_PARENT_PREFIX.length)} (new)`;
+    const parent = parentCategories.find((p) => p._id === val);
     return parent?.name ?? "Not set yet";
   };
 
@@ -462,6 +467,7 @@ export default function FurnitureProductsAdmin() {
       if (products.length === 0) throw new Error("No valid products found (missing product_name).");
 
       const existBrands = new Set(furnitureBrands.map((b) => b.toLowerCase()));
+      const existParents = new Set(parentCategories.map((p) => p.name.toLowerCase()));
       const existCats = new Set<string>();
       const existSubs = new Set<string>();
       for (const c of catalogs) {
@@ -470,25 +476,46 @@ export default function FurnitureProductsAdmin() {
       }
 
       const bMap = new Map<string, MissingItem>();
+      const pMap = new Map<string, MissingItem>();
       const cMap = new Map<string, MissingItem>();
       const sMap = new Map<string, { name: string; count: number; category: string }>();
+      // Sub category (lowercased) → its Parent Category name → how many products
+      // suggested it. The most-voted parent per sub category becomes the default.
+      const parentVotesByCategory = new Map<string, Map<string, number>>();
       for (const p of products) {
         if (p.brand_name) { const k = p.brand_name.toLowerCase(); const e = bMap.get(k) || { name: p.brand_name, count: 0 }; e.count++; bMap.set(k, e); }
+        if (p.parent_category) { const k = p.parent_category.toLowerCase(); const e = pMap.get(k) || { name: p.parent_category, count: 0 }; e.count++; pMap.set(k, e); }
         if (p.category_name) { const k = p.category_name.toLowerCase(); const e = cMap.get(k) || { name: p.category_name, count: 0 }; e.count++; cMap.set(k, e); }
         if (p.merchant_category) { const k = (p.category_name + "|" + p.merchant_category).toLowerCase(); const e = sMap.get(k) || { name: p.merchant_category, count: 0, category: p.category_name }; e.count++; sMap.set(k, e); }
+        if (p.category_name && p.parent_category) {
+          const ck = p.category_name.toLowerCase();
+          const votes = parentVotesByCategory.get(ck) || new Map<string, number>();
+          votes.set(p.parent_category, (votes.get(p.parent_category) || 0) + 1);
+          parentVotesByCategory.set(ck, votes);
+        }
       }
       const byCount = (a: { count: number }, b: { count: number }) => b.count - a.count;
 
       const missingBrands = Array.from(bMap.values()).filter((x) => !existBrands.has(x.name.toLowerCase())).sort(byCount);
+      const missingParentCategories = Array.from(pMap.values()).filter((x) => !existParents.has(x.name.toLowerCase())).sort(byCount);
       const missingCategories = Array.from(cMap.values()).filter((x) => !existCats.has(x.name.toLowerCase())).sort(byCount);
       const missingChildCategories = Array.from(sMap.values()).filter((x) => !existSubs.has(x.name.toLowerCase())).sort(byCount);
+
+      const suggestedParentByCategory: Record<string, string> = {};
+      for (const [ck, votes] of Array.from(parentVotesByCategory)) {
+        let best = ""; let bestCount = 0;
+        for (const [name, count] of Array.from(votes)) if (count > bestCount) { best = name; bestCount = count; }
+        suggestedParentByCategory[ck] = best;
+      }
 
       setImportData({
         fileName: file.name,
         products,
         missingBrands,
+        missingParentCategories,
         missingCategories,
         missingChildCategories,
+        suggestedParentByCategory,
       });
 
       // Default every new brand to map to itself; the admin can point variants at a
@@ -502,10 +529,19 @@ export default function FurnitureProductsAdmin() {
       for (const c of missingCategories) initPlacements[c.name.toLowerCase()] = "add";
       setCategoryPlacements(initPlacements);
 
-      // Default every new category to unassigned; the admin can file it under an
-      // existing Parent Category before import (the CSV feed has no parent data).
+      // Default every new category's parent from the CSV's own Parent Category
+      // column: an existing parent is pre-selected by id; a parent that doesn't
+      // exist yet is pre-selected as "create new" (see NEW_PARENT_PREFIX) — the
+      // admin can still change either before importing.
+      const parentIdByName = new Map(parentCategories.map((p) => [p.name.toLowerCase(), p._id]));
       const initParents: Record<string, string> = {};
-      for (const c of missingCategories) initParents[c.name.toLowerCase()] = "";
+      for (const c of missingCategories) {
+        const key = c.name.toLowerCase();
+        const suggested = suggestedParentByCategory[key] || "";
+        if (!suggested) { initParents[key] = ""; continue; }
+        const existingId = parentIdByName.get(suggested.toLowerCase());
+        initParents[key] = existingId ?? `${NEW_PARENT_PREFIX}${suggested}`;
+      }
       setCategoryParentAssignment(initParents);
 
       // Default every new category/child category to map to itself; the admin can
@@ -549,14 +585,79 @@ export default function FurnitureProductsAdmin() {
           if (canonical && !existLower.has(canonical.toLowerCase())) toCreate.add(canonical);
         }
 
+        // Website/logo/merchant name come from the CSV, keyed by the original
+        // (pre-merge) brand name — first non-empty value wins per brand.
+        const brandMetaBySourceName = new Map<string, { website: string; logo: string; merchantName: string }>();
+        for (const p of importData.products) {
+          if (!p.brand_name) continue;
+          const key = p.brand_name.toLowerCase();
+          const meta = brandMetaBySourceName.get(key) || { website: "", logo: "", merchantName: "" };
+          if (!meta.website && p.brand_website) meta.website = p.brand_website;
+          if (!meta.logo && p.brand_logo) meta.logo = p.brand_logo;
+          if (!meta.merchantName && p.merchant_name) meta.merchantName = p.merchant_name;
+          brandMetaBySourceName.set(key, meta);
+        }
+
         if (toCreate.size) {
           setImportStage(`Creating ${toCreate.size} brand(s)…`);
           for (const name of Array.from(toCreate)) {
+            // Merge meta from every original brand name folded into this canonical one.
+            const meta = { website: "", logo: "", merchantName: "" };
+            for (const [origLower, canonical] of Array.from(brandMap)) {
+              if (canonical.toLowerCase() !== name.toLowerCase()) continue;
+              const m = brandMetaBySourceName.get(origLower);
+              if (!m) continue;
+              if (!meta.website && m.website) meta.website = m.website;
+              if (!meta.logo && m.logo) meta.logo = m.logo;
+              if (!meta.merchantName && m.merchantName) meta.merchantName = m.merchantName;
+            }
             const res = await adminFetch("/api/furniture-brands", {
               method: "POST",
-              body: JSON.stringify({ title: name, slug: slugify(name) }),
+              body: JSON.stringify({
+                title: name,
+                slug: slugify(name),
+                website: meta.website,
+                logo: meta.logo,
+                merchantName: meta.merchantName,
+              }),
             }).catch(() => null);
             if (res && res.ok) createdBrandCount++;
+          }
+        }
+      }
+
+      // a2) Resolve the "New categories" parent assignments: an existing
+      //    Parent Category keeps its id as-is, while a NEW_PARENT_PREFIX
+      //    sentinel (the CSV named a parent that doesn't exist yet) is created
+      //    here, once per distinct name. `resolvedParentAssignment` replaces
+      //    categoryParentAssignment for the category-creation step below.
+      const resolvedParentAssignment: Record<string, string> = { ...categoryParentAssignment };
+      let createdParentCount = 0;
+      {
+        const newParentNames = new Set<string>();
+        for (const val of Object.values(resolvedParentAssignment)) {
+          if (val.startsWith(NEW_PARENT_PREFIX)) newParentNames.add(val.slice(NEW_PARENT_PREFIX.length));
+        }
+        if (newParentNames.size) {
+          setImportStage(`Creating ${newParentNames.size} parent categor${newParentNames.size === 1 ? "y" : "ies"}…`);
+          const createdIdByName = new Map<string, string>();
+          for (const name of Array.from(newParentNames)) {
+            const res = await adminFetch("/api/parent-categories", {
+              method: "POST",
+              body: JSON.stringify({ name, slug: slugify(name) }),
+            }).catch(() => null);
+            const data = await res?.json().catch(() => null);
+            const id = data?.parentCategory?._id || data?.parentCategory?.id;
+            if (res && res.ok && id) {
+              createdIdByName.set(name.toLowerCase(), id);
+              createdParentCount++;
+            }
+          }
+          for (const key of Object.keys(resolvedParentAssignment)) {
+            const val = resolvedParentAssignment[key];
+            if (!val.startsWith(NEW_PARENT_PREFIX)) continue;
+            const createdId = createdIdByName.get(val.slice(NEW_PARENT_PREFIX.length).toLowerCase());
+            resolvedParentAssignment[key] = createdId || ""; // fall back to unassigned if creation failed
           }
         }
       }
@@ -606,7 +707,7 @@ export default function FurnitureProductsAdmin() {
         catsToCreate.set(canonicalLower, {
           name: canonical,
           slug: slugify(canonical),
-          parentCategoryId: categoryParentAssignment[survivorKey] || undefined,
+          parentCategoryId: resolvedParentAssignment[survivorKey] || undefined,
         });
       }
 
@@ -744,12 +845,21 @@ export default function FurnitureProductsAdmin() {
         setImportProgress({ done: Math.min(i + CHUNK, all.length), total: all.length });
       }
 
-      setImportResult({ inserted, updated, total: all.length, createdBrands: createdBrandCount, createdCategories: createdCatCount, updatedCategories: updatedCatCount });
+      setImportResult({ inserted, updated, total: all.length, createdBrands: createdBrandCount, createdParentCategories: createdParentCount, createdCategories: createdCatCount, updatedCategories: updatedCatCount });
       setImportData(null);
       setPage(1);
-      // Brands created above must count as existing for the next import (and show
-      // up in the form dropdown) without a page reload.
+      // Brands/parent categories created above must count as existing for the
+      // next import (and show up in the relevant dropdowns) without a page reload.
       if (createdBrandCount) await loadFurnitureBrands();
+      if (createdParentCount) {
+        try {
+          const r = await adminFetch(`/api/parent-categories?t=${Date.now()}`);
+          const d = await r.json();
+          setParentCategories(Array.isArray(d) ? d : Array.isArray(d?.parentCategories) ? d.parentCategories : []);
+        } catch (e) {
+          console.error("parent-categories reload failed:", e);
+        }
+      }
       await fetchProducts();
     } catch (err: any) {
       alert(err.message || "Import failed");
@@ -770,7 +880,7 @@ export default function FurnitureProductsAdmin() {
             <Package className="w-5 h-5 text-primary-600" /> Products
           </h2>
           <p className="text-gray-500 text-sm max-w-2xl mt-1">
-            Add furniture products manually or import an AWIN product feed (CSV). {total.toLocaleString("de-DE")} products.
+            Add furniture products manually or import a product CSV. {total.toLocaleString("de-DE")} products.
           </p>
         </div>
         <div className="flex items-center gap-2">
@@ -795,6 +905,7 @@ export default function FurnitureProductsAdmin() {
             <CheckCircle2 size={16} />
             Imported {importResult.total.toLocaleString("de-DE")} products ({importResult.inserted} added, {importResult.updated} updated)
             {importResult.createdBrands > 0 && ` · ${importResult.createdBrands} brands created`}
+            {importResult.createdParentCategories > 0 && ` · ${importResult.createdParentCategories} parent categories created`}
             {importResult.createdCategories > 0 && ` · ${importResult.createdCategories} categories created`}
             {importResult.updatedCategories > 0 && ` · ${importResult.updatedCategories} categories updated with new child categories`}
           </p>
@@ -1029,12 +1140,12 @@ export default function FurnitureProductsAdmin() {
                   </select>
                 </Field>
                 <Field label="Price (€)"><input type="number" step="0.01" value={form.search_price ?? ""} onChange={(e) => setField("search_price", e.target.value === "" ? 0 : Number(e.target.value))} placeholder="7.99" className="input" /></Field>
+                <Field label="Discount Price (€, optional)"><input type="number" step="0.01" value={form.discount_price ?? ""} onChange={(e) => setField("discount_price", e.target.value === "" ? 0 : Number(e.target.value))} placeholder="leave empty if not on sale" className="input" /></Field>
                 <Field label="Display Price"><input value={form.display_price || ""} onChange={(e) => setField("display_price", e.target.value)} placeholder="auto (e.g. EUR7.99)" className="input" /></Field>
                 <Field label="Old / Delivery cost"><input value={form.delivery_cost || ""} onChange={(e) => setField("delivery_cost", e.target.value)} className="input" /></Field>
                 <Field label="Colour"><input value={form.colour || ""} onChange={(e) => setField("colour", e.target.value)} className="input" /></Field>
-                <Field label="Affiliate Link (aw_deep_link)"><input value={form.aw_deep_link || ""} onChange={(e) => setField("aw_deep_link", e.target.value)} placeholder="https://www.awin1.com/…" className="input" /></Field>
-                <Field label="Merchant Link"><input value={form.merchant_deep_link || ""} onChange={(e) => setField("merchant_deep_link", e.target.value)} placeholder="https://…" className="input" /></Field>
-                <Field label="AWIN Product ID (optional)"><input type="number" value={form.aw_product_id ?? ""} onChange={(e) => setField("aw_product_id", e.target.value === "" ? null : Number(e.target.value))} placeholder="matches CSV feed" className="input" /></Field>
+                <Field label="Product Deep Link"><input value={form.merchant_deep_link || ""} onChange={(e) => setField("merchant_deep_link", e.target.value)} placeholder="https://…" className="input" /></Field>
+                <Field label="Affiliate Link (optional)"><input value={form.aw_deep_link || ""} onChange={(e) => setField("aw_deep_link", e.target.value)} placeholder="used instead of the deep link above when set" className="input" /></Field>
               </div>
 
               <Field label="Description">                                         <RichDescriptionEditor
@@ -1074,12 +1185,14 @@ export default function FurnitureProductsAdmin() {
 
             <div className="p-6 space-y-5">
               <p className="text-sm text-gray-600">
-                Upload an AWIN-style product feed (CSV, comma-separated, first row = headers). Any column not
-                listed below is ignored, and a row without <code className="bg-gray-100 px-1 py-0.5 rounded text-[11px]">product_name</code> is skipped.
-                <code className="bg-gray-100 px-1 py-0.5 rounded text-[11px]">aw_product_id</code> is optional — some merchants don&apos;t provide one.
-                <code className="bg-gray-100 px-1 py-0.5 rounded text-[11px]">category_name</code> maps to the category
-                (&quot;sub category&quot;) tier and <code className="bg-gray-100 px-1 py-0.5 rounded text-[11px]">merchant_category</code> maps
-                to the child category tier — the feed has no parent-category column, so that&apos;s assigned in the next step.
+                Upload a product CSV (comma-separated, first row = headers). Any column not listed below is
+                ignored. Products get their own generated ID — there&apos;s no ID column — and re-importing a row
+                with the same <code className="bg-gray-100 px-1 py-0.5 rounded text-[11px]">Product Deep Link</code> updates
+                that product instead of creating a duplicate. A row without <code className="bg-gray-100 px-1 py-0.5 rounded text-[11px]">Product Name</code> or{" "}
+                <code className="bg-gray-100 px-1 py-0.5 rounded text-[11px]">Child Category</code> is skipped.
+                A missing <code className="bg-gray-100 px-1 py-0.5 rounded text-[11px]">Sub Category</code> is filled in
+                from Child Category, and a missing <code className="bg-gray-100 px-1 py-0.5 rounded text-[11px]">Parent Category</code> from
+                Sub Category — so a feed with only Child Category still resolves all three tiers.
               </p>
 
               <div className="border border-gray-100 rounded-lg overflow-hidden">
@@ -1166,12 +1279,12 @@ export default function FurnitureProductsAdmin() {
                 <>
                   <p className="text-sm text-gray-600">
                     Review what will be created before importing. Items below aren&apos;t in your catalog yet.
-                    Feeds without a <code className="bg-gray-100 px-1 py-0.5 rounded text-[11px]">brand_name</code> column
-                    use the merchant / shop name as the brand — merge the variants below before importing.
+                    Merge any brand or category name variants below before importing.
                   </p>
 
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
                     <MissingCard title="New brands" items={importData.missingBrands} accent="bg-amber-50 border-amber-100 text-amber-800" />
+                    <MissingCard title="New parent categories" items={importData.missingParentCategories} accent="bg-amber-50 border-amber-100 text-amber-800" />
                     <MissingCard title="New categories" items={importData.missingCategories} accent="bg-amber-50 border-amber-100 text-amber-800" />
                     <MissingCard title="New child categories" items={importData.missingChildCategories} accent="bg-amber-50 border-amber-100 text-amber-800" />
                   </div>
@@ -1193,7 +1306,7 @@ export default function FurnitureProductsAdmin() {
                         </thead>
                         <tbody className="divide-y divide-gray-50">
                           {importData.products.map((p, i) => (
-                            <tr key={p.aw_product_id || i} className="hover:bg-gray-50">
+                            <tr key={i} className="hover:bg-gray-50">
                               <td className="px-3 py-2 text-gray-700 truncate max-w-[220px]" title={p.product_name}>{p.product_name || "(no name)"}</td>
                               <td className="px-3 py-2 text-gray-500 truncate max-w-[140px]" title={p.brand_name}>{p.brand_name || "—"}</td>
                               <td className="px-3 py-2 text-gray-500 truncate max-w-[140px]">{parentCategoryLabel(p.category_name)}</td>
@@ -1274,8 +1387,8 @@ export default function FurnitureProductsAdmin() {
                       <p className="text-[11px] text-gray-400">
                         Merge variants (e.g. <em>Slaapkamers</em> → <em>Slaapkamer</em>) into one category — the target row&apos;s
                         placement and parent apply. Pick <strong>Don&apos;t create</strong> to skip a row entirely — its products still import.
-                        The CSV feed has no parent category of its own, so pick one per row or leave it unassigned (it can be set later
-                        in Categories → Parent Categories).
+                        The parent is pre-filled from the CSV&apos;s Parent Category column (creating it too, if it&apos;s new) — change it
+                        or set it to “No parent” before importing if that&apos;s not what you want.
                       </p>
                       <div className="max-h-64 overflow-y-auto divide-y divide-gray-50 border border-gray-100 rounded-lg">
                         {importData.missingCategories.map((cat) => {
@@ -1324,6 +1437,11 @@ export default function FurnitureProductsAdmin() {
                                   className="text-xs border border-gray-200 rounded-lg px-2 py-1.5 bg-white max-w-[160px] disabled:opacity-50 focus:outline-none focus:ring-2 focus:ring-primary-500"
                                 >
                                   <option value="">No parent</option>
+                                  {parentVal.startsWith(NEW_PARENT_PREFIX) && (
+                                    <option value={parentVal}>
+                                      Create new: “{parentVal.slice(NEW_PARENT_PREFIX.length)}”
+                                    </option>
+                                  )}
                                   {parentCategories.map((p) => (
                                     <option key={p._id} value={p._id}>{p.name}</option>
                                   ))}

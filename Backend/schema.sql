@@ -44,6 +44,7 @@ CREATE TABLE IF NOT EXISTS products (
   description TEXT NOT NULL DEFAULT '',
   merchant_category TEXT NOT NULL DEFAULT '',
   search_price REAL NOT NULL DEFAULT 0,
+  discount_price REAL NOT NULL DEFAULT 0,
   merchant_name TEXT NOT NULL DEFAULT '',
   merchant_id INTEGER,
   category_name TEXT NOT NULL DEFAULT '',

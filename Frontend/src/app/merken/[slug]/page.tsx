@@ -18,7 +18,7 @@ import ProductCard from "@/app/components/ProductCard";
 import TopsellerCarousel from "@/app/components/TopsellerCarousel";
 import { Reveal } from "@/app/components/motion/Reveal";
 import { useLanguage } from "@/providers/languageContext";
-import { shopLink } from "@/lib/productFormat";
+import { shopLink, priceDisplay } from "@/lib/productFormat";
 import RichContent from "@/app/components/RichContent";
 
 // Raw product shape returned by /api/brands/:slug/products
@@ -33,6 +33,7 @@ interface RawProduct {
   aw_thumb_url?: string;
   image?: string;
   search_price?: number;
+  discount_price?: number;
   display_price?: string;
   price?: string;
   brand_name?: string;
@@ -48,6 +49,7 @@ type Product = {
   link?: string;
   name: string;
   price: string;
+  originalPrice?: string;
   image: string;
   brand: string;
   is_sponsored?: boolean;
@@ -60,6 +62,8 @@ interface Brand {
   slug: string;
   logo?: string;
   description?: string;
+  /** Merchant/shop selling this brand's products, set from the CSV import. */
+  merchantName?: string;
   verifiedCoupons?: string;
   avgSavings?: string;
   totalOffers?: string;
@@ -74,10 +78,7 @@ const mapProduct = (item: RawProduct, t: (key: string) => string): Product => ({
   id: item._id,
   link: shopLink(item),
   name: item.product_name || t('common.unnamedProduct'),
-  price:
-    item.display_price ||
-    item.price ||
-    (item.search_price && item.search_price > 0 ? String(item.search_price) : "0"),
+  ...priceDisplay(item),
   image:
     item.merchant_image_url || item.aw_image_url || item.aw_thumb_url || item.image || "",
   brand: item.brand_name || item.brand || "",
@@ -351,6 +352,11 @@ export default function BrandProductsPage() {
               <h1 className="text-2xl md:text-3xl font-bold text-gray-900 capitalize">
                 {safeBrand?.name}
               </h1>
+              {brand?.merchantName && (
+                <p className="text-xs font-medium text-gray-400 mt-0.5">
+                  powered by {brand.merchantName}
+                </p>
+              )}
               {brand?.description && (
                 <RichContent
                   content={brand.description}

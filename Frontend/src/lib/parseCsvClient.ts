@@ -43,70 +43,72 @@ export function parseCsvText(text: string): Record<string, string>[] {
   return out;
 }
 
+// Case-insensitive header lookup — tolerates a hand-edited CSV whose header
+// casing drifts a little ("brand name" / "Brand Name" / "BRAND NAME").
+function col(row: Record<string, string>, name: string): string {
+  if (row[name] !== undefined) return (row[name] || "").trim();
+  const lower = name.toLowerCase();
+  for (const key of Object.keys(row)) {
+    if (key.toLowerCase() === lower) return (row[key] || "").trim();
+  }
+  return "";
+}
+
 export type FeedProduct = {
-  aw_product_id: string;
   product_name: string;
   brand_name: string;
-  category_name: string;
-  merchant_category: string; // childCategory
+  // Only used to seed a brand the import creates — not stored on the product.
+  brand_website: string;
+  brand_logo: string;
   merchant_name: string;
+  // Category tiers, already resolved through the parent←sub←child fallback below.
+  parent_category: string;
+  category_name: string; // "sub category" tier
+  merchant_category: string; // "child category" tier — required
   search_price: string;
-  display_price: string;
-  aw_deep_link: string;
+  discount_price: string;
+  description: string;
   merchant_deep_link: string;
   merchant_image_url: string;
-  aw_image_url: string;
-  aw_thumb_url: string;
-  description: string;
-  product_short_description: string;
-  colour: string;
-  delivery_cost: string;
-  merchant_product_id: string;
-  merchant_id: string;
-  data_feed_id: string;
-  slug: string;
 };
 
-// Map one AWIN feed row to a product object matching the backend columns.
-// aw_product_id is optional — not every merchant feed provides one, and the
-// backend's unique index only dedupes non-empty values (SQLite treats every
-// NULL as distinct), so rows without it just import as separate products.
+// Map one CSV row (see the "Website Link, Brand Name, Merchant Name, Brand Logo Url,
+// Product Name, Product Description, Product Image Url, Product Price,
+// Product Discount Price, Product Deep Link, Parent Category, Sub Category,
+// Child Category" format) to a product object matching the backend columns.
+//
+// Category fallback: Child Category is required (rows without one are dropped).
+// A missing Sub Category is filled in from the (required) Child Category; a
+// missing Parent Category is filled in from the Sub Category — after that
+// fallback has already run, so "only Child Category given" resolves all three
+// tiers to the same name.
 export function rowToFeedProduct(row: Record<string, string>): FeedProduct | null {
-  const product_name = (row.product_name || "").trim();
+  const product_name = col(row, "Product Name");
   if (!product_name) return null;
-  const aw_product_id = (row.aw_product_id || "").trim();
-  // Prefer the more specific merchant childCategory when available.
-  const childCategory =
-    row.merchant_product_second_category?.trim() ||
-    row.merchant_category?.trim() ||
-    "";
+
+  const rawChild = col(row, "Child Category");
+  if (!rawChild) return null;
+
+  const rawSub = col(row, "Sub Category");
+  const rawParent = col(row, "Parent Category");
+
+  const resolvedSub = rawSub || rawChild;
+  const resolvedParent = rawParent || resolvedSub;
+
   return {
-    aw_product_id,
     product_name,
-    // Most AWIN exports ship no brand_name column at all — there the merchant
-    // (shop) name is the closest thing to a brand, so fall back to it. Keeps the
-    // import's brand column, "new brands" coverage and merge step working for
-    // those feeds instead of importing every product brand-less.
-    brand_name: row.brand_name || row.merchant_name || "",
-    category_name: row.category_name || row.merchant_category || "",
-    merchant_category: childCategory,
-    merchant_name: row.merchant_name || "",
-    search_price: row.search_price || row.store_price || "",
-    display_price: row.display_price || "",
-    aw_deep_link: row.aw_deep_link || "",
-    merchant_deep_link: row.merchant_deep_link || "",
-    merchant_image_url: row.merchant_image_url || "",
-    aw_image_url: row.aw_image_url || "",
-    aw_thumb_url: row.aw_thumb_url || "",
-    description: row.description || "",
-    product_short_description: row.product_short_description || "",
-    colour: row.colour || "",
-    delivery_cost: row.delivery_cost || "",
-    merchant_product_id: row.merchant_product_id || "",
-    merchant_id: row.merchant_id || "",
-    data_feed_id: row.data_feed_id || "",
-    // Optional CSV column; the backend auto-generates from product_name when empty.
-    slug: row.slug || "",
+    brand_name: col(row, "Brand Name"),
+    brand_website: col(row, "Website Link"),
+    brand_logo: col(row, "Brand Logo Url"),
+    merchant_name: col(row, "Merchant Name"),
+    parent_category: resolvedParent,
+    category_name: resolvedSub,
+    merchant_category: rawChild,
+    search_price: col(row, "Product Price"),
+    discount_price: col(row, "Product Discount Price"),
+    description: col(row, "Product Description"),
+    merchant_deep_link: col(row, "Product Deep Link"),
+    merchant_image_url: col(row, "Product Image Url"),
   };
 }
 
