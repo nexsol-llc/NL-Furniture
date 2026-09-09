@@ -37,7 +37,7 @@ export default function TopsellerCarousel({
   };
 
   return (
-    <Reveal className="mb-8 rounded-2xl section-bg-2 p-5 sm:p-6">
+    <Reveal className="mb-8 min-w-0 rounded-2xl section-bg-2 p-5 sm:p-6">
       <div className="mb-4 flex items-center justify-between">
         <h2 className="text-lg font-black uppercase tracking-wide text-gray-900 sm:text-xl">
           {title ?? t('topsellerCarousel.defaultTitle')}

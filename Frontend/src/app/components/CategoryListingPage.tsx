@@ -842,7 +842,11 @@ export default function CategoryListingPage({
           </aside>
 
           {/* Product Grid Area */}
-          <div className="flex-grow">
+          {/* min-w-0 overrides the flex item's default content-based min-width —
+              without it, a wide child (the sponsored carousel) stretches this
+              column, and the whole page, past the viewport instead of scrolling
+              within its own overflow-x-auto. */}
+          <div className="min-w-0 flex-grow">
             {/* Topseller / featured (sponsored) products — above the grid.
                 Always the parent category's sponsored products, incl. on childCategories. */}
             {featuredProducts.length > 0 && (

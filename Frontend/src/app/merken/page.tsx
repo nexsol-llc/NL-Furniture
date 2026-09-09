@@ -13,7 +13,7 @@ function BrandLogo({ logo, name }: { logo: string; name: string }) {
 
   if (!logo || imgError) {
     return (
-      <span className="text-3xl font-extrabold text-gray-200 group-hover:text-primary-600 transition-colors duration-300">
+      <span className="text-5xl font-extrabold text-gray-200 group-hover:text-primary-600 transition-colors duration-300">
         {name.charAt(0).toUpperCase()}
       </span>
     );
@@ -24,7 +24,7 @@ function BrandLogo({ logo, name }: { logo: string; name: string }) {
     <img
       src={logo}
       alt={name}
-      className="max-h-[65px] max-w-[120px] object-contain p-3 group-hover:scale-105 transition-transform duration-300"
+      className="w-full h-full object-contain p-2 rounded-xl group-hover:scale-105 transition-transform duration-300"
       onError={() => setImgError(true)}
     />
   );

@@ -706,7 +706,10 @@ export default function FurnitureListingPage({
           </aside>
 
           {/* Product Grid */}
-          <div className="flex-grow">
+          {/* min-w-0: without it a wide flex child (the sponsored carousel)
+              stretches this column past the viewport instead of scrolling
+              within its own overflow-x-auto. */}
+          <div className="min-w-0 flex-grow">
             {featuredProducts.length > 0 && <TopsellerCarousel products={featuredProducts} />}
 
             {configLoaded && furnitureCategories.length === 0 ? (
