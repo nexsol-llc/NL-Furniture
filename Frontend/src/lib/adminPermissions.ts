@@ -14,6 +14,7 @@ export const PERMISSION_MODULES: PermissionModule[] = [
   { key: "indoor-outdoor", label: "Indoor/Outdoor", group: "Content" },
   { key: "home-influencer", label: "Home Influencer", group: "Content" },
   { key: "sponsors", label: "Sponsors", group: "Content" },
+  { key: "sponsor-ads", label: "Sponsor Ads", group: "Content" },
   { key: "gadgets", label: "Gadgets", group: "Content" },
   { key: "top-angebote", label: "Top Angebote", group: "Content" },
   { key: "blog", label: "Blog/Magazine", group: "Content" },

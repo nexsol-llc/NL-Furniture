@@ -64,13 +64,14 @@
     "teaserCta": "Bekijk hoe het werkt →"
   },
   "newsletterForm": {
-    "placeholder": "Jouw e-mailadres",
+    "placeholder": "Vul je e-mailadres in",
     "buttonText": "Aanmelden",
     "submitting": "Bezig met aanmelden...",
-    "invalidEmail": "Vul een geldig e-mailadres in.",
-    "subscribeError": "Aanmelden is niet gelukt.",
-    "subscribeSuccess": "Aanmelding gelukt!",
-    "networkError": "Aanmelden voor de nieuwsbrief is niet gelukt"
+    "invalidEmail": "Vul een geldig e-mailadres in",
+    "subscribeError": "Aanmelden is mislukt. Probeer het opnieuw.",
+    "subscribeSuccess": "Je bent succesvol aangemeld",
+    "networkError": "Aanmelden is mislukt. Probeer het opnieuw.",
+    "formLabel": "Formulier voor nieuwsbriefaanmelding"
   },
   "visualSearchModal": {
     "closeAriaLabel": "Sluiten",
@@ -246,6 +247,9 @@
     "sidebar": {
       "heading": "Menu",
       "home": "Home",
+      "products": "Producten",
+      "rooms": "Kamers",
+      "blog": "Blog",
       "categories": "Categorieën",
       "compare": "Vergelijken",
       "brands": "Merken",
@@ -256,11 +260,20 @@
       "guides": "Tips & gidsen"
     },
     "hero": {
-      "titleLine1": "Vind. Vergelijk.",
-      "titleLine2": "Richt je perfecte ruimte in.",
-      "subtitle": "Vergelijk prijzen, stijlen en beoordelingen van topmerken — alles op één plek.",
+      "titleLine1": "Vind de beste meubels,",
+      "titleLine2": "vergelijk & bespaar meer.",
+      "subtitle": "Vergelijk prijzen, kenmerken en beoordelingen van topmerken en vind de perfecte meubels voor jouw huis.",
       "ctaPrimary": "Start met vergelijken",
       "ctaSecondary": "Ontdek categorieën",
+      "statProducts": "Producten",
+      "statBrands": "Merken",
+      "statReviews": "Beoordelingen",
+      "statHappy": "Tevreden gebruikers",
+      "trustLine": "Onafhankelijke vergelijkingen van vertrouwde winkels",
+      "uploadTitle": "Kun je niet vinden wat je zoekt?",
+      "uploadText": "Upload een foto van het meubel en wij helpen je vergelijkbare producten bij vertrouwde winkels te vinden.",
+      "uploadCta": "Afbeelding uploaden",
+      "curated": "Dagelijks geselecteerd",
       "slideAria": "Ga naar slide {{index}}"
     },
     "compareTray": {
@@ -282,6 +295,18 @@
       "toShop": "Naar de winkel",
       "discountLabel": "Korting"
     },
+    "compareProducts": {
+      "title": "Vergelijk producten naast elkaar",
+      "description": "Voeg maximaal {{max}} producten toe en vergelijk kenmerken, prijzen en meer.",
+      "addProduct": "Product toevoegen",
+      "compareNow": "Nu vergelijken",
+      "removeProduct": "Product verwijderen",
+      "searchProducts": "Producten zoeken",
+      "noProducts": "Geen producten gevonden",
+      "alreadyAdded": "Dit product is al toegevoegd",
+      "maximum": "Je kunt maximaal {{max}} producten vergelijken",
+      "selectMinimum": "Selecteer minimaal 2 producten om te vergelijken"
+    },
     "categories": {
       "title": "Winkel per categorie",
       "viewAll": "Alle categorieën",
@@ -289,8 +314,11 @@
     },
     "deals": {
       "title": "Topaanbiedingen",
-      "viewAll": "Alle deals",
-      "empty": "Nog geen aanbiedingen."
+      "viewAll": "Bekijk alles",
+      "empty": "Nog geen aanbiedingen.",
+      "upToDiscount": "Tot {{discount}}% korting",
+      "productAriaLabel": "Bekijk aanbieding voor {{product}}",
+      "ratingAriaLabel": "Beoordeeld met {{rating}} van 5"
     },
     "rooms": {
       "title": "Ontwerp je droomkamers",
@@ -307,10 +335,28 @@
       "choiceText": "Koop met vertrouwen, zonder twijfel."
     },
     "brands": {
-      "title": "Merken die je kunt vertrouwen",
-      "viewAll": "Alle merken",
+      "title": "Gesponsorde merken",
+      "viewAll": "Bekijk alles",
       "prev": "Vorige merken",
-      "next": "Volgende merken"
+      "next": "Volgende merken",
+      "brandAriaLabel": "Bekijk {{brand}}"
+    },
+    "advertise": {
+      "title": "Adverteer bij ons",
+      "description": "Promoot je merk en producten dagelijks bij duizenden meubelshoppers.",
+      "cta": "Meer informatie",
+      "ariaLabel": "Lees meer over adverteren bij ons"
+    },
+    "whyAdvertise": {
+      "title": "Waarom adverteren?",
+      "visibilityTitle": "Hoge zichtbaarheid",
+      "visibilityDescription": "Bereik duizenden actieve kopers",
+      "audienceTitle": "Gerichte doelgroep",
+      "audienceDescription": "Bereik mensen die van plan zijn iets te kopen",
+      "salesTitle": "Verhoog je verkoop",
+      "salesDescription": "Vergroot het vertrouwen in je merk en stimuleer conversies",
+      "cta": "Nu adverteren",
+      "ariaLabel": "Begin met adverteren bij ons"
     },
     "featuredBrand": {
       "label": "Uitgelicht merk",
@@ -333,13 +379,14 @@
       "supportText": "We staan voor je klaar"
     },
     "inspiration": {
-      "title": "Doe inspiratie op",
-      "viewAll": "Alle inspiratie",
+      "title": "Nieuwste artikelen",
+      "viewAll": "Bekijk alles",
       "allFilter": "Alle kamers",
       "ideasCount": "{{count}} ideeën",
-      "prev": "Vorige inspiratie",
-      "next": "Volgende inspiratie",
-      "empty": "Binnenkort meer inspiratie."
+      "prev": "Vorige artikelen",
+      "next": "Volgende artikelen",
+      "empty": "Binnenkort meer inspiratie.",
+      "imageAlt": "Blogafbeelding"
     },
     "compareCta": {
       "title": "Krachtig vergelijken. Slimmere beslissingen.",
@@ -389,6 +436,10 @@
       "titleLine1": "De beste meubeldeals",
       "titleLine2": "rechtstreeks in je inbox",
       "subtitle": "Schrijf je in voor exclusieve aanbiedingen, prijsdalingen en nieuwe collecties."
+    },
+    "compactNewsletter": {
+      "title": "Blijf op de hoogte",
+      "description": "Schrijf je in voor de nieuwste aanbiedingen, lanceringen en inspiratie."
     }
   },
   "impressum": {

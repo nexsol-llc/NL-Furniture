@@ -13,6 +13,23 @@ import { logActivity } from "../lib/logger.js";
 // PUT /api/category-catalog/:slug endpoint with { parentCategoryId }.
 const parentCategories = new Hono<{ Bindings: Env }>();
 
+// `imageBgColor` fills the circle behind the image on the home page's
+// category rail. "" means "no override" — the Frontend then derives the fill
+// from the theme's primary color, so it follows a theme change.
+const INVALID_COLOR_ERROR = "imageBgColor must be a hex color like #f3e8ff";
+
+/** "" or a lowercase #rrggbb — `null` when the value isn't a hex color. */
+function parseImageBgColor(value: unknown): string | null {
+  if (value === null || value === "") return "";
+  if (typeof value !== "string") return null;
+  const hex = value.trim().toLowerCase();
+  if (/^#[0-9a-f]{6}$/.test(hex)) return hex;
+  if (/^#[0-9a-f]{3}$/.test(hex)) {
+    return "#" + hex.slice(1).split("").map((ch) => ch + ch).join("");
+  }
+  return null;
+}
+
 // Admin + public read this as a bare array, ordered for display.
 parentCategories.get("/", async (c) => {
   const { results } = await c.env.DB.prepare(
@@ -50,6 +67,11 @@ parentCategories.post("/", authMiddleware, requireStaff, async (c) => {
   const now = nowIso();
   const sortOrder = Number.isFinite(body.sortOrder) ? Number(body.sortOrder) : 0;
   const { type: _type, showOnFurniture: _showOnFurniture, ...rest } = body;
+  if (rest.imageBgColor !== undefined) {
+    const color = parseImageBgColor(rest.imageBgColor);
+    if (color === null) return c.json({ error: INVALID_COLOR_ERROR }, 400);
+    rest.imageBgColor = color;
+  }
   const doc = { ...rest, slug, createdAt: now, updatedAt: now };
 
   await db
@@ -89,6 +111,11 @@ parentCategories.put("/:id", authMiddleware, requireStaff, async (c) => {
   // `type`/`showOnFurniture` are retired — drop them off both the incoming
   // patch and any row still carrying them from before the migration.
   const { type: _bodyType, showOnFurniture: _bodyShow, ...bodyRest } = body;
+  if (bodyRest.imageBgColor !== undefined) {
+    const color = parseImageBgColor(bodyRest.imageBgColor);
+    if (color === null) return c.json({ error: INVALID_COLOR_ERROR }, 400);
+    bodyRest.imageBgColor = color;
+  }
   const { type: _docType, showOnFurniture: _docShow, ...existingRest } = existingDoc;
   const updatedDoc = { ...existingRest, ...bodyRest, slug: nextSlug, updatedAt: nowIso() };
   const sortOrder = Number.isFinite(updatedDoc.sortOrder) ? Number(updatedDoc.sortOrder) : 0;

@@ -17,13 +17,23 @@ import {
   writeAllPatterns,
 } from "@/lib/bgPatterns";
 import { BGPattern } from "@/components/ui/bg-pattern";
-import { Check, Loader2, Palette, Pipette, Layers, Sofa, Tag, Grid2x2 } from "lucide-react";
+import { Check, Loader2, Palette, Pipette, Layers, Sofa, Tag, Grid2x2, PanelBottom } from "lucide-react";
 import { adminFetch } from "@/lib/adminAuth";
+import {
+  DEFAULT_FOOTER_COLOR,
+  DEFAULT_FOOTER_THEME,
+  FOOTER_INK_FIELDS,
+  FOOTER_SHADES,
+  type FooterTheme,
+  footerCssVars,
+  isLightFooter,
+} from "@/lib/footerColor";
 
 export default function ThemeSettingsPage() {
   const {
     theme, customHex, setTheme, setCustomTheme,
     couponsTheme, couponsCustomHex, setCouponsTheme, setCouponsCustomTheme,
+    footerTheme, setFooterTheme,
     isSaving,
   } = useTheme();
   const [savedMsg, setSavedMsg] = useState("");
@@ -152,6 +162,15 @@ export default function ThemeSettingsPage() {
         onApplyCustom={async (hex) => {
           await setCouponsCustomTheme(hex);
           flashSaved("Coupons custom color saved");
+        }}
+      />
+
+      {/* Footer colors — every page's footer */}
+      <FooterThemeEditor
+        value={footerTheme}
+        onSave={async (value) => {
+          await setFooterTheme(value);
+          flashSaved("Footer colors saved");
         }}
       />
 
@@ -452,6 +471,278 @@ function ThemePicker({
           </span>
         )}
       </div>
+    </div>
+  );
+}
+
+const HEX_RE = /^#[0-9a-fA-F]{6}$/;
+
+/**
+ * Every footer colour in one place: the background — a shade of the furniture
+ * primary, which follows the theme, or a fixed custom colour — and optional
+ * overrides for headings, text, links, link hover, dividers and icon buttons.
+ * Left on Default, each of those is derived from the background: light on a
+ * dark footer, navy on a light one. The preview is a real `.site-footer` fed
+ * the same CSS variables the live site gets, so its hovers work too.
+ */
+function FooterThemeEditor({
+  value,
+  onSave,
+}: {
+  value: FooterTheme;
+  onSave: (value: FooterTheme) => Promise<void>;
+}) {
+  const [draft, setDraft] = useState<FooterTheme>(value);
+  const [customBg, setCustomBg] = useState(value.bg.startsWith("#") ? value.bg : "#1f2937");
+  const [busy, setBusy] = useState(false);
+
+  // Follow the stored value when it loads or is saved.
+  useEffect(() => {
+    setDraft(value);
+    if (value.bg.startsWith("#")) setCustomBg(value.bg);
+  }, [value]);
+
+  const set = (patch: Partial<FooterTheme>) => setDraft((d) => ({ ...d, ...patch }));
+  const vars = footerCssVars(draft);
+  const light = isLightFooter(draft.bg);
+  const isCustomBg = draft.bg.startsWith("#");
+  const dirty = JSON.stringify(draft) !== JSON.stringify(value);
+  const hasOverrides = FOOTER_INK_FIELDS.some((f) => draft[f.key]);
+
+  const pickCustomBg = (hex: string) => {
+    setCustomBg(hex);
+    if (HEX_RE.test(hex)) set({ bg: hex });
+  };
+
+  const save = async () => {
+    setBusy(true);
+    await onSave(draft);
+    setBusy(false);
+  };
+
+  return (
+    <div className="bg-white rounded-lg shadow-sm p-6 mb-4">
+      <div className="flex items-center gap-2 mb-4">
+        <PanelBottom size={18} className="text-primary-600" />
+        <p className="text-sm font-semibold text-gray-700">Footer Colors</p>
+      </div>
+      <p className="text-xs text-gray-500 -mt-2 mb-5">
+        The footer on every page. A <strong>primary shade</strong> background follows the
+        Furniture theme when it changes; a <strong>custom</strong> color stays fixed. Text, links
+        and icons left on <strong>Default</strong> adapt to the background automatically.
+      </p>
+
+      {/* Background */}
+      <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">
+        Background
+      </p>
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+        {FOOTER_SHADES.map((shade) => {
+          const key = `primary-${shade}`;
+          const active = draft.bg === key;
+          return (
+            <button
+              key={shade}
+              type="button"
+              onClick={() => set({ bg: key })}
+              className={`relative overflow-hidden rounded-xl border-2 text-left transition-all ${
+                active ? "border-gray-700 shadow-sm" : "border-gray-100 hover:border-gray-300 hover:shadow-sm"
+              }`}
+            >
+              <div className="h-12" style={{ backgroundColor: `var(--primary-${shade})` }} />
+              <span className="block px-2 py-1.5 text-[11px] font-medium text-gray-600 bg-white">
+                Primary {shade}
+                {key === DEFAULT_FOOTER_COLOR && <span className="text-gray-400"> · default</span>}
+              </span>
+              {active && (
+                <div className="absolute top-1 right-1 w-4 h-4 rounded-full bg-gray-800 flex items-center justify-center text-white">
+                  <Check size={9} strokeWidth={3} />
+                </div>
+              )}
+            </button>
+          );
+        })}
+      </div>
+
+      <div className="mt-4 flex items-center gap-3">
+        <label
+          className={`relative w-12 h-12 rounded-lg border-2 shadow-sm cursor-pointer flex-shrink-0 ${
+            isCustomBg ? "border-gray-700 ring-2 ring-offset-2 ring-gray-400" : "border-gray-200"
+          }`}
+          style={{ backgroundColor: HEX_RE.test(customBg) ? customBg : "#ffffff" }}
+          title="Pick a custom background"
+        >
+          <input
+            type="color"
+            value={HEX_RE.test(customBg) ? customBg : "#000000"}
+            onChange={(e) => pickCustomBg(e.target.value)}
+            className="sr-only"
+          />
+        </label>
+        <div className="flex flex-col gap-1">
+          <label className="text-xs text-gray-400">Custom background</label>
+          <input
+            type="text"
+            value={customBg}
+            maxLength={7}
+            onChange={(e) => pickCustomBg(e.target.value)}
+            onFocus={() => HEX_RE.test(customBg) && set({ bg: customBg })}
+            className="w-28 border border-gray-200 rounded-lg px-3 py-1.5 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-primary-400"
+          />
+        </div>
+      </div>
+
+      {/* Text, links & icons */}
+      <div className="mt-6 mb-3 flex items-center justify-between gap-3">
+        <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider">
+          Text, links &amp; icons
+        </p>
+        {hasOverrides && (
+          <button
+            type="button"
+            onClick={() => setDraft((d) => ({ ...DEFAULT_FOOTER_THEME, bg: d.bg }))}
+            className="text-xs font-medium text-gray-500 hover:text-gray-800"
+          >
+            Reset all to default
+          </button>
+        )}
+      </div>
+      <div className="divide-y divide-gray-100 rounded-xl border border-gray-100">
+        {FOOTER_INK_FIELDS.map((field) => (
+          <FooterInkRow
+            key={field.key}
+            label={field.label}
+            hint={field.hint}
+            value={draft[field.key]}
+            effective={vars[field.cssVar]}
+            background={vars["--footer-bg"]}
+            pickerFallback={light ? "#111827" : "#ffffff"}
+            onChange={(hex) => set({ [field.key]: hex })}
+          />
+        ))}
+      </div>
+
+      {/* Preview — a real .site-footer on the draft's variables */}
+      <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3 mt-6">
+        Preview <span className="normal-case tracking-normal font-normal">— hover the links and icons</span>
+      </p>
+      <div
+        className="site-footer footer-line rounded-xl overflow-hidden border px-5 pt-5 pb-4"
+        style={vars as React.CSSProperties}
+      >
+        <div className="flex flex-col items-center gap-3 text-center">
+          <p className="footer-heading text-[10px] uppercase tracking-[0.2em] font-semibold">Follow us</p>
+          <div className="flex gap-2">
+            {["f", "in", "▶"].map((glyph) => (
+              <span
+                key={glyph}
+                className="footer-chip w-8 h-8 rounded-full flex items-center justify-center text-[11px] font-bold cursor-pointer"
+              >
+                {glyph}
+              </span>
+            ))}
+          </div>
+        </div>
+        <div className="footer-line mt-4 border-t pt-4 grid grid-cols-3 gap-3 text-center">
+          {[
+            ["About", "About us"],
+            ["Partnerships", "Contact"],
+            ["Legal", "Privacy policy"],
+          ].map(([heading, link]) => (
+            <div key={heading}>
+              <p className="footer-heading text-[10px] uppercase tracking-[0.2em] font-bold mb-2">{heading}</p>
+              <span className="footer-link text-xs font-medium cursor-pointer hover:underline underline-offset-4">
+                {link}
+              </span>
+            </div>
+          ))}
+        </div>
+        <p className="footer-muted mt-4 text-center text-[10px]">© NL Furniture · Copyright line</p>
+      </div>
+
+      <div className="mt-5 flex items-center gap-3">
+        <button
+          onClick={save}
+          disabled={busy || !dirty}
+          className="bg-primary-600 hover:bg-primary-700 disabled:opacity-50 text-white text-sm font-medium px-5 py-2 rounded-lg transition flex items-center gap-2"
+        >
+          {busy ? <Loader2 size={14} className="animate-spin" /> : <Check size={14} />}
+          Save Footer Colors
+        </button>
+        {!dirty && (
+          <span className="text-xs text-gray-400 flex items-center gap-1">
+            <Check size={12} className="text-green-500" /> Currently active
+          </span>
+        )}
+      </div>
+    </div>
+  );
+}
+
+/**
+ * One overridable footer colour. The swatch shows the colour actually in use —
+ * drawn over the footer background, so a default's transparency reads true —
+ * and the hex field is empty while it's on Default.
+ */
+function FooterInkRow({
+  label,
+  hint,
+  value,
+  effective,
+  background,
+  pickerFallback,
+  onChange,
+}: {
+  label: string;
+  hint: string;
+  value: string;
+  effective: string;
+  background: string;
+  /** Where the native picker starts while on Default. */
+  pickerFallback: string;
+  onChange: (hex: string) => void;
+}) {
+  const [text, setText] = useState(value);
+  useEffect(() => setText(value), [value]);
+
+  return (
+    <div className="flex flex-wrap items-center gap-3 px-4 py-3">
+      <div className="min-w-0 flex-1">
+        <p className="text-sm font-medium text-gray-700">{label}</p>
+        <p className="text-[11px] text-gray-400">{hint}</p>
+      </div>
+      <label
+        className="relative flex h-9 w-9 flex-shrink-0 cursor-pointer items-center justify-center rounded-lg border border-gray-200"
+        style={{ background }}
+        title={`Pick ${label.toLowerCase()} color`}
+      >
+        <span className="h-5 w-5 rounded-md ring-1 ring-black/10" style={{ background: effective }} />
+        <input
+          type="color"
+          value={value || pickerFallback}
+          onChange={(e) => onChange(e.target.value)}
+          className="sr-only"
+        />
+      </label>
+      <input
+        type="text"
+        value={text}
+        maxLength={7}
+        placeholder="Default"
+        onChange={(e) => {
+          const v = e.target.value;
+          setText(v);
+          if (v === "" || HEX_RE.test(v)) onChange(v);
+        }}
+        className="w-24 border border-gray-200 rounded-lg px-2.5 py-1.5 text-sm font-mono placeholder:font-sans placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-400"
+      />
+      <button
+        type="button"
+        onClick={() => onChange("")}
+        className={`text-xs font-medium text-gray-500 hover:text-gray-800 ${value ? "" : "invisible"}`}
+      >
+        Default
+      </button>
     </div>
   );
 }

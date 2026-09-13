@@ -3,7 +3,7 @@ import { adminFetch } from "@/lib/adminAuth";
 import RichDescriptionEditor from "@/app/components/RichDescriptionEditor";
 
 import { useState, useEffect, lazy, Suspense } from "react";
-import { Edit2, Trash2, X, Save, Rocket, Plus, ImagePlus } from "lucide-react";
+import { Edit2, Trash2, X, Save, Rocket, Plus, ImagePlus, Star } from "lucide-react";
 import MediaPicker, { type MediaItem } from "@/app/components/MediaPicker";
 import PlaceholderImage from "@/app/components/PlaceholderImage";
 
@@ -40,6 +40,8 @@ type Blog = {
   sections: BlogSection[];
   faqs?: BlogFAQ[];
   seo?: BlogSEO;
+  /** Shown in the home page's inspiration rail — only featured posts appear there. */
+  featured?: boolean;
   createdAt?: string;
 };
 
@@ -80,6 +82,7 @@ export default function BlogAdminPage() {
   const [heroImageBy, setHeroImageBy] = useState("");
   const [sections, setSections] = useState<BlogSection[]>([]);
   const [faqs, setFaqs] = useState<BlogFAQ[]>([]);
+  const [featured, setFeatured] = useState(false);
 
   // Media library picker — holds the callback that receives the selected URL.
   const [pickerCallback, setPickerCallback] = useState<((url: string) => void) | null>(null);
@@ -224,6 +227,7 @@ export default function BlogAdminPage() {
     setHeroImageBy("");
     setSections([]);
     setFaqs([]);
+    setFeatured(false);
     setSeo({
       metaTitle: "",
       metaDescription: "",
@@ -245,6 +249,7 @@ export default function BlogAdminPage() {
     setSubHeading(blog.subHeading || "");
     setCategory(blog.category);
     setAuthor(blog.author || "");
+    setFeatured(blog.featured === true);
 
     // Fetch full data from the API (only on edit click)
     try {
@@ -256,6 +261,7 @@ export default function BlogAdminPage() {
       setHeroImageBy(full.heroImageBy || "");
       setSections(full.sections || []);
       setFaqs(full.faqs || []);
+      setFeatured(full.featured === true);
       setSeo({
         metaTitle: full.seo?.metaTitle || "",
         metaDescription: full.seo?.metaDescription || "",
@@ -304,6 +310,7 @@ export default function BlogAdminPage() {
       })),
       faqs: faqs.filter((faq) => faq.question.trim() || faq.answer.trim()),
       seo,
+      featured,
     };
 
     try {
@@ -338,6 +345,33 @@ export default function BlogAdminPage() {
     }
   };
 
+  // One-click featured toggle from the library list. Featured posts are the
+  // only ones the home page's inspiration rail shows.
+  const toggleFeatured = async (blog: Blog) => {
+    const next = !blog.featured;
+    const apply = (value: boolean) => {
+      setBlogs((list) => list.map((b) => (b._id === blog._id ? { ...b, featured: value } : b)));
+      // Keep an open form in step, or its next save would undo the toggle.
+      if (editingId === blog._id) setFeatured(value);
+    };
+
+    apply(next);
+    try {
+      const res = await adminFetch(`/api/blog/${blog._id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ featured: next }),
+      });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    } catch (error) {
+      console.error(error);
+      apply(!next);
+      alert("Could not update the featured flag");
+    }
+  };
+
+  const featuredCount = blogs.filter((blog) => blog.featured).length;
+
   const filteredBlogs = blogs.filter((blog) => {
     const query = adminSearch.trim().toLowerCase();
     if (!query) return true;
@@ -359,7 +393,9 @@ export default function BlogAdminPage() {
         <div className="p-4 border-b bg-gray-50 flex items-center justify-between gap-3 flex-shrink-0">
           <div>
             <h1 className="text-lg font-semibold text-gray-900">Blog Library</h1>
-            <p className="text-xs text-gray-500 mt-0.5">{blogs.length} blogs saved</p>
+            <p className="text-xs text-gray-500 mt-0.5">
+              {blogs.length} blogs saved · {featuredCount} featured on home
+            </p>
           </div>
           <button
             onClick={() => {
@@ -437,6 +473,17 @@ export default function BlogAdminPage() {
                       className="inline-flex items-center gap-1 text-xs text-primary-600 font-medium hover:underline"
                     >
                       <Edit2 size={13} /> Edit
+                    </button>
+                    <button
+                      onClick={() => toggleFeatured(blog)}
+                      aria-pressed={!!blog.featured}
+                      title={blog.featured ? "Shown on the home page — click to remove" : "Show on the home page"}
+                      className={`inline-flex items-center gap-1 text-xs font-medium hover:underline ${
+                        blog.featured ? "text-amber-600" : "text-gray-500"
+                      }`}
+                    >
+                      <Star size={13} className={blog.featured ? "fill-amber-400 text-amber-400" : ""} />
+                      {blog.featured ? "Featured" : "Feature"}
                     </button>
                     <button
                       onClick={() => handleDelete(blog._id)}
@@ -536,6 +583,23 @@ export default function BlogAdminPage() {
                     />
                   </div>
                 </div>
+
+                <label className="flex items-start gap-3 rounded-lg border border-amber-200 bg-amber-50/60 p-3 cursor-pointer select-none">
+                  <input
+                    type="checkbox"
+                    checked={featured}
+                    onChange={(e) => setFeatured(e.target.checked)}
+                    className="mt-0.5 h-4 w-4 accent-primary-600 cursor-pointer"
+                  />
+                  <span>
+                    <span className="flex items-center gap-1.5 text-sm font-medium text-gray-800">
+                      <Star size={14} className="fill-amber-400 text-amber-400" /> Featured blog
+                    </span>
+                    <span className="block text-xs text-gray-500 mt-0.5">
+                      Show this post in the home page&apos;s inspiration section — only featured posts appear there.
+                    </span>
+                  </span>
+                </label>
 
                 <div className="grid grid-cols-2 gap-4">
                   <div>

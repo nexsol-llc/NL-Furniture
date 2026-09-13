@@ -3,14 +3,15 @@
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname, useRouter } from "next/navigation";
-import { Heart, User, X, Camera, Scale } from "lucide-react";
-import { useState, useEffect, useRef } from "react";
+import { Bell, ChevronDown, Heart, Menu, Search, User, X, Camera, Scale, Upload } from "lucide-react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import useSWR from "swr";
 import { getUser, userFetch, type UserPayload } from "@/lib/userAuth";
 import VisualSearchModal from "./VisualSearchModal";
 import { Spotlight } from "./motion/Spotlight";
 import { useLanguage } from "@/providers/languageContext";
 import { useCompare } from "@/providers/compareContext";
+import { HomeNavDrawer } from "./home/HomeSidebar";
 
 function DSearchIcon({ size = 20 }: { size?: number }) {
   return (
@@ -84,6 +85,9 @@ export default function Header() {
   const searchPlaceholders = tList<string>('header.searchPlaceholders');
   const animatedPlaceholder = useTypewriterPlaceholder(searchPlaceholders);
   const headerRef = useRef<HTMLDivElement>(null);
+  // Home only: below `lg` the sidebar's links open in a drawer from here.
+  const [menuOpen, setMenuOpen] = useState(false);
+  const closeMenu = useCallback(() => setMenuOpen(false), []);
 
   // Expose the floating header's height as a CSS variable so pages that start
   // with a top hero image can pull it up behind the bar and pad its content.
@@ -103,9 +107,13 @@ export default function Header() {
   // `isHome` only picks the header's surface treatment now — the search bar
   // renders on every page, including home (the comparison hero has none).
   const isHome = pathname === "/";
+  // Home: a light, theme-tinted glass bar with navy text; the primary colour is
+  // kept for the search button, the upload accent and hover/focus states.
   const headerSurfaceClass = isHome
-    ? "glass-panel"
-    : "bg-gradient-to-r from-primary-400/85 via-primary-500/85 to-primary-400/85 backdrop-blur-xl";
+    ? "surface-tint rounded-[18px] border border-gray-200/80 shadow-soft-md backdrop-blur-xl"
+    : "rounded-2xl bg-gradient-to-r from-primary-400/85 via-primary-500/85 to-primary-400/85 shadow-depth-2 backdrop-blur-xl";
+  const homeFocusRing =
+    "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500/50";
   const navLinkClass = isHome
     ? "text-gray-700 hover:text-primary-600"
     : "text-white hover:text-white/90";
@@ -113,11 +121,12 @@ export default function Header() {
     ? "text-gray-600 hover:text-primary-600"
     : "text-white hover:text-white/90";
   const iconLinkClass = isHome
-    ? "hover:bg-gray-100 text-gray-900"
+    ? `text-gray-800 hover:bg-primary-500/10 hover:text-gray-950 ${homeFocusRing}`
     : "text-white hover:bg-white/15";
-  const wishlistIconClass = isHome ? "group-hover:text-red-500" : "group-hover:text-white";
+  const wishlistIconClass = isHome ? "group-hover:text-primary-600" : "group-hover:text-white";
   const accountIconClass = isHome ? "group-hover:text-primary-600" : "group-hover:text-white";
   const headerDividerClass = isHome ? "border-gray-100" : "border-white/20";
+  // Dark-text logo on home's light bar; white-text logo on the gradient bar.
   const logoSrc = isHome ? "/nl-furniture_logo_dark.png" : "/nl-furniture_logo_light.png";
 
   const { count: compareCount } = useCompare();
@@ -139,6 +148,7 @@ export default function Header() {
 
   useEffect(() => {
     setQuery("");
+    setMenuOpen(false);
   }, [pathname]);
 
   // Scroll hide header effect
@@ -155,6 +165,9 @@ export default function Header() {
           ? 'translateY(-100%)'
           : 'translateY(0)';
       }
+      // Lets sticky elements (the home sidebar) reclaim the bar's space while
+      // it is tucked away instead of floating below an empty gap.
+      document.documentElement.toggleAttribute('data-header-hidden', scrollDown);
 
       lastScrollY = currentScrollY;
       ticking = false;
@@ -187,32 +200,51 @@ export default function Header() {
       >
         {/* Ambient color aura behind the floating header — gives the glass panel's
             backdrop-blur something to actually blur so it's visibly "glass" on
-            every page, not just when a photo happens to scroll underneath. */}
-        <div className="pointer-events-none absolute -inset-x-2 -top-6 h-24 -z-10 overflow-visible" aria-hidden="true">
-          <div className="absolute left-[8%] top-0 h-20 w-40 rounded-full bg-primary-400/50 blur-3xl" />
-          <div className="absolute right-[12%] top-0 h-20 w-40 rounded-full bg-primary-600/40 blur-3xl" />
-        </div>
+            every page, not just when a photo happens to scroll underneath.
+            Kept flush with the viewport (`inset-x-0`): any negative inset makes
+            the whole document scroll sideways. The blur still bleeds past the
+            edge, but filter overflow is paint-only and adds no scroll width. */}
+        {/* Not on home: its light bar sits over the blurred hero backdrop, and
+            the aura would tint it violet. */}
+        {!isHome && (
+          <div className="pointer-events-none absolute inset-x-0 -top-6 h-24 -z-10 overflow-visible" aria-hidden="true">
+            <div className="absolute left-[8%] top-0 h-20 w-40 rounded-full bg-primary-400/50 blur-3xl" />
+            <div className="absolute right-[12%] top-0 h-20 w-40 rounded-full bg-primary-600/40 blur-3xl" />
+          </div>
+        )}
 
         {/* Main Header */}
-        <header className={`relative ${headerSurfaceClass} shadow-depth-2 rounded-2xl mx-3 md:mx-6 mt-3`}>
-          <div className="max-w-content mx-auto px-4 md:px-6">
+        <header className={`relative ${headerSurfaceClass} mx-3 md:mx-6 mt-3`}>
+          <div className={`${isHome ? "max-w-none" : "max-w-content mx-auto"} px-4 md:px-6`}>
 
             {/* Top Row: logo + menu + search (not on home) + icons */}
-            <div className="flex items-center gap-2 h-12 md:h-16">
+            <div className={`flex items-center gap-2 ${isHome ? "h-14" : "h-12 md:h-16"}`}>
 
-              <Link href="/" className="relative h-full w-[145px] shrink-0 md:w-[215px] ml-1 md:ml-4">
-                <Image
-                  src={logoSrc}
-                  alt="NL FURNITURE"
-                  width={1000}
-                  height={249}
-                  priority
-                  className="absolute inset-0 h-full w-full object-contain transition-all duration-300"
-                />
-              </Link>
+              {isHome && (
+                <button
+                  type="button"
+                  onClick={() => setMenuOpen(true)}
+                  aria-label={t('homeCompare.sidebar.heading')}
+                  aria-expanded={menuOpen}
+                  className={`-ml-1.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-xl text-gray-800 transition hover:bg-primary-500/10 hover:text-gray-950 lg:hidden ${homeFocusRing}`}
+                >
+                  <Menu className="h-5 w-5" />
+                </button>
+              )}
+
+              {isHome ? (
+                // Narrower on phones so the bar stays one compact row.
+                <Link href="/" className={`relative h-full w-[128px] shrink-0 rounded-lg sm:w-[160px] lg:w-[190px] ${homeFocusRing}`}>
+                  <Image src={logoSrc} alt="NL FURNITURE" width={1000} height={249} priority className="absolute inset-0 h-full w-full object-contain" />
+                </Link>
+              ) : (
+                <Link href="/" className="relative ml-1 h-full w-[145px] shrink-0 md:ml-4 md:w-[215px]">
+                  <Image src={logoSrc} alt="NL FURNITURE" width={1000} height={249} priority className="absolute inset-0 h-full w-full object-contain transition-all duration-300" />
+                </Link>
+              )}
 
               {/* Desktop Menu (ShopForward style, inline next to logo) */}
-              <nav className="hidden lg:flex items-center gap-x-6 xl:gap-x-8 text-sm whitespace-nowrap shrink-0 ml-2 xl:ml-6">
+              <nav className={`${isHome ? "hidden" : "hidden lg:flex"} items-center gap-x-6 xl:gap-x-8 text-sm whitespace-nowrap shrink-0 ml-2 xl:ml-6`}>
                 {NAV_LINKS.map((item) => (
                   <Link
                     key={item.href}
@@ -225,8 +257,14 @@ export default function Header() {
               </nav>
 
               {/* Mobile Search — inline bar */}
-              <div className="flex md:hidden flex-1 max-w-[130px] min-w-[95px] ml-auto relative rounded-full p-[2px] bg-gradient-to-r from-primary-400 via-primary-600 to-primary-400 shadow-md shadow-primary-500/25">
-                <form onSubmit={handleSearch} className="relative w-full bg-gray-100 rounded-full flex items-center">
+              <div
+                className={`flex md:hidden flex-1 ml-auto relative rounded-full ${
+                  isHome
+                    ? "min-w-0 border border-gray-200/90 bg-white shadow-soft-sm transition focus-within:border-primary-300 focus-within:ring-2 focus-within:ring-primary-500/20"
+                    : "max-w-[130px] min-w-[95px] p-[2px] bg-gradient-to-r from-primary-400 via-primary-600 to-primary-400 shadow-md shadow-primary-500/25"
+                }`}
+              >
+                <form onSubmit={handleSearch} className={`relative w-full rounded-full flex items-center ${isHome ? "bg-white" : "bg-gray-100"}`}>
                   <button type="submit" className="ml-3 mr-1.5 shrink-0 transition-opacity hover:opacity-80 flex items-center justify-center">
                     <DSearchIcon size={18} />
                   </button>
@@ -251,11 +289,11 @@ export default function Header() {
               </div>
 
               {/* Desktop Search */}
-              <div className="hidden md:flex flex-1 max-w-xl mx-4 lg:mx-6 relative group rounded-full p-[2px] bg-gradient-to-r from-primary-400 via-primary-600 to-primary-400 shadow-lg shadow-primary-500/30">
-                <Spotlight size={220} className="from-white/70 via-white/25" />
-                <form onSubmit={handleSearch} className="relative w-full bg-gray-100 rounded-full flex items-center">
-                  <button type="submit" className="relative ml-5 mr-3 transition-opacity hover:opacity-80 flex items-center justify-center">
-                    <DSearchIcon size={22} />
+              <div className={`hidden md:flex flex-1 mx-4 lg:mx-6 relative group rounded-xl ${isHome ? "max-w-2xl border border-gray-200/90 bg-white shadow-soft-sm transition focus-within:border-primary-300 focus-within:ring-2 focus-within:ring-primary-500/20" : "p-[2px] max-w-xl bg-gradient-to-r from-primary-400 via-primary-600 to-primary-400 shadow-lg shadow-primary-500/30"}`}>
+                {!isHome && <Spotlight size={220} className="from-white/70 via-white/25" />}
+                <form onSubmit={handleSearch} className={`relative w-full flex items-center ${isHome ? "rounded-[11px] bg-white" : "rounded-full bg-gray-100"}`}>
+                  <button type="submit" className={`relative ml-4 mr-3 flex items-center justify-center transition-opacity hover:opacity-80 ${isHome ? "text-gray-400" : ""}`}>
+                    {isHome ? <Search size={17} /> : <DSearchIcon size={22} />}
                   </button>
                   <div className="relative flex-1">
                     <input
@@ -283,22 +321,36 @@ export default function Header() {
                       <X size={18} />
                     </button>
                   )}
-                  <button
-                    type="button"
-                    onClick={() => setShowVisualSearch(true)}
-                    className="p-2 mr-3 text-gray-500 hover:text-gray-800"
-                    title={t('header.visualSearchTitle')}
-                  >
-                    <Camera size={20} />
-                  </button>
+                  {isHome ? (
+                    <button type="submit" className={`m-1 flex h-8 w-10 shrink-0 items-center justify-center rounded-lg bg-primary-600 text-white shadow-cta transition hover:bg-primary-700 ${homeFocusRing}`} aria-label={t('header.mobileSearchPlaceholder')}>
+                      <Search size={15} />
+                    </button>
+                  ) : (
+                    <button type="button" onClick={() => setShowVisualSearch(true)} className="p-2 mr-3 text-gray-500 hover:text-gray-800" title={t('header.visualSearchTitle')}>
+                      <Camera size={20} />
+                    </button>
+                  )}
                 </form>
               </div>
 
               {/* Compare + Wishlist + Account Icons (Mobile & Desktop) */}
               <div className="flex items-center gap-2 md:gap-4 shrink-0">
+                {isHome && (
+                  <button
+                    type="button"
+                    onClick={() => setShowVisualSearch(true)}
+                    className={`hidden items-center gap-2 rounded-xl border border-primary-200 bg-primary-50/60 px-3.5 py-2 text-[11px] font-bold text-gray-900 transition hover:border-primary-300 hover:bg-primary-50 lg:inline-flex ${homeFocusRing}`}
+                  >
+                    <Upload className="h-4 w-4 text-primary-600" />
+                    <span className="leading-tight">
+                      <span className="block">{t('homeCompare.hero.uploadCta')}</span>
+                      <span className="block text-[8px] font-medium text-gray-500">{t('header.visualSearchTitle')}</span>
+                    </span>
+                  </button>
+                )}
                 {/* Comparison tray counter — only once something is in it, so it
                     never sits in the bar as a dead control. */}
-                {compareCount > 0 && (
+                {compareCount > 0 && !isHome && (
                   <Link
                     href="/#vergelijken"
                     className={`hidden sm:inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-semibold transition ${
@@ -323,18 +375,29 @@ export default function Header() {
                     </span>
                   )}
                 </Link>
-                <Link
-                  href={user ? "/dashboard" : "/login"}
-                  className={`p-1.5 md:p-2 ${iconLinkClass} rounded-full transition group flex items-center justify-center`}
-                  title={user ? t('header.myAccount') : t('header.login')}
-                >
-                  <User size={22} className={`md:w-[26px] md:h-[26px] ${accountIconClass} transition-colors`} />
-                </Link>
+                {isHome && (
+                  <button type="button" className={`hidden rounded-full p-2 text-gray-800 transition hover:bg-primary-500/10 hover:text-gray-950 sm:flex ${homeFocusRing}`} aria-label="Notifications">
+                    <Bell size={21} />
+                  </button>
+                )}
+                {isHome ? (
+                  <Link href={user ? "/dashboard" : "/login"} className={`group hidden items-center gap-2 rounded-xl px-1.5 py-1 text-gray-900 transition hover:bg-primary-500/10 md:flex ${homeFocusRing}`} title={user ? t('header.myAccount') : t('header.login')}>
+                    <span className="flex h-8 w-8 items-center justify-center rounded-full bg-primary-50 text-[11px] font-extrabold text-primary-700 ring-1 ring-primary-200">
+                      {user?.name ? user.name.charAt(0).toUpperCase() : <User size={16} />}
+                    </span>
+                    <span className="hidden max-w-[105px] truncate text-[11px] font-semibold xl:block">{user?.name || t('header.myAccount')}</span>
+                    <ChevronDown className="hidden h-3 w-3 text-gray-500 xl:block" />
+                  </Link>
+                ) : (
+                  <Link href={user ? "/dashboard" : "/login"} className={`p-1.5 md:p-2 ${iconLinkClass} rounded-full transition group flex items-center justify-center`} title={user ? t('header.myAccount') : t('header.login')}>
+                    <User size={22} className={`md:w-[26px] md:h-[26px] ${accountIconClass} transition-colors`} />
+                  </Link>
+                )}
               </div>
             </div>
 
             {/* Navigation Bar (mobile/tablet only — desktop menu is inline in the top row) */}
-            <div className={`border-t ${headerDividerClass} lg:hidden`}>
+            <div className={`${isHome ? "hidden" : "border-t"} ${headerDividerClass} lg:hidden`}>
               <div className="w-full flex justify-start md:justify-center overflow-x-auto hide-scrollbar">
                 <nav className="flex items-center gap-x-6 md:gap-x-8 text-sm whitespace-nowrap py-3">
                   {NAV_LINKS.map((item) => (
@@ -354,6 +417,9 @@ export default function Header() {
       </div>
 
       <VisualSearchModal open={showVisualSearch} onClose={() => setShowVisualSearch(false)} />
+      {/* Rendered outside the header wrapper: its transform would otherwise
+          pin this `fixed` drawer to the bar instead of the viewport. */}
+      {isHome && <HomeNavDrawer open={menuOpen} onClose={closeMenu} />}
     </>
   );
 }

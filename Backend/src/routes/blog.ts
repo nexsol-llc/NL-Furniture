@@ -11,17 +11,25 @@ blog.get("/", async (c) => {
   const db = c.env.DB;
   const summary = c.req.query("summary") === "true";
   const category = c.req.query("category");
+  // ?featured=true → only posts flagged for the home page's inspiration rail.
+  const featuredOnly = c.req.query("featured") === "true";
 
-  const sql = category
-    ? "SELECT id, data FROM blogs WHERE json_extract(data, '$.category') = ? ORDER BY created_at DESC"
-    : "SELECT id, data FROM blogs ORDER BY created_at DESC";
+  const where: string[] = [];
+  const params: string[] = [];
+  if (category) {
+    where.push("json_extract(data, '$.category') = ?");
+    params.push(category);
+  }
+  // `featured` is stored as a JSON boolean, which json_extract returns as 1.
+  if (featuredOnly) where.push("json_extract(data, '$.featured') = 1");
 
-  const { results } = await db.prepare(sql).bind(...(category ? [category] : [])).all<D1Row>();
+  const sql = `SELECT id, data FROM blogs${where.length ? ` WHERE ${where.join(" AND ")}` : ""} ORDER BY created_at DESC`;
+  const { results } = await db.prepare(sql).bind(...params).all<D1Row>();
   const items = fromRows(results);
 
   if (summary) {
-    const summarized = items.map(({ _id, title, subHeading, category, author, heroImage, thumbnail, createdAt }: any) => ({
-      _id, title, subHeading, category, author, heroImage, thumbnail, createdAt,
+    const summarized = items.map(({ _id, title, subHeading, category, author, heroImage, thumbnail, featured, createdAt }: any) => ({
+      _id, title, subHeading, category, author, heroImage, thumbnail, featured: featured === true, createdAt,
     }));
     return c.json(summarized, 200, { "Cache-Control": "private, max-age=30, stale-while-revalidate=60" });
   }
@@ -57,6 +65,7 @@ blog.post("/", authMiddleware, requireStaff, async (c) => {
     sections: body.sections ?? [],
     faqs: body.faqs ?? [],
     seo: body.seo ?? {},
+    featured: body.featured === true || body.featured === "true",
     createdAt: now,
     updatedAt: now,
   };
@@ -81,6 +90,9 @@ blog.put("/:id", authMiddleware, requireStaff, async (c) => {
     .prepare("SELECT id, data FROM blogs WHERE id = ? LIMIT 1")
     .bind(id).first<D1Row>();
   if (!existing) return c.json({ error: "Not found" }, 404);
+
+  // Keep `featured` a real boolean — the ?featured=true filter matches on it.
+  if (body.featured !== undefined) body.featured = body.featured === true || body.featured === "true";
 
   const updatedDoc = { ...JSON.parse(existing.data), ...body, updatedAt: nowIso() };
   await db

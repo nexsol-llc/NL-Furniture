@@ -144,6 +144,19 @@ export function generateShades(hex: string): ColorShades {
   };
 }
 
+// ─── Category image circles ──────────────────────────────────────────────────
+
+/**
+ * Fill for a category's image circle when the admin hasn't picked a color: a
+ * light shade of the live primary theme, so it follows theme changes.
+ */
+export const DEFAULT_CATEGORY_CIRCLE_BG = "var(--primary-100)";
+
+/** The admin-picked circle color, or the theme-derived default. */
+export function categoryCircleBg(color?: string | null): string {
+  return color && color.trim() ? color : DEFAULT_CATEGORY_CIRCLE_BG;
+}
+
 // ─── Apply helpers ────────────────────────────────────────────────────────────
 
 function applyShades(shades: ColorShades) {

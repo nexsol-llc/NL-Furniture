@@ -26,6 +26,40 @@ const LANGUAGE_OPTIONS: { code: Language; flag: string; label: string }[] = [
   { code: 'de', flag: '🇩🇪', label: 'Deutsch' },
 ];
 
+// Link columns. The desktop grid shows them under their headings; the mobile
+// stack lists them in the same order under the first heading.
+const LINK_GROUPS: { heading: string; links: { href: string; label: string }[] }[] = [
+  {
+    heading: 'footer.aboutHeading',
+    links: [
+      { href: '/over-ons', label: 'footer.aboutUs' },
+      { href: '/magazine', label: 'footer.magazine' },
+      { href: '/magazine', label: 'footer.inspiration' },
+    ],
+  },
+  {
+    heading: 'footer.partnershipsHeading',
+    links: [
+      { href: '/contact', label: 'footer.contact' },
+      { href: '/partner-worden', label: 'footer.cooperations' },
+    ],
+  },
+  {
+    heading: 'footer.legalHeading',
+    links: [
+      { href: '/algemene-voorwaarden', label: 'footer.termsOfUse' },
+      { href: '/privacybeleid', label: 'footer.privacy' },
+      { href: '/colofon', label: 'footer.imprint' },
+      { href: '/advertentieverklaring', label: 'footer.advertisingDisclosure' },
+    ],
+  },
+];
+
+const LINK_CLASS = 'footer-link font-medium hover:underline underline-offset-4';
+
+/* Colours come from Admin → Theme → Footer Color through the .site-footer
+   tokens in globals.css — the background plus one ink channel that flips to
+   navy on light colours — so this component hardcodes none. */
 export default function Footer() {
   const { language, setLanguage, t } = useLanguage();
   const [langOpen, setLangOpen] = useState(false);
@@ -48,32 +82,31 @@ export default function Footer() {
   };
 
   return (
-    <footer className="relative bg-[#FAF6F0] text-[#333333] pt-16 pb-12 border-t border-[#E8E3DB] font-sans">
+    <footer className="site-footer footer-line relative pt-16 pb-12 border-t font-sans">
       <div className="max-w-7xl mx-auto px-6 lg:px-8 flex flex-col items-center">
-        {/* Original Logo Image */}
-        {/* We apply a negative top margin here to counter the empty transparent space inside the logo file itself */}
+        {/* Logo — the negative top margin counters the empty transparent space
+            inside the artwork. Both versions render; CSS shows the white-text
+            one on a dark footer and the dark-text one on a light footer. */}
         <div className="text-center mb-6 -mt-4 md:-mt-6 lg:-mt-8 overflow-hidden">
-          <Image
-            src="/nl-furniture_logo_dark.png"
-            alt="NL FURNITURE"
-            width={1600}
-            height={400}
-            priority
-            className="
-              mx-auto
-              h-[90px]
-              md:h-[110px]
-              lg:h-[130px]
-              w-auto
-              object-contain
-            "
-          />
+          {[
+            { src: '/nl-furniture_logo_light.png', className: 'footer-logo-light' },
+            { src: '/nl-furniture_logo_dark.png', className: 'footer-logo-dark' },
+          ].map((logo) => (
+            <Image
+              key={logo.src}
+              src={logo.src}
+              alt="NL FURNITURE"
+              width={1600}
+              height={400}
+              className={`${logo.className} block mx-auto h-[90px] md:h-[110px] lg:h-[130px] w-auto object-contain`}
+            />
+          ))}
         </div>
 
-        {/* Folge Uns + Social Icons */}
+        {/* Follow us + social icons */}
         {activeSocials.length > 0 && (
           <div className="text-center mb-10 -mt-2">
-            <p className="text-xs uppercase tracking-[0.2em] font-semibold mb-4 text-[#7A7570]">
+            <p className="footer-heading text-xs uppercase tracking-[0.2em] font-semibold mb-4">
               {t('footer.followUs')}
             </p>
             <div className="flex justify-center gap-4">
@@ -84,7 +117,7 @@ export default function Footer() {
                   target="_blank"
                   rel="noopener noreferrer"
                   aria-label={platform.label}
-                  className="w-10 h-10 flex items-center justify-center rounded-full bg-[#111111] text-white hover:bg-gray-800 transition-all duration-200 hover:scale-105"
+                  className="footer-chip w-10 h-10 flex items-center justify-center rounded-full transition-all duration-200 hover:scale-105"
                 >
                   <svg className="w-5 h-5 fill-current" viewBox="0 0 24 24">
                     <path d={platform.path} />
@@ -95,147 +128,45 @@ export default function Footer() {
           </div>
         )}
 
-        {/* Links Section */}
-        {/* Mobile View: Vertical Stack */}
+        {/* Mobile: one vertical stack */}
         <div className="md:hidden text-center mb-8">
-          <p className="text-xs uppercase tracking-[0.2em] font-semibold mb-5 text-[#7A7570]">
+          <p className="footer-heading text-xs uppercase tracking-[0.2em] font-semibold mb-5">
             {t('footer.aboutHeading')}
           </p>
           <div className="flex flex-col items-center gap-3.5">
-            <Link
-              href="/over-ons"
-              className="text-[14px] text-[#4A4A4A] hover:text-black transition-colors font-medium hover:underline underline-offset-4"
-            >
-              {t('footer.aboutUs')}
-            </Link>
-            <Link
-              href="/magazine"
-              className="text-[14px] text-[#4A4A4A] hover:text-black transition-colors font-medium hover:underline underline-offset-4"
-            >
-              {t('footer.magazine')}
-            </Link>
-            <Link
-              href="/magazine"
-              className="text-[14px] text-[#4A4A4A] hover:text-black transition-colors font-medium hover:underline underline-offset-4"
-            >
-              {t('footer.inspiration')}
-            </Link>
-            <Link
-              href="/contact"
-              className="text-[14px] text-[#4A4A4A] hover:text-black transition-colors font-medium hover:underline underline-offset-4"
-            >
-              {t('footer.contact')}
-            </Link>
-            <Link
-              href="/partner-worden"
-              className="text-[14px] text-[#4A4A4A] hover:text-black transition-colors font-medium hover:underline underline-offset-4"
-            >
-              {t('footer.cooperations')}
-            </Link>
-            <Link
-              href="/algemene-voorwaarden"
-              className="text-[14px] text-[#4A4A4A] hover:text-black transition-colors font-medium hover:underline underline-offset-4"
-            >
-              {t('footer.termsOfUse')}
-            </Link>
-            <Link
-              href="/privacybeleid"
-              className="text-[14px] text-[#4A4A4A] hover:text-black transition-colors font-medium hover:underline underline-offset-4"
-            >
-              {t('footer.privacy')}
-            </Link>
-            <Link
-              href="/colofon"
-              className="text-[14px] text-[#4A4A4A] hover:text-black transition-colors font-medium hover:underline underline-offset-4"
-            >
-              {t('footer.imprint')}
-            </Link>
-            <Link
-              href="/advertentieverklaring"
-              className="text-[14px] text-[#4A4A4A] hover:text-black transition-colors font-medium hover:underline underline-offset-4"
-            >
-              {t('footer.advertisingDisclosure')}
-            </Link>
+            {LINK_GROUPS.flatMap((group) => group.links).map((link) => (
+              <Link key={link.label} href={link.href} className={`${LINK_CLASS} text-[14px]`}>
+                {t(link.label)}
+              </Link>
+            ))}
           </div>
         </div>
 
-        {/* Desktop View: Multi-column Grid */}
-        <div className="hidden md:grid grid-cols-3 gap-16 max-w-4xl w-full mb-10 text-center border-t border-[#E8E3DB] pt-10 px-8">
-          <div>
-            <h3 className="text-xs uppercase tracking-[0.2em] font-bold text-[#7A7570] mb-5">
-              {t('footer.aboutHeading')}
-            </h3>
-            <ul className="space-y-3.5">
-              <li>
-                <Link href="/over-ons" className="text-sm text-[#4A4A4A] hover:text-black transition-colors font-medium hover:underline underline-offset-4">
-                  {t('footer.aboutUs')}
-                </Link>
-              </li>
-              <li>
-                <Link href="/magazine" className="text-sm text-[#4A4A4A] hover:text-black transition-colors font-medium hover:underline underline-offset-4">
-                  {t('footer.magazine')}
-                </Link>
-              </li>
-              <li>
-                <Link href="/magazine" className="text-sm text-[#4A4A4A] hover:text-black transition-colors font-medium hover:underline underline-offset-4">
-                  {t('footer.inspiration')}
-                </Link>
-              </li>
-            </ul>
-          </div>
-
-          <div>
-            <h3 className="text-xs uppercase tracking-[0.2em] font-bold text-[#7A7570] mb-5">
-              {t('footer.partnershipsHeading')}
-            </h3>
-            <ul className="space-y-3.5">
-              <li>
-                <Link href="/contact" className="text-sm text-[#4A4A4A] hover:text-black transition-colors font-medium hover:underline underline-offset-4">
-                  {t('footer.contact')}
-                </Link>
-              </li>
-              <li>
-                <Link href="/partner-worden" className="text-sm text-[#4A4A4A] hover:text-black transition-colors font-medium hover:underline underline-offset-4">
-                  {t('footer.cooperations')}
-                </Link>
-              </li>
-            </ul>
-          </div>
-
-          <div>
-            <h3 className="text-xs uppercase tracking-[0.2em] font-bold text-[#7A7570] mb-5">
-              {t('footer.legalHeading')}
-            </h3>
-            <ul className="space-y-3.5">
-              <li>
-                <Link href="/algemene-voorwaarden" className="text-sm text-[#4A4A4A] hover:text-black transition-colors font-medium hover:underline underline-offset-4">
-                  {t('footer.termsOfUse')}
-                </Link>
-              </li>
-              <li>
-                <Link href="/privacybeleid" className="text-sm text-[#4A4A4A] hover:text-black transition-colors font-medium hover:underline underline-offset-4">
-                  {t('footer.privacy')}
-                </Link>
-              </li>
-              <li>
-                <Link href="/colofon" className="text-sm text-[#4A4A4A] hover:text-black transition-colors font-medium hover:underline underline-offset-4">
-                  {t('footer.imprint')}
-                </Link>
-              </li>
-              <li>
-                <Link href="/advertentieverklaring" className="text-sm text-[#4A4A4A] hover:text-black transition-colors font-medium hover:underline underline-offset-4">
-                  {t('footer.advertisingDisclosure')}
-                </Link>
-              </li>
-            </ul>
-          </div>
+        {/* Desktop: one column per group */}
+        <div className="footer-line hidden md:grid grid-cols-3 gap-16 max-w-4xl w-full mb-10 text-center border-t pt-10 px-8">
+          {LINK_GROUPS.map((group) => (
+            <div key={group.heading}>
+              <h3 className="footer-heading text-xs uppercase tracking-[0.2em] font-bold mb-5">
+                {t(group.heading)}
+              </h3>
+              <ul className="space-y-3.5">
+                {group.links.map((link) => (
+                  <li key={link.label}>
+                    <Link href={link.href} className={`${LINK_CLASS} text-sm`}>
+                      {t(link.label)}
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ))}
         </div>
 
-        {/* Language selector */}
+        {/* Language selector — a white control, readable on any footer colour */}
         <div className="relative inline-block text-left mb-10">
           <button
             onClick={() => setLangOpen(!langOpen)}
-            className="flex items-center gap-2 px-5 py-2.5 border border-[#CCCCCC] text-[12px] font-semibold uppercase tracking-wider bg-white text-[#333333] hover:border-black transition-colors min-w-[120px] justify-between shadow-soft-sm"
+            className="flex items-center gap-2 px-5 py-2.5 border border-gray-300 text-[12px] font-semibold uppercase tracking-wider bg-white text-gray-800 hover:border-gray-500 transition-colors min-w-[120px] justify-between shadow-soft-sm"
           >
             <span className="flex items-center gap-2">
               <span>{currentLang.flag}</span>
@@ -251,9 +182,9 @@ export default function Footer() {
               <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 15.75l7.5-7.5 7.5 7.5" />
             </svg>
           </button>
-          
+
           {langOpen && (
-            <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-40 bg-white border border-[#E5E5E5] shadow-soft-lg rounded-lg py-2 z-50 text-center">
+            <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-40 bg-white border border-gray-200 shadow-soft-lg rounded-lg py-2 z-50 text-center">
               {LANGUAGE_OPTIONS.map((option) => (
                 <button
                   key={option.code}
@@ -262,7 +193,7 @@ export default function Footer() {
                     setLangOpen(false);
                   }}
                   className={`w-full flex items-center justify-center gap-2 text-xs font-semibold py-1.5 hover:bg-gray-50 transition-colors ${
-                    option.code === currentLang.code ? 'text-black' : 'text-[#7A7570]'
+                    option.code === currentLang.code ? 'text-gray-900' : 'text-gray-500'
                   }`}
                 >
                   <span>{option.flag}</span>
@@ -273,17 +204,17 @@ export default function Footer() {
           )}
         </div>
 
-        {/* Disclaimer / Copyright text */}
-        <div className="w-full text-center text-[11px] text-[#7A7570] leading-relaxed max-w-2xl mx-auto px-4 mb-4">
+        {/* Disclaimer / copyright */}
+        <div className="footer-muted w-full text-center text-[11px] leading-relaxed max-w-2xl mx-auto px-4 mb-4">
           {t('footer.copyright')}
         </div>
       </div>
 
-      {/* Scroll to top button */}
+      {/* Scroll to top */}
       <div className="absolute bottom-8 right-6 md:right-12">
         <button
           onClick={scrollToTop}
-          className="flex items-center justify-center w-10 h-10 bg-[#333333] hover:bg-black text-white rounded-full shadow-soft-md hover:shadow-soft-lg transition-all duration-300 transform hover:-translate-y-1"
+          className="footer-chip flex items-center justify-center w-10 h-10 rounded-full shadow-soft-md hover:shadow-soft-lg transition-all duration-300 transform hover:-translate-y-1"
           aria-label={t('footer.scrollToTop')}
         >
           <svg className="w-5 h-5 stroke-current stroke-[2.5]" viewBox="0 0 24 24" fill="none">

@@ -62,11 +62,11 @@ export function PromoBanner({
       className={`relative overflow-hidden rounded-2xl ${
         dark
           ? "bg-gradient-to-r from-gray-900 via-gray-900 to-primary-950 shadow-depth-2"
-          : "border border-gray-200/80 bg-gradient-to-r from-primary-50 via-white to-primary-50/60 shadow-soft-sm"
+          : "border border-gray-800 bg-gray-900 shadow-depth-2"
       } ${className}`}
     >
       {/* Photo bleeds in from the right and fades into the panel. */}
-      <div className={`absolute inset-y-0 right-0 ${dark ? "w-[52%]" : "w-[38%]"}`}>
+      <div className={`absolute inset-y-0 right-0 ${dark ? "w-[52%]" : "w-full"}`}>
         {slides.map((s, i) => (
           <div
             key={`${s.image}-${i}`}
@@ -81,14 +81,14 @@ export function PromoBanner({
         <div
           aria-hidden="true"
           className={`absolute inset-0 bg-gradient-to-r ${
-            dark ? "from-gray-900 via-gray-900/70" : "from-white via-white/80"
+            dark ? "from-gray-900 via-gray-900/70" : "from-gray-950/95 via-gray-900/65"
           } to-transparent`}
         />
       </div>
 
       <div
         className={`relative z-10 flex flex-col justify-center gap-2.5 ${
-          dark ? "min-h-[170px] p-6 md:min-h-[210px] md:p-8" : "min-h-[112px] p-5 md:min-h-[128px] md:px-7"
+          dark ? "min-h-[170px] p-6 md:min-h-[210px] md:p-8" : "min-h-[132px] p-5 md:min-h-[144px] md:px-7"
         } max-w-[64%] sm:max-w-[56%]`}
       >
         <AdChip label={label} className="w-fit" />
@@ -96,8 +96,8 @@ export function PromoBanner({
         <div>
           {slide.title && (
             <h2
-              className={`font-display leading-tight ${
-                dark ? "text-lg text-white md:text-2xl" : "text-base text-gray-900 md:text-xl"
+              className={`font-sans font-bold leading-tight ${
+                dark ? "text-lg text-white md:text-2xl" : "text-base font-bold text-white md:text-xl"
               }`}
             >
               {slide.title}
@@ -106,7 +106,7 @@ export function PromoBanner({
           {slide.subtitle && (
             <p
               className={`mt-1 line-clamp-2 text-[11px] md:text-xs ${
-                dark ? "text-white/75" : "text-gray-500"
+                dark ? "text-white/75" : "text-white/60"
               }`}
             >
               {slide.subtitle}
@@ -122,7 +122,7 @@ export function PromoBanner({
             className={`inline-flex w-fit items-center gap-1.5 rounded-lg px-3.5 py-2 text-[11px] font-bold transition-all hover:-translate-y-0.5 md:text-xs ${
               dark
                 ? "bg-primary-600 text-white shadow-cta hover:bg-primary-700"
-                : "bg-white text-primary-700 shadow-soft-sm ring-1 ring-primary-200 hover:bg-primary-50"
+                : "bg-primary-600 text-white shadow-cta ring-1 ring-primary-500 hover:bg-primary-700"
             }`}
           >
             {slide.buttonText || t("homeCompare.featuredBrand.cta")}
@@ -166,7 +166,7 @@ export function RoomsCard({ image, href = "/categorie" }: { image?: string | nul
       </div>
 
       <div className="relative z-10 max-w-[62%]">
-        <h2 className="font-display text-base leading-tight text-white md:text-lg">
+        <h2 className="text-base font-bold leading-tight text-white md:text-lg">
           {t("homeCompare.rooms.title")}
         </h2>
         <p className="mt-1.5 line-clamp-3 text-[11px] leading-relaxed text-white/70">
@@ -229,7 +229,7 @@ export function FeaturedBrandCard({ slide }: { slide: PromoSlide }) {
   return (
     <Wrapper
       {...(href === "#" ? {} : { href, target: "_blank", rel: "noopener noreferrer" })}
-      className="group relative flex min-h-[190px] flex-col justify-end overflow-hidden rounded-2xl bg-gray-900 p-4 shadow-depth-2"
+      className="group relative flex min-h-[250px] flex-col justify-end overflow-hidden rounded-2xl bg-gray-900 p-4 shadow-depth-2"
     >
       <PlaceholderImage
         src={slide.image}
@@ -246,7 +246,7 @@ export function FeaturedBrandCard({ slide }: { slide: PromoSlide }) {
 
       <div className="relative z-10">
         {slide.title && (
-          <h2 className="font-display text-base leading-tight text-white">{slide.title}</h2>
+          <h2 className="text-base font-bold leading-tight text-white">{slide.title}</h2>
         )}
         {slide.subtitle && (
           <p className="mt-1 line-clamp-2 text-[10px] text-white/70">{slide.subtitle}</p>

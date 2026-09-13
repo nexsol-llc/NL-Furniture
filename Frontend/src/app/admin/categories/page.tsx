@@ -28,6 +28,7 @@ import {
 import MediaPicker, { type MediaItem } from "@/app/components/MediaPicker";
 import PlaceholderImage from "@/app/components/PlaceholderImage";
 import { sortChildCategories } from "@/lib/categoryCatalog";
+import { categoryCircleBg } from "@/lib/colorPresets";
 
 type Faq = { question: string; answer: string };
 
@@ -139,6 +140,14 @@ const serializeCatalog = (v: {
   childCategories: any[];
 }) => JSON.stringify(v);
 
+// A native color input needs a concrete hex, so when no circle color is set it
+// starts from the live theme shade the default resolves to (--primary-100).
+function readThemeCircleHex(): string {
+  if (typeof window === "undefined") return "#ffffff";
+  const value = getComputedStyle(document.documentElement).getPropertyValue("--primary-100").trim();
+  return /^#[0-9a-f]{6}$/i.test(value) ? value : "#ffffff";
+}
+
 export default function CategoriesAdmin() {
   const [activeTab, setActiveTab] = useState<"mainPage" | "catalog">("mainPage");
 
@@ -194,7 +203,9 @@ export default function CategoriesAdmin() {
     seoTitle: string;
     seoDescription: string;
     description: string;
-  }>({ name: "", slug: "", image: "", featured: false, seoTitle: "", seoDescription: "", description: "" });
+    /** Circle behind the image on the home rail; "" = theme default. */
+    imageBgColor: string;
+  }>({ name: "", slug: "", image: "", featured: false, seoTitle: "", seoDescription: "", description: "", imageBgColor: "" });
   const [parentCategoryFaqs, setParentCategoryFaqs] = useState<{ question: string; answer: string }[]>([]);
   const [parentCategoryImagePreview, setParentCategoryImagePreview] = useState("");
   const [savingParentCategory, setSavingParentCategory] = useState(false);
@@ -505,6 +516,7 @@ export default function CategoriesAdmin() {
             seoTitle: parentCategoryForm.seoTitle,
             seoDescription: parentCategoryForm.seoDescription,
             description: parentCategoryForm.description,
+            imageBgColor: parentCategoryForm.imageBgColor.trim(),
             faqs: parentCategoryFaqs,
           }),
         }
@@ -513,7 +525,7 @@ export default function CategoriesAdmin() {
       if (res.ok) {
         await fetchParentCategories();
         setEditingParentCategory(null);
-        setParentCategoryForm({ name: "", slug: "", image: "", featured: false, seoTitle: "", seoDescription: "", description: "" });
+        setParentCategoryForm({ name: "", slug: "", image: "", featured: false, seoTitle: "", seoDescription: "", description: "", imageBgColor: "" });
         setParentCategoryFaqs([]);
         setParentCategoryImagePreview("");
       } else {
@@ -1211,7 +1223,7 @@ export default function CategoriesAdmin() {
                   <button
                     onClick={() => {
                       setEditingParentCategory({ index: -1 });
-                      setParentCategoryForm({ name: "", slug: "", image: "", featured: false, seoTitle: "", seoDescription: "", description: "" });
+                      setParentCategoryForm({ name: "", slug: "", image: "", featured: false, seoTitle: "", seoDescription: "", description: "", imageBgColor: "" });
                       setParentCategoryFaqs([]);
                       setParentCategoryImagePreview("");
                     }}
@@ -1273,7 +1285,11 @@ export default function CategoriesAdmin() {
                                     />
                                   </button>
                                 </div>
-                                <div className="w-16 h-16 bg-white rounded-lg border border-zinc-100 flex items-center justify-center overflow-hidden mb-2">
+                                <div
+                                  className="w-16 h-16 rounded-full ring-1 ring-black/[0.04] flex items-center justify-center overflow-hidden mb-2"
+                                  style={{ backgroundColor: categoryCircleBg(pc.imageBgColor) }}
+                                  title={pc.imageBgColor ? `Circle color ${pc.imageBgColor}` : "Circle color: theme default"}
+                                >
                                   {pc.image ? (
                                     <img src={pc.image} draggable={false} className="object-contain w-full h-full p-1" />
                                   ) : (
@@ -1320,6 +1336,7 @@ export default function CategoriesAdmin() {
                                         seoTitle: pc.seoTitle || "",
                                         seoDescription: pc.seoDescription || "",
                                         description: pc.description || "",
+                                        imageBgColor: pc.imageBgColor || "",
                                       });
                                       setParentCategoryFaqs(Array.isArray(pc.faqs) ? pc.faqs : []);
                                       setParentCategoryImagePreview(pc.image || "");
@@ -1451,6 +1468,54 @@ export default function CategoriesAdmin() {
                         <span className="text-[8px] text-zinc-400 mt-0.5">From media library</span>
                       </div>
                     </button>
+                  </div>
+
+                  {/* Circle behind the image on the home page's "Shop by category"
+                      rail. Empty = a shade derived from the site's primary color. */}
+                  <div className="space-y-2">
+                    <label className="text-[11px] font-semibold text-zinc-500 uppercase tracking-wider">Image Background Color</label>
+                    <div className="flex items-center gap-4">
+                      <div
+                        className="relative w-20 h-20 shrink-0 rounded-full overflow-hidden ring-1 ring-black/[0.04] flex items-center justify-center"
+                        style={{ backgroundColor: categoryCircleBg(parentCategoryForm.imageBgColor) }}
+                      >
+                        {parentCategoryImagePreview ? (
+                          <img src={parentCategoryImagePreview} className="absolute inset-0 w-full h-full object-contain p-2.5" />
+                        ) : (
+                          <FolderTree className="w-6 h-6 text-zinc-400/70" />
+                        )}
+                      </div>
+                      <div className="flex-1 min-w-0 space-y-2">
+                        <div className="flex flex-wrap items-center gap-2">
+                          <input
+                            type="color"
+                            value={parentCategoryForm.imageBgColor || readThemeCircleHex()}
+                            onChange={(e) => setParentCategoryForm(prev => ({ ...prev, imageBgColor: e.target.value }))}
+                            className="h-10 w-12 cursor-pointer rounded-lg border border-zinc-200 bg-white p-1"
+                            title="Pick a color"
+                          />
+                          <input
+                            type="text"
+                            value={parentCategoryForm.imageBgColor}
+                            onChange={(e) => setParentCategoryForm(prev => ({ ...prev, imageBgColor: e.target.value }))}
+                            placeholder="Theme default"
+                            maxLength={7}
+                            className="w-32 border border-zinc-200 rounded-xl p-2.5 text-xs font-mono focus:outline-none focus:ring-2"
+                          />
+                          <button
+                            type="button"
+                            onClick={() => setParentCategoryForm(prev => ({ ...prev, imageBgColor: "" }))}
+                            disabled={!parentCategoryForm.imageBgColor}
+                            className="border border-zinc-200 text-zinc-700 hover:bg-zinc-50 disabled:opacity-40 disabled:cursor-not-allowed text-[11px] font-semibold py-2.5 px-3 rounded-xl transition"
+                          >
+                            Use theme default
+                          </button>
+                        </div>
+                        <p className="text-[10px] text-zinc-400">
+                          Fills the circle behind the image on the home page. Leave it on the theme default to follow the site&apos;s primary color.
+                        </p>
+                      </div>
+                    </div>
                   </div>
 
                   <div className="border-t pt-4 space-y-4">

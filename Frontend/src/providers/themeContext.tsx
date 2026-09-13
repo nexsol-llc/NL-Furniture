@@ -26,6 +26,15 @@ import {
   applyAllPatternVars,
   readAllPatterns,
 } from "@/lib/bgPatterns";
+import {
+  DEFAULT_FOOTER_THEME,
+  FOOTER_THEME_KEY,
+  type FooterTheme,
+  applyFooterTheme,
+  normalizeFooterTheme,
+  readFooterTheme,
+  writeFooterTheme,
+} from "@/lib/footerColor";
 import { adminFetch } from "@/lib/adminAuth";
 
 // ── Section background colors (published as CSS variables for every section) ──
@@ -88,6 +97,9 @@ type ThemeContextType = {
   couponsShades: ColorShades;
   setCouponsTheme: (key: ColorPresetKey) => Promise<void>;
   setCouponsCustomTheme: (hex: string) => Promise<void>;
+  // Footer colours — background plus heading/text/link/divider/icon overrides (lib/footerColor).
+  footerTheme: FooterTheme;
+  setFooterTheme: (next: FooterTheme) => Promise<void>;
   isSaving: boolean;
 };
 
@@ -101,6 +113,8 @@ const ThemeContext = createContext<ThemeContextType>({
   couponsShades: resolveShades(DEFAULT_COUPONS_THEME, DEFAULT_COUPONS_CUSTOM_HEX),
   setCouponsTheme: async () => {},
   setCouponsCustomTheme: async () => {},
+  footerTheme: DEFAULT_FOOTER_THEME,
+  setFooterTheme: async () => {},
   isSaving: false,
 });
 
@@ -109,6 +123,7 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
   const [customHex, setCustomHex] = useState(DEFAULT_CUSTOM_HEX);
   const [couponsTheme, setCouponsThemeState] = useState<ThemeKey>(DEFAULT_COUPONS_THEME);
   const [couponsCustomHex, setCouponsCustomHex] = useState(DEFAULT_COUPONS_CUSTOM_HEX);
+  const [footerTheme, setFooterThemeState] = useState<FooterTheme>(DEFAULT_FOOTER_THEME);
   const [isSaving, setIsSaving] = useState(false);
   const [loaded, setLoaded] = useState(false);
 
@@ -116,6 +131,10 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
     // Apply cached section backgrounds + patterns immediately (no flash), then reconcile below.
     applySectionBgVars(readCachedSectionBgs());
     applyAllPatternVars(readCachedPatterns());
+    try {
+      const cachedFooter = localStorage.getItem(FOOTER_THEME_KEY);
+      if (cachedFooter) setFooterThemeState(normalizeFooterTheme(JSON.parse(cachedFooter)));
+    } catch {}
 
     // Apply cached values immediately (no flash)
     const cachedTheme = localStorage.getItem(STORAGE_KEY) as ThemeKey | null;
@@ -192,10 +211,39 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
         try {
           localStorage.setItem(SECTION_PATTERN_KEY, JSON.stringify(patterns));
         } catch {}
+
+        // Footer colours → CSS variables (applied by the effect below).
+        const serverFooter = readFooterTheme(data);
+        setFooterThemeState(serverFooter);
+        try {
+          localStorage.setItem(FOOTER_THEME_KEY, JSON.stringify(serverFooter));
+        } catch {}
       })
       .catch(() => {})
       .finally(() => setLoaded(true));
   }, []);
+
+  // Declared after the load effect so the cached theme is on :root first.
+  // Re-runs on theme changes: a primary-shade background follows the theme by
+  // itself, but the default text colours depend on how light it is.
+  useEffect(() => {
+    applyFooterTheme(footerTheme);
+  }, [footerTheme, theme, customHex]);
+
+  const setFooterTheme = async (value: FooterTheme) => {
+    const next = normalizeFooterTheme(value);
+    setFooterThemeState(next);
+    try {
+      localStorage.setItem(FOOTER_THEME_KEY, JSON.stringify(next));
+    } catch {}
+
+    setIsSaving(true);
+    await adminFetch("/api/site-settings", {
+      method: "PUT",
+      body: JSON.stringify(writeFooterTheme(next)),
+    });
+    setIsSaving(false);
+  };
 
   const setTheme = async (key: ColorPresetKey) => {
     setThemeState(key);
@@ -268,6 +316,8 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
         couponsShades,
         setCouponsTheme,
         setCouponsCustomTheme,
+        footerTheme,
+        setFooterTheme,
         isSaving,
       }}
     >

@@ -1,9 +1,11 @@
 "use client";
 
 import Link from "next/link";
-import { useMemo, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { ArrowRight, ChevronLeft, ChevronRight } from "lucide-react";
 import PlaceholderImage from "../PlaceholderImage";
-import { FilterChip, HomeCard, Rail, SectionHeader } from "./HomeUi";
+import { HomeCard } from "./HomeUi";
+import { LOCALE_TAG } from "@/lib/languageDefaults";
 import { useLanguage } from "@/providers/languageContext";
 
 export interface InspirationItem {
@@ -12,93 +14,194 @@ export interface InspirationItem {
   category?: string;
   thumbnail?: string;
   heroImage?: string;
+  createdAt?: string;
 }
 
-const ALL = "__all__";
-
-/**
- * Magazine articles as room inspiration. The filter chips are the categories
- * actually present in the feed, so the row never offers an empty filter.
- */
+/** Latest API-ordered magazine posts in a responsive, swipeable editorial rail. */
 export default function InspirationRail({ items }: { items: InspirationItem[] }) {
-  const { t } = useLanguage();
-  const [filter, setFilter] = useState<string>(ALL);
+  const { language, t } = useLanguage();
+  const scroller = useRef<HTMLDivElement>(null);
+  const [scrollState, setScrollState] = useState({
+    canScroll: false,
+    atStart: true,
+    atEnd: false,
+  });
 
-  // How many articles each category holds — doubles as the card caption, the
-  // way the design captions each tile with an idea count.
-  const counts = useMemo(() => {
-    const map = new Map<string, number>();
-    for (const item of items) {
-      const key = item.category?.trim();
-      if (key) map.set(key, (map.get(key) ?? 0) + 1);
-    }
-    return map;
-  }, [items]);
+  const updateScrollState = useCallback(() => {
+    const element = scroller.current;
+    if (!element) return;
 
-  const categories = useMemo(() => Array.from(counts.keys()), [counts]);
+    const maxScrollLeft = element.scrollWidth - element.clientWidth;
+    const visibleCapacity = window.matchMedia("(min-width: 1280px)").matches
+      ? 4
+      : window.matchMedia("(min-width: 1024px)").matches
+        ? 3
+        : window.matchMedia("(min-width: 640px)").matches
+          ? 2
+          : 1;
+    setScrollState({
+      canScroll: items.length > visibleCapacity,
+      atStart: element.scrollLeft <= 2,
+      atEnd: element.scrollLeft >= maxScrollLeft - 2,
+    });
+  }, [items.length]);
 
-  const visible = filter === ALL ? items : items.filter((i) => i.category === filter);
+  useEffect(() => {
+    const element = scroller.current;
+    if (!element) return;
+
+    updateScrollState();
+    const resizeObserver = new ResizeObserver(updateScrollState);
+    resizeObserver.observe(element);
+    element.addEventListener("scroll", updateScrollState, { passive: true });
+
+    return () => {
+      resizeObserver.disconnect();
+      element.removeEventListener("scroll", updateScrollState);
+    };
+  }, [items.length, updateScrollState]);
+
+  const scrollArticles = (direction: -1 | 1) => {
+    const element = scroller.current;
+    if (!element) return;
+    element.scrollBy({
+      left: direction * Math.round(element.clientWidth * 0.88),
+      behavior: "smooth",
+    });
+  };
 
   return (
-    <HomeCard className="p-4">
-      <SectionHeader
-        title={t("homeCompare.inspiration.title")}
-        href="/magazine"
-        linkLabel={t("homeCompare.inspiration.viewAll")}
-        className="mb-3.5"
-      >
-        {categories.length > 0 && (
-          <div className="flex w-full items-center gap-1.5 overflow-x-auto hide-scrollbar md:justify-center">
-            <FilterChip
-              label={t("homeCompare.inspiration.allFilter")}
-              active={filter === ALL}
-              onClick={() => setFilter(ALL)}
+    <HomeCard className="overflow-hidden rounded-[20px] border-gray-200/90 p-5 shadow-soft-sm sm:p-6">
+      <div className="mb-4 flex items-center gap-3">
+        <h2 className="min-w-0 text-[15px] font-bold text-gray-900 sm:text-base">
+          {t("homeCompare.inspiration.title")}
+        </h2>
+        <Link
+          href="/magazine"
+          className="ml-auto inline-flex shrink-0 items-center gap-1 rounded-md text-[10px] font-semibold text-primary-600 transition-colors duration-200 hover:text-primary-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 sm:text-[11px]"
+        >
+          {t("homeCompare.inspiration.viewAll")}
+          <ArrowRight aria-hidden="true" className="h-3 w-3" />
+        </Link>
+      </div>
+
+      {items.length === 0 ? (
+        <p className="py-8 text-center text-xs text-gray-400">
+          {t("homeCompare.inspiration.empty")}
+        </p>
+      ) : (
+        <div className="flex min-w-0 items-center gap-2 sm:gap-3">
+          {scrollState.canScroll && (
+            <ArticleControl
+              direction="previous"
+              label={t("homeCompare.inspiration.prev")}
+              disabled={scrollState.atStart}
+              onClick={() => scrollArticles(-1)}
             />
-            {categories.map((category) => (
-              <FilterChip
-                key={category}
-                label={category}
-                active={filter === category}
-                onClick={() => setFilter(category)}
+          )}
+
+          <div
+            ref={scroller}
+            className="hide-scrollbar flex min-w-0 flex-1 snap-x snap-mandatory gap-4 overflow-x-auto scroll-smooth py-1"
+          >
+            {items.map((item) => (
+              <ArticleCard
+                key={item._id}
+                item={item}
+                date={formatPublicationDate(item.createdAt, LOCALE_TAG[language])}
+                imageFallbackAlt={t("homeCompare.inspiration.imageAlt")}
               />
             ))}
           </div>
-        )}
-      </SectionHeader>
 
-      {visible.length === 0 ? (
-        <p className="py-6 text-center text-xs text-gray-400">{t("homeCompare.inspiration.empty")}</p>
-      ) : (
-        <Rail
-          prevLabel={t("homeCompare.inspiration.prev")}
-          nextLabel={t("homeCompare.inspiration.next")}
-        >
-          {visible.map((item) => (
-            <Link
-              key={item._id}
-              href={`/blog/${item._id}`}
-              className="group w-[170px] shrink-0 snap-start sm:w-[190px]"
-            >
-              <div className="relative aspect-[4/3] overflow-hidden rounded-xl bg-gray-100 ring-1 ring-gray-200/80 transition-all duration-300 group-hover:ring-primary-300">
-                <PlaceholderImage
-                  src={item.thumbnail || item.heroImage}
-                  alt={item.title}
-                  fill
-                  className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
-                />
-              </div>
-              <p className="mt-1.5 line-clamp-1 text-[11px] font-semibold text-gray-900">
-                {item.title}
-              </p>
-              {item.category && (
-                <p className="text-[9px] text-gray-400">
-                  {t("homeCompare.inspiration.ideasCount", { count: counts.get(item.category) ?? 1 })}
-                </p>
-              )}
-            </Link>
-          ))}
-        </Rail>
+          {scrollState.canScroll && (
+            <ArticleControl
+              direction="next"
+              label={t("homeCompare.inspiration.next")}
+              disabled={scrollState.atEnd}
+              onClick={() => scrollArticles(1)}
+            />
+          )}
+        </div>
       )}
     </HomeCard>
   );
+}
+
+function ArticleCard({
+  item,
+  date,
+  imageFallbackAlt,
+}: {
+  item: InspirationItem;
+  date: string;
+  imageFallbackAlt: string;
+}) {
+  return (
+    <Link
+      href={`/blog/${item._id}`}
+      className="group flex min-h-[226px] basis-[82%] shrink-0 snap-start flex-col overflow-hidden rounded-[13px] border border-gray-200/90 bg-gray-50/70 shadow-[0_3px_12px_-10px_rgba(15,23,42,0.2)] transition-all duration-[220ms] hover:-translate-y-[3px] hover:border-primary-200 hover:shadow-[0_10px_22px_-12px_rgba(15,23,42,0.3)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 sm:basis-[calc((100%-1rem)/2)] lg:basis-[calc((100%-2rem)/3)] xl:basis-[calc((100%-3rem)/4)]"
+    >
+      <div className="relative aspect-[16/9] w-full shrink-0 overflow-hidden rounded-t-[12px] bg-gray-100">
+        <PlaceholderImage
+          src={item.thumbnail || item.heroImage}
+          alt={item.title || imageFallbackAlt}
+          fill
+          sizes="(min-width: 1280px) 22vw, (min-width: 1024px) 30vw, (min-width: 640px) 46vw, 78vw"
+          className="h-full w-full object-cover transition-transform duration-[220ms] group-hover:scale-[1.03]"
+          iconClassName="h-1/4 w-1/4"
+        />
+      </div>
+
+      <div className="flex flex-1 flex-col p-3.5">
+        {item.category && (
+          <p className="truncate text-[9px] font-bold uppercase tracking-[0.08em] text-primary-600">
+            {item.category}
+          </p>
+        )}
+        <h3 className="mt-1 line-clamp-2 min-h-8 text-[12px] font-semibold leading-4 text-gray-900 transition-colors duration-200 group-hover:text-primary-700">
+          {item.title}
+        </h3>
+        {date && <time dateTime={item.createdAt} className="mt-auto pt-2 text-[9px] text-gray-400">{date}</time>}
+      </div>
+    </Link>
+  );
+}
+
+function ArticleControl({
+  direction,
+  label,
+  disabled,
+  onClick,
+}: {
+  direction: "previous" | "next";
+  label: string;
+  disabled: boolean;
+  onClick: () => void;
+}) {
+  const Icon = direction === "previous" ? ChevronLeft : ChevronRight;
+
+  return (
+    <button
+      type="button"
+      aria-label={label}
+      disabled={disabled}
+      onClick={onClick}
+      className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-gray-200 bg-white text-gray-600 shadow-soft transition-all duration-200 hover:border-primary-200 hover:text-primary-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 disabled:cursor-default disabled:opacity-40"
+    >
+      <Icon aria-hidden="true" className="h-4 w-4" />
+    </button>
+  );
+}
+
+function formatPublicationDate(value: string | undefined, locale: string): string {
+  if (!value) return "";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "";
+
+  return new Intl.DateTimeFormat(locale, {
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+  }).format(date);
 }

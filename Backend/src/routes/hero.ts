@@ -6,28 +6,14 @@ import { logActivity } from "../lib/logger.js";
 
 const hero = new Hono<{ Bindings: Env }>();
 
-// ── GET /api/hero — all hero slots (3 slots with default fallbacks) ──────────
-const SLOT_FALLBACKS: Record<number, { image: string; title: string; subtitle: string; link: string }> = {
-  1: { image: "/hero/chair.jpg", title: "Premium Chairs", subtitle: "Comfort & Style", link: "/category/moebel" },
-  2: { image: "/hero/sofa.jpg", title: "Modern Sofas", subtitle: "Chic designs", link: "/category/moebel" },
-  3: { image: "/hero/table.jpg", title: "Elegant Tables", subtitle: "Wood & Metal", link: "/category/moebel" },
-};
-
+// ── GET /api/hero — the configured slides, in slot order ────────────────────
+// Unset slots are simply absent: the home hero rotates what exists and the
+// admin shows the rest as empty.
 hero.get("/", async (c) => {
   const { results } = await c.env.DB.prepare(
     "SELECT id, data FROM heroes ORDER BY slot ASC"
   ).all<D1Row>();
-
-  const heroes = fromRows(results);
-  const slots = [1, 2, 3].map(
-    (slot) =>
-      heroes.find((h) => h.slot === slot) ?? {
-        _id: `fallback-${slot}`,
-        slot,
-        ...SLOT_FALLBACKS[slot],
-      }
-  );
-  return c.json(slots);
+  return c.json(fromRows(results));
 });
 
 // ── GET /api/hero/:id ────────────────────────────────────────────────────────

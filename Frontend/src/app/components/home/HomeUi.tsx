@@ -19,7 +19,7 @@ export function HomeCard({
 }) {
   return (
     <div
-      className={`bg-white rounded-2xl border border-gray-200/80 shadow-soft-sm ${className}`}
+      className={`rounded-2xl border border-gray-200/80 bg-white shadow-soft-sm ${className}`}
     >
       {children}
     </div>
@@ -93,6 +93,7 @@ export function SlideDots({
   active,
   onSelect,
   ariaLabel,
+  variant = "overlay",
   className = "",
 }: {
   count: number;
@@ -100,9 +101,16 @@ export function SlideDots({
   onSelect: (index: number) => void;
   /** Label template containing {{index}}. */
   ariaLabel: (index: number) => string;
+  /** `overlay` sits on a photo (white dots); `surface` sits on the light page. */
+  variant?: "overlay" | "surface";
   className?: string;
 }) {
   if (count <= 1) return null;
+  const on = variant === "overlay" ? "w-6 bg-white" : "w-6 bg-primary-600";
+  const off =
+    variant === "overlay"
+      ? "w-2.5 bg-white/45 hover:bg-white/70"
+      : "w-2.5 bg-gray-300 hover:bg-gray-400";
   return (
     <div className={`flex items-center gap-1.5 ${className}`}>
       {Array.from({ length: count }, (_, i) => (
@@ -112,9 +120,7 @@ export function SlideDots({
           onClick={() => onSelect(i)}
           aria-label={ariaLabel(i + 1)}
           aria-current={i === active}
-          className={`h-1.5 rounded-full transition-all duration-300 ${
-            i === active ? "w-6 bg-white" : "w-2.5 bg-white/45 hover:bg-white/70"
-          }`}
+          className={`h-1.5 rounded-full transition-all duration-300 ${i === active ? on : off}`}
         />
       ))}
     </div>

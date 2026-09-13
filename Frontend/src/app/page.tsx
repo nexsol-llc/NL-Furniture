@@ -3,9 +3,10 @@
 import Link from 'next/link';
 import { useEffect, useMemo, useState } from 'react';
 import HomeSidebar from './components/home/HomeSidebar';
-import CompareHero, { type HeroSlide } from './components/home/CompareHero';
-import CompareTray from './components/home/CompareTray';
-import TopDealsRail, { type DealItem } from './components/home/TopDealsRail';
+import CompareHero, { HeroBackdrop, type HeroSlide } from './components/home/CompareHero';
+import CompareProducts from './components/home/CompareProducts';
+import { type DealItem } from './components/home/TopDealsRail';
+import HeroSideCards from './components/home/HeroSideCards';
 import CategoryRail, { type CategoryTile } from './components/home/CategoryRail';
 import BrandStrip, { type BrandTile } from './components/home/BrandStrip';
 import ProductRail, { type RailProduct } from './components/home/ProductRail';
@@ -13,18 +14,16 @@ import InspirationRail, { type InspirationItem } from './components/home/Inspira
 import ComparisonCta from './components/home/ComparisonCta';
 import TestimonialsSection from './components/home/TestimonialsSection';
 import TrustStrip from './components/home/TrustStrip';
-import NewsletterBand from './components/home/NewsletterBand';
-import {
-  FeaturedBrandCard,
-  PromoBanner,
-  RailNewsletterCard,
-  RoomsCard,
-  WhyCompareCard,
-  type PromoSlide,
-} from './components/home/PromoCards';
+import { RoomsCard, WhyCompareCard } from './components/home/PromoCards';
+import { SponsorAdCarousel } from './components/home/SponsorAd';
 import FAQSection, { FAQItem } from './components/FAQSection';
 import { fetchCatalogList } from '@/lib/categoryCatalog';
 import { shopLink } from '@/lib/productFormat';
+import {
+  EMPTY_SPONSOR_ADS,
+  normalizeSponsorAds,
+  type SponsorAdsByPlacement,
+} from '@/lib/sponsorAds';
 import { useLanguage } from '@/providers/languageContext';
 
 /**
@@ -39,7 +38,8 @@ export default function HomePage() {
   const { t, tList } = useLanguage();
 
   const [heroSlides, setHeroSlides] = useState<HeroSlide[]>([]);
-  const [sponsors, setSponsors] = useState<PromoSlide[]>([]);
+  const [heroActiveId, setHeroActiveId] = useState<string | null>(null);
+  const [sponsorAds, setSponsorAds] = useState<SponsorAdsByPlacement>(EMPTY_SPONSOR_ADS);
   const [categories, setCategories] = useState<CategoryTile[]>([]);
   const [deals, setDeals] = useState<DealItem[]>([]);
   const [brands, setBrands] = useState<BrandTile[]>([]);
@@ -59,10 +59,11 @@ export default function HomePage() {
       })
       .catch(() => setLoading(false));
 
-    fetch('/api/sponsors')
-      .then((res) => (res.ok ? res.json() : []))
-      .then((data) => setSponsors(Array.isArray(data) ? data : []))
-      .catch((err) => console.error('Error fetching sponsors:', err));
+    // Paid placements — Admin → Sponsor Ads. Active ads only, grouped by slot.
+    fetch('/api/sponsor-ads')
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => setSponsorAds(normalizeSponsorAds(data)))
+      .catch((err) => console.error('Error fetching sponsor ads:', err));
 
     // Featured parent categories, in their drag-configured order, captioned
     // with how many catalog entries sit under each.
@@ -87,6 +88,7 @@ export default function HomePage() {
               name: p.name || p.slug,
               href: `/${encodeURIComponent(p.slug)}`,
               image: p.image || null,
+              imageBgColor: p.imageBgColor || null,
               count: catalogCounts.get(p._id) ?? 0,
             }))
         );
@@ -118,7 +120,9 @@ export default function HomePage() {
             price: p.price,
             oldPrice: p.oldPrice,
             saleValue: p.saleValue,
-            brandName: p.brandName,
+            // Home products store the brand as `brand`; `brandName` is the
+            // Top Deals feed's key, so accept either.
+            brandName: p.brandName || p.brand,
           }))
         );
       })
@@ -142,7 +146,8 @@ export default function HomePage() {
       })
       .catch((err) => console.error('Error fetching sponsored products:', err));
 
-    fetch('/api/blog?summary=true')
+    // Only posts the admin flagged as Featured (Admin → Blog) appear here.
+    fetch('/api/blog?summary=true&featured=true')
       .then((res) => (res.ok ? res.json() : []))
       .then((data) => setInspiration(Array.isArray(data) ? data.slice(0, 12) : []))
       .catch(() => setInspiration([]));
@@ -160,25 +165,8 @@ export default function HomePage() {
       .catch((err) => console.error('Error fetching home SEO settings:', err));
   }, []);
 
-  /**
-   * Paid slots draw from the sponsor pool by index and wrap around, so a site
-   * with a single sponsor still fills every placement instead of leaving holes.
-   */
-  const slot = useMemo(() => {
-    return (index: number): PromoSlide | undefined =>
-      sponsors.length ? sponsors[index % sponsors.length] : undefined;
-  }, [sponsors]);
-
-  const spotlight = slot(0);
-  const railBrand = slot(1);
-  // The dark banner gets its own slice once there are enough sponsors to spare;
-  // below that it rotates the whole pool rather than rendering nothing.
-  const megaBanner = sponsors.length > 2 ? sponsors.slice(2, 5) : sponsors;
-  const midSpotlight = slot(5);
-  const reviewAd = slot(6);
-
   // The top deals rail keeps a compact list; the rest live on /topaanbiedingen.
-  const railDeals = deals.slice(0, 4);
+  const railDeals = deals.slice(0, 3);
 
   // Fall back to the deal feed when no home products are configured, so the
   // best-seller row is never an empty card on a partly configured site.
@@ -187,15 +175,15 @@ export default function HomePage() {
       bestSellers.length
         ? bestSellers
         : deals.map((d) => ({
-            _id: d._id,
-            title: d.title,
-            image: d.productLogo,
-            link: d.link,
-            price: d.price,
-            oldPrice: d.oldPrice,
-            saleValue: d.saleValue,
-            brandName: d.brandName,
-          })),
+          _id: d._id,
+          title: d.title,
+          image: d.productLogo,
+          link: d.link,
+          price: d.price,
+          oldPrice: d.oldPrice,
+          saleValue: d.saleValue,
+          brandName: d.brandName,
+        })),
     [bestSellers, deals]
   );
 
@@ -212,74 +200,73 @@ export default function HomePage() {
   if (loading) return <div className="h-[600px] bg-gray-100 animate-pulse" />;
 
   return (
-    <div className="section-pattern-1 bg-gray-50">
-      <div className="max-w-content mx-auto px-3 pb-12 pt-4 sm:px-4">
+    <div className="section-pattern-1 relative min-h-screen overflow-clip bg-gray-50">
+      <HeroBackdrop
+        slides={heroSlides}
+        activeId={heroActiveId}
+        className="absolute inset-x-0 top-0 h-[560px] rounded-b-[18px]"
+      />
+      <div className="relative w-full px-3 pb-12 pt-4 sm:px-4 sm:pt-5 lg:px-6 2xl:px-8">
         <div className="flex gap-4 xl:gap-5">
           <HomeSidebar />
 
           <div className="min-w-0 flex-1 space-y-4">
-            {/* ── Above the fold: main column + right rail ─────────────────── */}
-            <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_300px] xl:grid-cols-[minmax(0,1fr)_330px]">
-              <div className="min-w-0 space-y-4">
-                <CompareHero slides={heroSlides} />
+            <div className="relative w-full min-w-0">
+              <CompareHero slides={heroSlides} onActiveChange={setHeroActiveId} />
 
-                {spotlight && (
-                  <PromoBanner slides={[spotlight]} tone="light" label={t('homeCompare.adLabel')} />
+              <aside className="mt-4 mr-2 w-full min-w-0 xl:absolute xl:right-0 xl:top-[286px] xl:z-30 xl:mt-0 xl:w-[310px]">
+                <HeroSideCards
+                  topAd={sponsorAds.sidebar_1}
+                  bottomAd={sponsorAds.sidebar_2}
+                  deals={railDeals}
+                />
+              </aside>
+
+              <section className="mt-4 w-full min-w-0 space-y-4 xl:pr-[334px]">
+                <SponsorAdCarousel ads={sponsorAds.hero_below} />
+
+                {categories.length > 0 && (
+                  <div className="pt-2">
+                    <CategoryRail categories={categories} />
+                  </div>
                 )}
 
-                {categories.length > 0 && <CategoryRail categories={categories} />}
-
-                <div className="grid gap-4 sm:grid-cols-2">
-                  <RoomsCard image={roomsImage || heroSlides[0]?.image} />
-                  <WhyCompareCard />
-                </div>
+                <ProductRail
+                  title={t('homeCompare.bestSellers.title')}
+                  href="/topaanbiedingen"
+                  linkLabel={t('homeCompare.bestSellers.viewAll')}
+                  products={bestSellerProducts}
+                  emptyLabel={t('homeCompare.bestSellers.empty')}
+                />
 
                 {brands.length > 0 && <BrandStrip brands={brands} />}
 
-                {megaBanner.length > 0 && (
-                  <PromoBanner slides={megaBanner} tone="dark" label={t('homeCompare.adLabel')} />
-                )}
-              </div>
+                <div className="py-1">
+                  <CompareProducts />
+                </div>
 
-              <div className="min-w-0 space-y-4">
-                <CompareTray />
-                <TopDealsRail deals={railDeals} />
-                {railBrand && <FeaturedBrandCard slide={railBrand} />}
-                <RailNewsletterCard />
-              </div>
+                {sponsoredPicks.length > 0 && (
+                  <ProductRail
+                    title={t('homeCompare.sponsoredPicks.title')}
+                    href="/categorie"
+                    linkLabel={t('homeCompare.sponsoredPicks.viewAll')}
+                    products={sponsoredPicks}
+                    sponsored
+                    emptyLabel={t('homeCompare.bestSellers.empty')}
+                  />
+                )}
+
+                <div className="w-full min-w-0">
+                  <TrustStrip />
+                </div>
+                
+                {inspiration.length > 0 && <InspirationRail items={inspiration} />}
+
+              </section>
             </div>
 
             {/* ── Full-width below the fold ─────────────────────────────────── */}
-            <TrustStrip />
 
-            <ProductRail
-              title={t('homeCompare.bestSellers.title')}
-              href="/topaanbiedingen"
-              linkLabel={t('homeCompare.bestSellers.viewAll')}
-              products={bestSellerProducts}
-              emptyLabel={t('homeCompare.bestSellers.empty')}
-            />
-
-            {sponsoredPicks.length > 0 && (
-              <ProductRail
-                title={t('homeCompare.sponsoredPicks.title')}
-                href="/categorie"
-                linkLabel={t('homeCompare.sponsoredPicks.viewAll')}
-                products={sponsoredPicks}
-                sponsored
-                emptyLabel={t('homeCompare.bestSellers.empty')}
-              />
-            )}
-
-            {midSpotlight && (
-              <PromoBanner slides={[midSpotlight]} tone="light" label={t('homeCompare.adLabel')} />
-            )}
-
-            <ComparisonCta showcase={showcase} />
-
-            {inspiration.length > 0 && <InspirationRail items={inspiration} />}
-
-            <TestimonialsSection ad={reviewAd} />
 
             {/* Admin-managed SEO body — Settings → Furniture SEO Content. */}
             {homeSeo?.longContent?.trim() && (
@@ -307,7 +294,6 @@ export default function HomePage() {
               </Link>
             </p>
 
-            <NewsletterBand />
           </div>
         </div>
       </div>

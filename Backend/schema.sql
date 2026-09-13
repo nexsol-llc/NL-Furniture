@@ -144,6 +144,19 @@ CREATE TABLE IF NOT EXISTS sponsors (
   data TEXT NOT NULL
 );
 
+-- ── Sponsor ads (image + link, booked into a home-page placement) ───────────
+-- placement: 'hero_below' (many, ordered by position) | 'sidebar_1' | 'sidebar_2'
+-- (one each). data holds { image, link, title, createdAt, updatedAt }.
+CREATE TABLE IF NOT EXISTS sponsor_ads (
+  id TEXT NOT NULL PRIMARY KEY,
+  placement TEXT NOT NULL,
+  position INTEGER NOT NULL DEFAULT 0,
+  active INTEGER NOT NULL DEFAULT 1,
+  created_at TEXT NOT NULL,
+  data TEXT NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_sponsor_ads_placement ON sponsor_ads(placement, position);
+
 -- ── Offers ───────────────────────────────────────────────────────────────────
 CREATE TABLE IF NOT EXISTS offers (
   id TEXT NOT NULL PRIMARY KEY,

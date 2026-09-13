@@ -127,7 +127,7 @@ function CompareSlot({
 }
 
 /** Side-by-side table for the selected products. */
-function CompareModal({ onClose }: { onClose: () => void }) {
+export function CompareModal({ onClose }: { onClose: () => void }) {
   const { t } = useLanguage();
   const { items, remove, clear } = useCompare();
 

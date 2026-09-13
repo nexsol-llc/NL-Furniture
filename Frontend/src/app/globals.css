@@ -66,6 +66,58 @@
    borrow a section color keep using bg-[var(--section-bg-N)], so the pattern
    never lands on small elements where it would read as noise.
    ============================================= */
+/* Light chrome surfaces (home header, sidebar, nav drawer): white warmed with
+   a hint of the theme's primary, so they follow the admin's brand colour.
+   The plain white line is the fallback for browsers without color-mix(). */
+.surface-tint {
+  background-color: rgb(255 255 255 / 0.9);
+  background-color: color-mix(in srgb, var(--primary-50) 40%, rgb(255 255 255 / 0.9));
+}
+
+/* ── Site footer ───────────────────────────────────────────────────────────────
+   Every colour comes from Admin → Theme → Footer Colors as a CSS variable —
+   set on :root by ThemeProvider, or on the admin preview's own .site-footer.
+   lib/footerColor.ts computes them, filling unset ones with defaults derived
+   from the background (light on dark, navy on light). The fallbacks here only
+   cover the moment before that runs: the default dark footer. */
+.site-footer {
+  background-color: var(--footer-bg, var(--primary-950));
+  color: var(--footer-text, rgb(255 255 255 / 0.6));
+}
+.site-footer .footer-heading {
+  color: var(--footer-heading, rgb(255 255 255 / 0.6));
+}
+.site-footer .footer-muted {
+  color: var(--footer-text, rgb(255 255 255 / 0.6));
+}
+.site-footer .footer-link {
+  color: var(--footer-link, rgb(255 255 255 / 0.78));
+  transition: color 150ms;
+}
+.site-footer .footer-link:hover {
+  color: var(--footer-link-hover, rgb(255 255 255));
+}
+.site-footer.footer-line,
+.site-footer .footer-line {
+  border-color: var(--footer-divider, rgb(255 255 255 / 0.12));
+}
+.site-footer .footer-chip {
+  background-color: var(--footer-icon-bg, rgb(255 255 255 / 0.1));
+  color: var(--footer-icon-fg, rgb(255 255 255 / 0.9));
+  transition: background-color 150ms;
+}
+.site-footer .footer-chip:hover {
+  background-color: var(--footer-icon-bg-hover, rgb(255 255 255 / 0.2));
+}
+/* Logo: white-text artwork on a dark footer, dark-text artwork on a light one. */
+.site-footer .footer-logo-dark,
+html[data-footer-light] .site-footer .footer-logo-light {
+  display: none;
+}
+html[data-footer-light] .site-footer .footer-logo-dark {
+  display: block;
+}
+
 @layer components {
   .section-bg-1,
   .section-bg-2,
@@ -164,6 +216,7 @@
   -webkit-backdrop-filter: blur(16px);
   border: 1px solid rgb(var(--primary-500-rgb) / 0.18);
 }
+
 
 /* Infinite horizontal marquee (brand logos, furniture carousels) */
 @keyframes marquee {

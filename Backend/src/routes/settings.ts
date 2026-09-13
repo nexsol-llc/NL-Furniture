@@ -103,6 +103,17 @@ const DEFAULT_SITE_SETTINGS = {
   coupon_section_pattern_2_color: "#000000",
   coupon_section_pattern_2_opacity: 8,
   coupon_section_pattern_2_size: 24,
+  // Footer background: "primary-950|900|800|700" (a shade of the furniture theme,
+  // so it follows it) or a fixed "#rrggbb". See Frontend lib/footerColor.ts.
+  footer_color: "primary-950",
+  // Optional footer colours, "#rrggbb"; "" = default, derived from the
+  // background (light on a dark footer, navy on a light one).
+  footer_heading_color: "",
+  footer_text_color: "",
+  footer_link_color: "",
+  footer_link_hover_color: "",
+  footer_divider_color: "",
+  footer_icon_bg_color: "",
   // Social media profile URLs shown in the footer. Empty = icon hidden.
   social_links: {
     facebook: "",

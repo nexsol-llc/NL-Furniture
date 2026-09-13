@@ -64,13 +64,14 @@
     "teaserCta": "So funktioniert's →"
   },
   "newsletterForm": {
-    "placeholder": "Deine E-Mail",
+    "placeholder": "E-Mail-Adresse eingeben",
     "buttonText": "Abonnieren",
     "submitting": "Wird abonniert...",
-    "invalidEmail": "Geben Sie eine gültige E-Mail-Adresse ein.",
-    "subscribeError": "Fehler beim Abonnieren.",
-    "subscribeSuccess": "Erfolgreich abonniert!",
-    "networkError": "Fehler beim Abonnieren des Newsletters"
+    "invalidEmail": "Geben Sie eine gültige E-Mail-Adresse ein",
+    "subscribeError": "Anmeldung fehlgeschlagen. Bitte versuchen Sie es erneut.",
+    "subscribeSuccess": "Sie haben sich erfolgreich angemeldet",
+    "networkError": "Anmeldung fehlgeschlagen. Bitte versuchen Sie es erneut.",
+    "formLabel": "Formular zur Newsletter-Anmeldung"
   },
   "visualSearchModal": {
     "closeAriaLabel": "Schließen",
@@ -246,6 +247,9 @@
     "sidebar": {
       "heading": "Menü",
       "home": "Startseite",
+      "products": "Produkte",
+      "rooms": "Räume",
+      "blog": "Blog",
       "categories": "Kategorien",
       "compare": "Vergleichen",
       "brands": "Marken",
@@ -256,11 +260,20 @@
       "guides": "Tipps & Ratgeber"
     },
     "hero": {
-      "titleLine1": "Finden. Vergleichen.",
-      "titleLine2": "Richte deinen perfekten Raum ein.",
-      "subtitle": "Vergleiche Preise, Stile und Bewertungen von Top-Marken — alles an einem Ort.",
+      "titleLine1": "Finde die besten Möbel,",
+      "titleLine2": "vergleiche & spare mehr.",
+      "subtitle": "Vergleiche Preise, Eigenschaften und Bewertungen von Top-Marken und finde die perfekten Möbel für dein Zuhause.",
       "ctaPrimary": "Jetzt vergleichen",
       "ctaSecondary": "Kategorien entdecken",
+      "statProducts": "Produkte",
+      "statBrands": "Marken",
+      "statReviews": "Bewertungen",
+      "statHappy": "Zufriedene Nutzer",
+      "trustLine": "Unabhängige Vergleiche vertrauenswürdiger Shops",
+      "uploadTitle": "Nicht gefunden, wonach du suchst?",
+      "uploadText": "Lade ein Foto des Möbelstücks hoch und wir finden ähnliche Produkte bei vertrauenswürdigen Shops.",
+      "uploadCta": "Bild hochladen",
+      "curated": "Täglich ausgewählt",
       "slideAria": "Zu Slide {{index}} springen"
     },
     "compareTray": {
@@ -282,6 +295,18 @@
       "toShop": "Zum Shop",
       "discountLabel": "Rabatt"
     },
+    "compareProducts": {
+      "title": "Produkte nebeneinander vergleichen",
+      "description": "Füge bis zu {{max}} Produkte hinzu und vergleiche Funktionen, Preise und mehr.",
+      "addProduct": "Produkt hinzufügen",
+      "compareNow": "Jetzt vergleichen",
+      "removeProduct": "Produkt entfernen",
+      "searchProducts": "Produkte suchen",
+      "noProducts": "Keine Produkte gefunden",
+      "alreadyAdded": "Dieses Produkt wurde bereits hinzugefügt",
+      "maximum": "Du kannst bis zu {{max}} Produkte vergleichen",
+      "selectMinimum": "Wähle mindestens 2 Produkte zum Vergleichen aus"
+    },
     "categories": {
       "title": "Nach Kategorie shoppen",
       "viewAll": "Alle Kategorien",
@@ -289,8 +314,11 @@
     },
     "deals": {
       "title": "Top-Angebote",
-      "viewAll": "Alle Angebote",
-      "empty": "Noch keine Angebote."
+      "viewAll": "Alle ansehen",
+      "empty": "Noch keine Angebote.",
+      "upToDiscount": "Bis zu {{discount}}% Rabatt",
+      "productAriaLabel": "Angebot für {{product}} ansehen",
+      "ratingAriaLabel": "Mit {{rating}} von 5 bewertet"
     },
     "rooms": {
       "title": "Gestalte deine Traumräume",
@@ -307,10 +335,28 @@
       "choiceText": "Kaufe mit Sicherheit, ohne zu zweifeln."
     },
     "brands": {
-      "title": "Marken, denen du vertrauen kannst",
-      "viewAll": "Alle Marken",
+      "title": "Gesponserte Marken",
+      "viewAll": "Alle ansehen",
       "prev": "Vorherige Marken",
-      "next": "Nächste Marken"
+      "next": "Nächste Marken",
+      "brandAriaLabel": "{{brand}} ansehen"
+    },
+    "advertise": {
+      "title": "Bei uns werben",
+      "description": "Präsentiere deine Marke und Produkte täglich Tausenden von Möbelkäufern.",
+      "cta": "Mehr erfahren",
+      "ariaLabel": "Mehr über Werbung bei uns erfahren"
+    },
+    "whyAdvertise": {
+      "title": "Warum werben?",
+      "visibilityTitle": "Hohe Sichtbarkeit",
+      "visibilityDescription": "Erreiche Tausende aktive Käufer",
+      "audienceTitle": "Gezielte Zielgruppe",
+      "audienceDescription": "Erreiche Menschen mit konkreter Kaufabsicht",
+      "salesTitle": "Mehr Verkäufe",
+      "salesDescription": "Stärke das Markenvertrauen und steigere Conversions",
+      "cta": "Jetzt werben",
+      "ariaLabel": "Jetzt bei uns werben"
     },
     "featuredBrand": {
       "label": "Empfohlene Marke",
@@ -333,13 +379,14 @@
       "supportText": "Wir sind für dich da"
     },
     "inspiration": {
-      "title": "Lass dich inspirieren",
-      "viewAll": "Alle Inspirationen",
+      "title": "Neues aus unserem Blog",
+      "viewAll": "Alle ansehen",
       "allFilter": "Alle Räume",
       "ideasCount": "{{count}} Ideen",
-      "prev": "Vorherige Inspiration",
-      "next": "Nächste Inspiration",
-      "empty": "Bald mehr Inspiration."
+      "prev": "Vorherige Artikel",
+      "next": "Nächste Artikel",
+      "empty": "Bald mehr Inspiration.",
+      "imageAlt": "Blogbild"
     },
     "compareCta": {
       "title": "Starker Vergleich. Klügere Entscheidungen.",
@@ -389,6 +436,10 @@
       "titleLine1": "Die besten Möbel-Deals",
       "titleLine2": "direkt in dein Postfach",
       "subtitle": "Melde dich an für exklusive Angebote, Preissenkungen und Neuheiten."
+    },
+    "compactNewsletter": {
+      "title": "Bleiben Sie auf dem Laufenden",
+      "description": "Abonnieren Sie die neuesten Angebote, Neuheiten und Inspirationen."
     }
   },
   "impressum": {

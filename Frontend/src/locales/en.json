@@ -64,13 +64,14 @@
     "teaserCta": "See how it works →"
   },
   "newsletterForm": {
-    "placeholder": "Your email",
+    "placeholder": "Enter your email",
     "buttonText": "Subscribe",
     "submitting": "Subscribing...",
-    "invalidEmail": "Please enter a valid email address.",
-    "subscribeError": "Error while subscribing.",
-    "subscribeSuccess": "Successfully subscribed!",
-    "networkError": "Error subscribing to the newsletter"
+    "invalidEmail": "Enter a valid email address",
+    "subscribeError": "Subscription failed. Please try again.",
+    "subscribeSuccess": "You have successfully subscribed",
+    "networkError": "Subscription failed. Please try again.",
+    "formLabel": "Newsletter subscription form"
   },
   "visualSearchModal": {
     "closeAriaLabel": "Close",
@@ -246,6 +247,9 @@
     "sidebar": {
       "heading": "Menu",
       "home": "Home",
+      "products": "Products",
+      "rooms": "Rooms",
+      "blog": "Blog",
       "categories": "Categories",
       "compare": "Compare",
       "brands": "Brands",
@@ -256,11 +260,20 @@
       "guides": "Tips & guides"
     },
     "hero": {
-      "titleLine1": "Find. Compare.",
-      "titleLine2": "Furnish your perfect space.",
-      "subtitle": "Compare prices, styles and reviews from top brands — all in one place.",
+      "titleLine1": "Find the Best Furniture,",
+      "titleLine2": "Compare & Save More.",
+      "subtitle": "Compare prices, features and reviews from top brands and find the perfect furniture for your home.",
       "ctaPrimary": "Start comparing",
       "ctaSecondary": "Explore categories",
+      "statProducts": "Products",
+      "statBrands": "Brands",
+      "statReviews": "User reviews",
+      "statHappy": "Happy users",
+      "trustLine": "Independent comparisons from trusted stores",
+      "uploadTitle": "Can't find what you're looking for?",
+      "uploadText": "Upload a photo of the furniture and we'll help you find similar products from trusted stores.",
+      "uploadCta": "Upload image",
+      "curated": "Curated daily",
       "slideAria": "Go to slide {{index}}"
     },
     "compareTray": {
@@ -282,15 +295,30 @@
       "toShop": "Go to shop",
       "discountLabel": "Discount"
     },
+    "compareProducts": {
+      "title": "Compare Products Side by Side",
+      "description": "Add up to {{max}} products and compare features, prices and more.",
+      "addProduct": "Add Product",
+      "compareNow": "Compare Now",
+      "removeProduct": "Remove Product",
+      "searchProducts": "Search Products",
+      "noProducts": "No products found",
+      "alreadyAdded": "This product has already been added",
+      "maximum": "You can compare up to {{max}} products",
+      "selectMinimum": "Select at least 2 products to compare"
+    },
     "categories": {
       "title": "Shop by category",
       "viewAll": "All categories",
       "itemCount": "{{count}}+ items"
     },
     "deals": {
-      "title": "Top deals",
-      "viewAll": "All deals",
-      "empty": "No deals yet."
+      "title": "Top Deals",
+      "viewAll": "View All",
+      "empty": "No deals yet.",
+      "upToDiscount": "Up to {{discount}}% off",
+      "productAriaLabel": "View deal for {{product}}",
+      "ratingAriaLabel": "Rated {{rating}} out of 5"
     },
     "rooms": {
       "title": "Design your dream rooms",
@@ -307,10 +335,28 @@
       "choiceText": "Buy with confidence, without second-guessing."
     },
     "brands": {
-      "title": "Top brands you can trust",
-      "viewAll": "All brands",
+      "title": "Sponsored Brands",
+      "viewAll": "View All",
       "prev": "Previous brands",
-      "next": "Next brands"
+      "next": "Next brands",
+      "brandAriaLabel": "View {{brand}}"
+    },
+    "advertise": {
+      "title": "Advertise with Us",
+      "description": "Promote your brand and products to thousands of furniture shoppers every day.",
+      "cta": "Learn More",
+      "ariaLabel": "Learn more about advertising with us"
+    },
+    "whyAdvertise": {
+      "title": "Why Advertise?",
+      "visibilityTitle": "High Visibility",
+      "visibilityDescription": "Reach thousands of active buyers",
+      "audienceTitle": "Targeted Audience",
+      "audienceDescription": "Get in front of people looking to buy",
+      "salesTitle": "Boost Sales",
+      "salesDescription": "Increase brand trust and conversions",
+      "cta": "Advertise Now",
+      "ariaLabel": "Start advertising with us"
     },
     "featuredBrand": {
       "label": "Featured brand",
@@ -333,13 +379,14 @@
       "supportText": "We are here to help"
     },
     "inspiration": {
-      "title": "Get inspired",
-      "viewAll": "All inspiration",
+      "title": "Latest from Our Blog",
+      "viewAll": "View All",
       "allFilter": "All rooms",
       "ideasCount": "{{count}} ideas",
-      "prev": "Previous inspiration",
-      "next": "Next inspiration",
-      "empty": "More inspiration coming soon."
+      "prev": "Previous articles",
+      "next": "Next articles",
+      "empty": "More inspiration coming soon.",
+      "imageAlt": "Blog image"
     },
     "compareCta": {
       "title": "Powerful comparison. Smarter decisions.",
@@ -389,6 +436,10 @@
       "titleLine1": "The best furniture deals",
       "titleLine2": "straight to your inbox",
       "subtitle": "Subscribe for exclusive offers, price drops and new arrivals."
+    },
+    "compactNewsletter": {
+      "title": "Stay Updated",
+      "description": "Subscribe to get the latest deals, new launches and inspiration."
     }
   },
   "impressum": {
