@@ -145,8 +145,8 @@ CREATE TABLE IF NOT EXISTS sponsors (
 );
 
 -- ── Sponsor ads (image + link, booked into a home-page placement) ───────────
--- placement: 'hero_below' (many, ordered by position) | 'sidebar_1' | 'sidebar_2'
--- (one each). data holds { image, link, title, createdAt, updatedAt }.
+-- placement: 'hero_below' | 'compare_below' (many, ordered by position) |
+-- 'sidebar_1' … 'sidebar_5' (one each). Keys live in routes/sponsorAds.ts. data holds { image, link, title, createdAt, updatedAt }.
 CREATE TABLE IF NOT EXISTS sponsor_ads (
   id TEXT NOT NULL PRIMARY KEY,
   placement TEXT NOT NULL,

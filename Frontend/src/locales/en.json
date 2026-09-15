@@ -297,7 +297,25 @@
     },
     "compareProducts": {
       "title": "Compare Products Side by Side",
-      "description": "Add up to {{max}} products and compare features, prices and more.",
+      "description": "Add up to {{max}} products and compare features, prices, reviews and more.",
+      "eyebrowLead": "Compare",
+      "eyebrowAccent": "products",
+      "highlights": {
+        "prices": { "title": "Prices", "text": "Find the best deal" },
+        "features": { "title": "Features", "text": "What makes it unique" },
+        "reviews": { "title": "Reviews", "text": "Real experiences" },
+        "warranty": { "title": "Warranty", "text": "Compare coverage" }
+      },
+      "badges": {
+        "price": "Price",
+        "features": "Features",
+        "reviews": "Reviews",
+        "shipping": "Shipping",
+        "warranty": "Warranty",
+        "popular": "Popular"
+      },
+      "vs": "VS",
+      "selectedCount": "{{count}} of {{max}} products selected",
       "addProduct": "Add Product",
       "compareNow": "Compare Now",
       "removeProduct": "Remove Product",

@@ -1,7 +1,23 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { Check, LoaderCircle, Plus, Scale, Search, X } from "lucide-react";
+import {
+  Check,
+  Coins,
+  Heart,
+  Info,
+  List,
+  LoaderCircle,
+  Plus,
+  Scale,
+  Search,
+  ShieldCheck,
+  Star,
+  Tag,
+  Truck,
+  X,
+  type LucideIcon,
+} from "lucide-react";
 import PlaceholderImage from "../PlaceholderImage";
 import { CompareModal } from "./CompareTray";
 import { HomeCard } from "./HomeUi";
@@ -10,8 +26,33 @@ import {
   useCompare,
   type CompareItem,
 } from "@/providers/compareContext";
+import {
+  DEFAULT_COMPARE_SECTION,
+  type CompareSectionSettings,
+} from "@/lib/compareSection";
 import { formatPrice, priceDisplay, shopLink } from "@/lib/productFormat";
 import { useLanguage } from "@/providers/languageContext";
+
+type Icon = LucideIcon;
+
+const HIGHLIGHTS: { key: string; icon: Icon }[] = [
+  { key: "prices", icon: Tag },
+  { key: "features", icon: List },
+  { key: "reviews", icon: Star },
+  { key: "warranty", icon: ShieldCheck },
+];
+
+/** Floating chips either side of the VS badge — decorative, over the photo. */
+const BADGES_LEFT: { key: string; icon: Icon }[] = [
+  { key: "price", icon: Coins },
+  { key: "features", icon: List },
+  { key: "reviews", icon: Star },
+];
+const BADGES_RIGHT: { key: string; icon: Icon }[] = [
+  { key: "shipping", icon: Truck },
+  { key: "warranty", icon: ShieldCheck },
+  { key: "popular", icon: Heart },
+];
 
 type CatalogProduct = {
   _id: string;
@@ -41,51 +82,87 @@ const toCompareItem = (product: CatalogProduct): CompareItem => {
   };
 };
 
-/** Four-slot homepage product picker backed by the shared comparison context. */
-export default function CompareProducts() {
+/**
+ * Four-slot homepage product picker backed by the shared comparison context.
+ * The header pairs the copy with an admin-set photo (Admin → Home Page
+ * Settings) that fades into the card on its left edge; without one the copy
+ * spans the full width. The admin preview mirrors this geometry.
+ */
+export default function CompareProducts({
+  settings = DEFAULT_COMPARE_SECTION,
+}: {
+  settings?: CompareSectionSettings;
+}) {
   const { t } = useLanguage();
   const { slots, count, remove } = useCompare();
   const [pickerOpen, setPickerOpen] = useState(false);
   const [comparisonOpen, setComparisonOpen] = useState(false);
+  // Keyed by src so a newly configured image gets a fresh chance to load.
+  const [failedImage, setFailedImage] = useState<string | null>(null);
   const canCompare = count >= 2;
+
+  const image = settings.backgroundImage;
+  const hasImage = image !== "" && failedImage !== image;
 
   return (
     <>
-      <HomeCard className="rounded-[20px] border-gray-200/90 p-5 shadow-soft sm:p-6">
+      <HomeCard className="overflow-hidden rounded-[20px] border-gray-200/90 shadow-soft">
         <div
           id="vergelijken"
           className="scroll-mt-[calc(var(--header-height)+1rem)]"
         >
-          <div className="flex flex-col gap-3 sm:flex-row sm:items-start">
-            <div className="min-w-0 flex-1">
-              <h2 className="text-base font-bold text-gray-900 sm:text-lg">
+          <div className="relative lg:min-h-[320px]">
+            {hasImage && (
+              <CompareBackdrop
+                image={image}
+                showBadges={settings.showBadges}
+                onError={() => setFailedImage(image)}
+              />
+            )}
+
+            <div
+              className={`relative z-10 px-5 pb-6 pt-6 sm:px-7 sm:pt-8 ${
+                hasImage ? "lg:w-1/2 lg:pr-0" : ""
+              }`}
+            >
+              <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-gray-400 sm:text-[11px]">
+                {t("homeCompare.compareProducts.eyebrowLead")}{" "}
+                <span className="text-primary-600">
+                  {t("homeCompare.compareProducts.eyebrowAccent")}
+                </span>
+              </p>
+              <h2 className="mt-2 max-w-[440px] text-[1.625rem] font-extrabold leading-[1.08] tracking-[-0.035em] text-gray-900 sm:text-[2rem] xl:text-[2.25rem]">
                 {t("homeCompare.compareProducts.title")}
               </h2>
-              <p className="mt-1 text-[11px] leading-relaxed text-gray-500 sm:text-xs">
+              <p className="mt-3 max-w-[460px] text-[13px] leading-relaxed text-gray-500 sm:text-sm">
                 {t("homeCompare.compareProducts.description", { max: COMPARE_MAX })}
               </p>
-            </div>
 
-            <div className="shrink-0 sm:text-right">
-              <button
-                type="button"
-                disabled={!canCompare}
-                aria-describedby={!canCompare ? "compare-products-hint" : undefined}
-                onClick={() => setComparisonOpen(true)}
-                className="inline-flex w-full items-center justify-center gap-1.5 rounded-lg bg-primary-600 px-4 py-2.5 text-xs font-bold text-white shadow-cta transition-colors duration-200 hover:bg-primary-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:bg-gray-200 disabled:text-gray-400 disabled:shadow-none sm:w-auto"
+              <ul
+                className={`mt-6 grid grid-cols-2 gap-x-4 gap-y-4 sm:grid-cols-4 ${
+                  hasImage ? "lg:grid-cols-2 lg:max-w-[400px]" : ""
+                }`}
               >
-                <Scale aria-hidden="true" className="h-3.5 w-3.5" />
-                {t("homeCompare.compareProducts.compareNow")}
-              </button>
-              {!canCompare && (
-                <p id="compare-products-hint" className="mt-1.5 text-[10px] text-gray-400">
-                  {t("homeCompare.compareProducts.selectMinimum")}
-                </p>
-              )}
+                {HIGHLIGHTS.map(({ key, icon: Icon }) => (
+                  <li key={key} className="flex min-w-0 items-center gap-2.5">
+                    <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-primary-50 text-primary-600 ring-1 ring-primary-100">
+                      <Icon aria-hidden className="h-4 w-4" />
+                    </span>
+                    <span className="min-w-0">
+                      <span className="block truncate text-[12px] font-bold text-gray-900">
+                        {t(`homeCompare.compareProducts.highlights.${key}.title`)}
+                      </span>
+                      <span className="block truncate text-[10px] text-gray-500 sm:text-[11px]">
+                        {t(`homeCompare.compareProducts.highlights.${key}.text`)}
+                      </span>
+                    </span>
+                  </li>
+                ))}
+              </ul>
             </div>
           </div>
 
-          <div className="mt-5 grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
+          <div className="relative z-10 grid grid-cols-1 gap-3 px-5 sm:grid-cols-2 sm:px-7 xl:grid-cols-4">
             {slots.map((item, index) =>
               item ? (
                 <SelectedProductSlot
@@ -100,17 +177,40 @@ export default function CompareProducts() {
                   type="button"
                   aria-label={t("homeCompare.compareProducts.addProduct")}
                   onClick={() => setPickerOpen(true)}
-                  className="group flex min-h-[156px] flex-col items-center justify-center rounded-[13px] border border-dashed border-primary-200 bg-primary-50/45 p-4 text-gray-500 transition-all duration-200 hover:-translate-y-0.5 hover:border-primary-300 hover:bg-primary-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2"
+                  className="group flex min-h-[150px] flex-col items-center justify-center rounded-2xl border border-dashed border-gray-300/80 bg-white/90 p-4 text-gray-500 backdrop-blur-sm transition-all duration-200 hover:-translate-y-0.5 hover:border-primary-300 hover:bg-primary-50/40 hover:text-primary-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 sm:min-h-[168px]"
                 >
-                  <span className="flex h-10 w-10 items-center justify-center rounded-full border border-primary-200 bg-white text-primary-600 shadow-soft-sm transition-transform duration-200 group-hover:scale-105">
+                  <span className="flex h-12 w-12 items-center justify-center rounded-full bg-white text-primary-600 shadow-soft-md ring-1 ring-gray-200/80 transition-transform duration-200 group-hover:scale-105 group-hover:ring-primary-200">
                     <Plus aria-hidden="true" className="h-5 w-5" />
                   </span>
-                  <span className="mt-2.5 text-[11px] font-semibold">
+                  <span className="mt-3 text-[13px] font-semibold">
                     {t("homeCompare.compareProducts.addProduct")}
                   </span>
                 </button>
               )
             )}
+          </div>
+
+          <div className="flex flex-col-reverse gap-3 px-5 pb-5 pt-5 sm:flex-row sm:items-center sm:justify-between sm:px-7 sm:pb-6">
+            <p
+              id="compare-products-hint"
+              aria-live="polite"
+              className="flex items-center gap-2 text-[12px] text-gray-500 sm:text-[13px]"
+            >
+              <Info aria-hidden="true" className="h-4 w-4 shrink-0 text-gray-400" />
+              {canCompare
+                ? t("homeCompare.compareProducts.selectedCount", { count, max: COMPARE_MAX })
+                : t("homeCompare.compareProducts.selectMinimum")}
+            </p>
+            <button
+              type="button"
+              disabled={!canCompare}
+              aria-describedby="compare-products-hint"
+              onClick={() => setComparisonOpen(true)}
+              className="inline-flex w-full shrink-0 items-center justify-center gap-2 rounded-xl bg-primary-600 px-6 py-3 text-sm font-bold text-white shadow-cta transition duration-200 hover:-translate-y-0.5 hover:bg-primary-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 disabled:translate-y-0 disabled:cursor-not-allowed disabled:opacity-50 disabled:shadow-none sm:w-auto"
+            >
+              <Scale aria-hidden="true" className="h-4 w-4" />
+              {t("homeCompare.compareProducts.compareNow")}
+            </button>
           </div>
         </div>
       </HomeCard>
@@ -118,6 +218,80 @@ export default function CompareProducts() {
       {pickerOpen && <ProductPicker onClose={() => setPickerOpen(false)} />}
       {comparisonOpen && <CompareModal onClose={() => setComparisonOpen(false)} />}
     </>
+  );
+}
+
+/**
+ * The admin photo: a full-width band above the copy on small screens, the
+ * right 56% of the header from `lg` up. White fades melt its edges into the
+ * card, and the optional badges float over it.
+ */
+function CompareBackdrop({
+  image,
+  showBadges,
+  onError,
+}: {
+  image: string;
+  showBadges: boolean;
+  onError: () => void;
+}) {
+  const { t } = useLanguage();
+
+  return (
+    <div className="relative h-52 sm:h-64 lg:absolute lg:inset-y-0 lg:right-0 lg:h-auto lg:w-[56%]">
+      <img
+        src={image}
+        alt=""
+        loading="lazy"
+        decoding="async"
+        onError={onError}
+        className="absolute inset-0 h-full w-full object-cover object-center"
+      />
+      <div
+        aria-hidden="true"
+        className="absolute inset-y-0 left-0 hidden w-2/5 bg-gradient-to-r from-white via-white/70 to-transparent lg:block"
+      />
+      <div
+        aria-hidden="true"
+        className="absolute inset-x-0 bottom-0 h-20 bg-gradient-to-t from-white to-transparent lg:h-16"
+      />
+
+      {showBadges && (
+        <div aria-hidden="true" className="pointer-events-none absolute inset-0">
+          <span className="absolute left-1/2 top-1/2 flex h-12 w-12 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full bg-primary-600 text-sm font-extrabold tracking-wide text-white shadow-cta ring-4 ring-white/70 sm:h-14 sm:w-14 sm:text-base">
+            {t("homeCompare.compareProducts.vs")}
+          </span>
+          <BadgeColumn badges={BADGES_LEFT} className="left-[16%] items-start" />
+          <BadgeColumn badges={BADGES_RIGHT} className="right-[4%] items-end" />
+        </div>
+      )}
+    </div>
+  );
+}
+
+function BadgeColumn({
+  badges,
+  className,
+}: {
+  badges: { key: string; icon: Icon }[];
+  className: string;
+}) {
+  const { t } = useLanguage();
+
+  return (
+    <ul
+      className={`absolute top-1/2 hidden -translate-y-1/2 flex-col gap-2 sm:flex ${className}`}
+    >
+      {badges.map(({ key, icon: Icon }) => (
+        <li
+          key={key}
+          className="inline-flex items-center gap-1.5 rounded-full bg-white/90 px-3 py-1.5 text-[10px] font-semibold text-gray-800 shadow-soft-md ring-1 ring-white backdrop-blur-sm xl:text-[11px]"
+        >
+          <Icon aria-hidden className="h-3.5 w-3.5 text-primary-600" />
+          {t(`homeCompare.compareProducts.badges.${key}`)}
+        </li>
+      ))}
+    </ul>
   );
 }
 

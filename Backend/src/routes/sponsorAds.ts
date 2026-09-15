@@ -14,8 +14,12 @@ const sponsorAds = new Hono<{ Bindings: Env }>();
  */
 const PLACEMENTS = {
   hero_below: { multiple: true },
+  compare_below: { multiple: true },
   sidebar_1: { multiple: false },
   sidebar_2: { multiple: false },
+  sidebar_3: { multiple: false },
+  sidebar_4: { multiple: false },
+  sidebar_5: { multiple: false },
 } as const;
 
 type Placement = keyof typeof PLACEMENTS;
@@ -65,13 +69,17 @@ sponsorAds.get("/", async (c) => {
   ).all<AdRow>();
 
   const ads = results.map(toAd);
+  const many = (placement: Placement) => ads.filter((a) => a.placement === placement);
   const single = (placement: Placement) => ads.find((a) => a.placement === placement) ?? null;
 
-  return c.json({
-    hero_below: ads.filter((a) => a.placement === "hero_below"),
-    sidebar_1: single("sidebar_1"),
-    sidebar_2: single("sidebar_2"),
-  });
+  // Every placement key is present: a list for multiple ones, an ad or null for
+  // single ones — so a new entry in PLACEMENTS reaches the feed on its own.
+  const placements = Object.keys(PLACEMENTS) as Placement[];
+  return c.json(
+    Object.fromEntries(
+      placements.map((p) => [p, PLACEMENTS[p].multiple ? many(p) : single(p)])
+    )
+  );
 });
 
 // ── GET /api/sponsor-ads/admin — every ad, inactive included ─────────────────

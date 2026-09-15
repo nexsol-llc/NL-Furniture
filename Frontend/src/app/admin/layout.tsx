@@ -122,7 +122,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     {
       label: "Content",
       items: [
-        { name: "Hero Section", href: "/admin/hero", icon: <Image size={16} /> },
+        { name: "Home Page Settings", href: "/admin/hero", icon: <Image size={16} /> },
         { name: "Indoor/Outdoor", href: "/admin/indoor-outdoor", icon: <Home size={16} /> },
         { name: "Home Influencer", href: "/admin/home-influencer", icon: <Sparkles size={16} /> },
         { name: "Sponsors", href: "/admin/sponsors", icon: <Megaphone size={16} /> },

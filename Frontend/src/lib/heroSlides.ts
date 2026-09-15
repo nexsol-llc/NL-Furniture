@@ -1,4 +1,4 @@
-// Home hero slides — the three admin-managed images (Admin → Hero Section)
+// Home hero slides — the three admin-managed images (Admin → Home Page Settings)
 // that CompareHero fades through as the background behind its headline,
 // stats and search bar. The recommended size is tuned to that layout; if
 // CompareHero's geometry changes, revisit it and the preview overlay in

@@ -297,7 +297,25 @@
     },
     "compareProducts": {
       "title": "Vergelijk producten naast elkaar",
-      "description": "Voeg maximaal {{max}} producten toe en vergelijk kenmerken, prijzen en meer.",
+      "description": "Voeg maximaal {{max}} producten toe en vergelijk kenmerken, prijzen, reviews en meer.",
+      "eyebrowLead": "Producten",
+      "eyebrowAccent": "vergelijken",
+      "highlights": {
+        "prices": { "title": "Prijzen", "text": "Vind de beste deal" },
+        "features": { "title": "Kenmerken", "text": "Wat maakt het uniek" },
+        "reviews": { "title": "Reviews", "text": "Echte ervaringen" },
+        "warranty": { "title": "Garantie", "text": "Vergelijk dekking" }
+      },
+      "badges": {
+        "price": "Prijs",
+        "features": "Kenmerken",
+        "reviews": "Reviews",
+        "shipping": "Verzending",
+        "warranty": "Garantie",
+        "popular": "Populair"
+      },
+      "vs": "VS",
+      "selectedCount": "{{count}} van {{max}} producten geselecteerd",
       "addProduct": "Product toevoegen",
       "compareNow": "Nu vergelijken",
       "removeProduct": "Product verwijderen",

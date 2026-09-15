@@ -13,7 +13,7 @@ export interface HeroSlide {
   link?: string;
   title?: string;
   subtitle?: string;
-  /** Per-slide switches from Admin → Hero Section; absent means shown. */
+  /** Per-slide switches from Admin → Home Page Settings; absent means shown. */
   showGradient?: boolean;
   showText?: boolean;
 }
@@ -33,7 +33,7 @@ export default function CompareHero({
   const { t } = useLanguage();
   const [active, setActive] = useState(0);
   const [showVisualSearch, setShowVisualSearch] = useState(false);
-  // Admin → Hero Section. A slot without an image is skipped; with none at
+  // Admin → Home Page Settings. A slot without an image is skipped; with none at
   // all the hero is just the brand colour behind its gradient.
   const images = withImage(slides);
   const count = images.length;

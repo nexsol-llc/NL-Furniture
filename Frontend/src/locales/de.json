@@ -297,7 +297,25 @@
     },
     "compareProducts": {
       "title": "Produkte nebeneinander vergleichen",
-      "description": "Füge bis zu {{max}} Produkte hinzu und vergleiche Funktionen, Preise und mehr.",
+      "description": "Füge bis zu {{max}} Produkte hinzu und vergleiche Funktionen, Preise, Bewertungen und mehr.",
+      "eyebrowLead": "Produkte",
+      "eyebrowAccent": "vergleichen",
+      "highlights": {
+        "prices": { "title": "Preise", "text": "Das beste Angebot finden" },
+        "features": { "title": "Merkmale", "text": "Was es besonders macht" },
+        "reviews": { "title": "Bewertungen", "text": "Echte Erfahrungen" },
+        "warranty": { "title": "Garantie", "text": "Absicherung vergleichen" }
+      },
+      "badges": {
+        "price": "Preis",
+        "features": "Merkmale",
+        "reviews": "Bewertungen",
+        "shipping": "Versand",
+        "warranty": "Garantie",
+        "popular": "Beliebt"
+      },
+      "vs": "VS",
+      "selectedCount": "{{count}} von {{max}} Produkten ausgewählt",
       "addProduct": "Produkt hinzufügen",
       "compareNow": "Jetzt vergleichen",
       "removeProduct": "Produkt entfernen",

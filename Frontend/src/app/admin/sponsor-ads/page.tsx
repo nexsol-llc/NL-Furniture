@@ -295,6 +295,23 @@ function PlacementMap({ active }: { active: AdPlacement }) {
   const block = (placement?: AdPlacement) =>
     `rounded-[3px] ${placement && placement === active ? "bg-primary-500" : "bg-zinc-200"}`;
 
+  // A banner carousel: the banner plus its slide dots.
+  const carousel = (placement: AdPlacement) => (
+    <div>
+      <div className={`h-3 ${block(placement)}`} />
+      <div className="mt-0.5 flex justify-center gap-0.5">
+        {[0, 1, 2].map((i) => (
+          <span
+            key={i}
+            className={`h-[3px] rounded-full ${i === 0 ? "w-1.5" : "w-[3px]"} ${
+              active === placement ? "bg-primary-500" : "bg-zinc-200"
+            }`}
+          />
+        ))}
+      </div>
+    </div>
+  );
+
   return (
     <div className="space-y-1.5" aria-hidden="true">
       <p className={LABEL}>Where it shows</p>
@@ -306,27 +323,23 @@ function PlacementMap({ active }: { active: AdPlacement }) {
             <div className="h-6 rounded-[3px] bg-zinc-300" />
             <div className="flex gap-1">
               <div className="flex-1 space-y-1">
-                <div>
-                  <div className={`h-3 ${block("hero_below")}`} />
-                  <div className="mt-0.5 flex justify-center gap-0.5">
-                    {[0, 1, 2].map((i) => (
-                      <span
-                        key={i}
-                        className={`h-[3px] rounded-full ${i === 0 ? "w-1.5" : "w-[3px]"} ${
-                          active === "hero_below" ? "bg-primary-500" : "bg-zinc-200"
-                        }`}
-                      />
-                    ))}
-                  </div>
-                </div>
+                {carousel("hero_below")}
                 <div className={`h-3 ${block()}`} />
                 <div className={`h-3 ${block()}`} />
+                {/* The compare section, drawn a touch darker so the banner under it reads. */}
+                <div className="h-4 rounded-[3px] bg-zinc-300" />
+                {carousel("compare_below")}
                 <div className={`h-3 ${block()}`} />
               </div>
               <div className="w-6 space-y-1">
-                <div className={`h-5 ${block("sidebar_1")}`} />
+                <div className={`h-4 ${block("sidebar_1")}`} />
                 <div className={`h-2.5 ${block()}`} />
-                <div className={`h-5 ${block("sidebar_2")}`} />
+                <div className={`h-4 ${block("sidebar_2")}`} />
+                <div className={`h-2 ${block()}`} />
+                <div className={`h-4 ${block("sidebar_3")}`} />
+                <div className={`h-2 ${block()}`} />
+                <div className={`h-4 ${block("sidebar_4")}`} />
+                <div className={`h-8 ${block("sidebar_5")}`} />
               </div>
             </div>
           </div>

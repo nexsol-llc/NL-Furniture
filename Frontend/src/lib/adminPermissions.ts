@@ -10,7 +10,8 @@ export interface PermissionModule {
 
 export const PERMISSION_MODULES: PermissionModule[] = [
   // Content
-  { key: "hero", label: "Hero Section", group: "Content" },
+  // Key kept as "hero" so existing editor grants survive the rename.
+  { key: "hero", label: "Home Page Settings", group: "Content" },
   { key: "indoor-outdoor", label: "Indoor/Outdoor", group: "Content" },
   { key: "home-influencer", label: "Home Influencer", group: "Content" },
   { key: "sponsors", label: "Sponsors", group: "Content" },

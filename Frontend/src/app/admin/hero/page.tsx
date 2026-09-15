@@ -4,7 +4,19 @@ import { useEffect, useState, type CSSProperties } from "react";
 import { AlertTriangle, CheckCircle2, ImagePlus, Trash2 } from "lucide-react";
 import { adminFetch } from "@/lib/adminAuth";
 import MediaPicker, { type MediaItem } from "@/app/components/MediaPicker";
+import RichDescriptionEditor from "@/app/components/RichDescriptionEditor";
+import { HOME_PAGE_SEO_KEY, isBlankHtml } from "@/lib/homeText";
 import { HERO_IMAGE, HERO_ROTATE_SECONDS, HERO_SLOTS, type HeroSlot } from "@/lib/heroSlides";
+import {
+  COMPARE_IMAGE,
+  COMPARE_SECTION_ID,
+  DEFAULT_COMPARE_SECTION,
+  normalizeCompareSection,
+  type CompareSectionSettings,
+} from "@/lib/compareSection";
+
+/** Which image the media picker is choosing for: a hero slot or the compare section. */
+type PickerTarget = HeroSlot | "compare";
 
 type HeroRow = {
   _id: string;
@@ -28,7 +40,45 @@ export default function HeroAdmin() {
   // Images picked from the library but not saved yet, per slot.
   const [pending, setPending] = useState<Partial<Record<HeroSlot, string>>>({});
   const [busy, setBusy] = useState<Partial<Record<HeroSlot, boolean>>>({});
-  const [pickerSlot, setPickerSlot] = useState<HeroSlot | null>(null);
+  const [pickerTarget, setPickerTarget] = useState<PickerTarget | null>(null);
+
+  // Compare section — stored in section-settings, saved independently of the slides.
+  const [compare, setCompare] = useState<CompareSectionSettings>(DEFAULT_COMPARE_SECTION);
+  const [compareLoading, setCompareLoading] = useState(true);
+  const [comparePending, setComparePending] = useState<string | null>(null);
+  const [compareBusy, setCompareBusy] = useState(false);
+
+  const fetchCompare = async () => {
+    try {
+      const res = await adminFetch(`/api/section-settings?t=${Date.now()}`, { cache: "no-store" });
+      const data = await res.json();
+      setCompare(normalizeCompareSection(data));
+    } catch (e) {
+      console.error("Error fetching compare section settings:", e);
+    } finally {
+      setCompareLoading(false);
+    }
+  };
+
+  const saveCompare = async (patch: Partial<CompareSectionSettings>) => {
+    setCompareBusy(true);
+    try {
+      const res = await adminFetch("/api/section-settings", {
+        method: "POST",
+        body: JSON.stringify({ sectionId: COMPARE_SECTION_ID, ...patch }),
+      });
+      const data = await res.json().catch(() => null);
+      if (!res.ok) throw new Error(data?.error || "Failed to save compare section");
+      setCompare(normalizeCompareSection(data));
+      return true;
+    } catch (err: any) {
+      alert(err.message || "Failed to save compare section");
+      await fetchCompare();
+      return false;
+    } finally {
+      setCompareBusy(false);
+    }
+  };
 
   const fetchHeroes = async () => {
     try {
@@ -42,8 +92,57 @@ export default function HeroAdmin() {
     }
   };
 
+  // Home page text — the official-home page-SEO `longContent`, shown before the FAQs.
+  const [homeText, setHomeText] = useState("");
+  const [homeTextSaved, setHomeTextSaved] = useState("");
+  const [homeTextLoading, setHomeTextLoading] = useState(true);
+  const [homeTextBusy, setHomeTextBusy] = useState(false);
+  const homeTextDirty = homeText !== homeTextSaved;
+
+  const fetchHomeText = async () => {
+    try {
+      const res = await adminFetch(`/api/page-seo-settings/${HOME_PAGE_SEO_KEY}?t=${Date.now()}`, {
+        cache: "no-store",
+      });
+      const data = await res.json();
+      const text = typeof data?.longContent === "string" ? data.longContent : "";
+      setHomeText(text);
+      setHomeTextSaved(text);
+    } catch (e) {
+      console.error("Error fetching home page text:", e);
+    } finally {
+      setHomeTextLoading(false);
+    }
+  };
+
+  const saveHomeText = async () => {
+    // An emptied editor still holds markup like "<p><br></p>", which would
+    // render an empty card on the home page — store it as "" instead.
+    const longContent = isBlankHtml(homeText) ? "" : homeText;
+    setHomeTextBusy(true);
+    try {
+      // Only this key is sent; the endpoint merges, so the page's SEO title,
+      // meta and FAQs are untouched.
+      const res = await adminFetch(`/api/page-seo-settings/${HOME_PAGE_SEO_KEY}`, {
+        method: "PUT",
+        body: JSON.stringify({ longContent }),
+      });
+      const data = await res.json().catch(() => null);
+      if (!res.ok) throw new Error(data?.error || "Failed to save home page text");
+      const saved = typeof data?.longContent === "string" ? data.longContent : longContent;
+      setHomeText(saved);
+      setHomeTextSaved(saved);
+    } catch (err: any) {
+      alert(err.message || "Failed to save home page text");
+    } finally {
+      setHomeTextBusy(false);
+    }
+  };
+
   useEffect(() => {
     fetchHeroes();
+    fetchCompare();
+    fetchHomeText();
   }, []);
 
   const heroFor = (slot: HeroSlot) => heroes.find((h) => h.slot === slot);
@@ -123,7 +222,15 @@ export default function HeroAdmin() {
   return (
     <div className="max-w-6xl mx-auto p-4 md:p-6 space-y-6">
       <div className="bg-white border border-gray-200 text-gray-900 p-6 rounded-xl space-y-2">
-        <h2 className="text-xl font-semibold tracking-tight">Hero Section Manager</h2>
+        <h2 className="text-xl font-semibold tracking-tight">Home Page Settings</h2>
+        <p className="text-gray-500 text-sm max-w-2xl">
+          What the home page shows, top to bottom: the hero slides, the photo behind the
+          &ldquo;Compare products&rdquo; section, and the text block before the FAQs.
+        </p>
+      </div>
+
+      <div className="space-y-1 px-1">
+        <h3 className="text-lg font-semibold text-zinc-950">Hero slides</h3>
         <p className="text-gray-500 text-sm max-w-2xl">
           The home page hero fades through these images every {HERO_ROTATE_SECONDS} seconds, as
           the background behind the headline, stats and search bar. Empty slots are skipped; with
@@ -172,7 +279,7 @@ export default function HeroAdmin() {
               hero={heroFor(slot)}
               pending={pending[slot]}
               busy={!!busy[slot]}
-              onPick={() => setPickerSlot(slot)}
+              onPick={() => setPickerTarget(slot)}
               onSave={() => save(slot)}
               onDiscard={() => clearPending(slot)}
               onRemove={() => remove(slot)}
@@ -180,13 +287,113 @@ export default function HeroAdmin() {
             />
           ))}
 
+      <div className="space-y-1 px-1 pt-4">
+        <h3 className="text-lg font-semibold text-zinc-950">Compare section</h3>
+        <p className="text-gray-500 text-sm max-w-2xl">
+          The photo on the right of the &ldquo;Compare products side by side&rdquo; card. It fades
+          into the card behind the headline; the optional badges (VS, Price, Shipping&hellip;) float
+          on top. With no photo, the text spans the full card.
+        </p>
+      </div>
+
+      {compareLoading ? (
+        <div className="h-72 rounded-xl bg-white border border-zinc-100 animate-pulse" />
+      ) : (
+        <CompareSectionCard
+          settings={compare}
+          pending={comparePending}
+          busy={compareBusy}
+          onPick={() => setPickerTarget("compare")}
+          onSave={async () => {
+            if (comparePending && (await saveCompare({ backgroundImage: comparePending }))) {
+              setComparePending(null);
+            }
+          }}
+          onDiscard={() => setComparePending(null)}
+          onRemove={() => {
+            if (confirm("Remove the compare section photo? The text then spans the full card.")) {
+              saveCompare({ backgroundImage: "" });
+            }
+          }}
+          onToggleBadges={(value) => {
+            // Optimistic — saveCompare re-fetches if the save fails.
+            setCompare((c) => ({ ...c, showBadges: value }));
+            saveCompare({ showBadges: value });
+          }}
+        />
+      )}
+
+      <div className="space-y-1 px-1 pt-4">
+        <h3 className="text-lg font-semibold text-zinc-950">Home page text</h3>
+        <p className="text-gray-500 text-sm max-w-2xl">
+          Shown on the home page just before the FAQs. Use headings, lists and links as you would in
+          a description; leave it empty to hide the block. One text is shown for all languages.
+        </p>
+      </div>
+
+      {homeTextLoading ? (
+        <div className="h-72 rounded-xl bg-white border border-zinc-100 animate-pulse" />
+      ) : (
+        <section className="bg-white rounded-xl border border-zinc-100 p-6 shadow-sm space-y-4">
+          <div className="flex flex-wrap items-center gap-2">
+            <h3 className="font-semibold text-lg text-zinc-950">Text</h3>
+            <span
+              className={`rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider ${
+                homeTextDirty
+                  ? "bg-amber-100 text-amber-800"
+                  : homeTextSaved
+                    ? "bg-emerald-100 text-emerald-700"
+                    : "bg-zinc-100 text-zinc-500"
+              }`}
+            >
+              {homeTextDirty ? "Unsaved" : homeTextSaved ? "Live" : "Empty — hidden"}
+            </span>
+          </div>
+
+          <RichDescriptionEditor
+            value={homeText}
+            onChange={setHomeText}
+            placeholder="Write the home page text..."
+            minHeight={280}
+          />
+
+          <div className="flex flex-wrap items-center gap-2">
+            <button
+              type="button"
+              onClick={saveHomeText}
+              disabled={!homeTextDirty || homeTextBusy}
+              className="bg-primary-600 hover:bg-primary-700 disabled:opacity-50 text-white font-semibold px-5 py-2 rounded-xl text-xs uppercase tracking-wider transition-all"
+            >
+              {homeTextBusy ? "Saving..." : "Save text"}
+            </button>
+            {homeTextDirty && (
+              <button
+                type="button"
+                onClick={() => setHomeText(homeTextSaved)}
+                disabled={homeTextBusy}
+                className="px-4 py-2 bg-zinc-200 hover:bg-zinc-300 text-zinc-800 font-semibold rounded-xl text-xs uppercase tracking-wider transition-all"
+              >
+                Discard
+              </button>
+            )}
+          </div>
+        </section>
+      )}
+
       <MediaPicker
-        open={pickerSlot !== null}
-        onClose={() => setPickerSlot(null)}
+        open={pickerTarget !== null}
+        onClose={() => setPickerTarget(null)}
         onSelect={(item: MediaItem) => {
-          if (pickerSlot) setPending((p) => ({ ...p, [pickerSlot]: item.url }));
+          if (pickerTarget === "compare") setComparePending(item.url);
+          else if (pickerTarget) setPending((p) => ({ ...p, [pickerTarget]: item.url }));
         }}
-        title={pickerSlot ? `Select image for slide ${pickerSlot}` : "Media Library"}
+        title={
+          pickerTarget === "compare"
+            ? "Select image for the compare section"
+            : pickerTarget
+              ? `Select image for slide ${pickerTarget}`
+              : "Media Library"
+        }
       />
     </div>
   );
@@ -505,6 +712,269 @@ function HeroPreview({
           <div style={spec.rail} className="absolute rounded-t-md bg-white ring-1 ring-zinc-200" />
         )}
       </div>
+    </div>
+  );
+}
+
+function CompareSectionCard({
+  settings,
+  pending,
+  busy,
+  onPick,
+  onSave,
+  onDiscard,
+  onRemove,
+  onToggleBadges,
+}: {
+  settings: CompareSectionSettings;
+  pending: string | null;
+  busy: boolean;
+  onPick: () => void;
+  onSave: () => void;
+  onDiscard: () => void;
+  onRemove: () => void;
+  onToggleBadges: (value: boolean) => void;
+}) {
+  const saved = settings.backgroundImage;
+  const image = pending ?? saved;
+
+  // Keyed by src so a stale measurement never describes a newly picked image.
+  const [natural, setNatural] = useState<{ src: string; w: number; h: number } | null>(null);
+  const measured = natural && natural.src === image ? natural : null;
+  const ratio = measured ? measured.w / measured.h : COMPARE_IMAGE.width / COMPARE_IMAGE.height;
+
+  const status = pending
+    ? { label: "Unsaved", className: "bg-amber-100 text-amber-800" }
+    : saved
+      ? { label: "Live", className: "bg-emerald-100 text-emerald-700" }
+      : { label: "No photo — text only", className: "bg-zinc-100 text-zinc-500" };
+
+  return (
+    <section className="bg-white rounded-xl border border-zinc-100 p-6 shadow-sm space-y-5">
+      <div className="flex flex-wrap items-center gap-x-2 gap-y-3">
+        <h3 className="font-semibold text-lg text-zinc-950">Background photo</h3>
+        <span
+          className={`rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider ${status.className}`}
+        >
+          {status.label}
+        </span>
+        <div className="sm:ml-auto">
+          <Switch
+            label="Show badges"
+            checked={settings.showBadges}
+            disabled={busy}
+            onChange={onToggleBadges}
+          />
+        </div>
+      </div>
+
+      <div className="flex flex-col gap-6 md:flex-row md:items-center">
+        <div className="space-y-1.5 shrink-0">
+          <p className={LABEL}>Image size</p>
+          <div
+            style={{ aspectRatio: COMPARE_IMAGE.aspect }}
+            className="h-[84px] flex flex-col items-center justify-center rounded-lg border-2 border-dashed border-primary-300 bg-primary-50 text-primary-700"
+          >
+            <span className="text-[12px] font-bold leading-tight">
+              {COMPARE_IMAGE.width} × {COMPARE_IMAGE.height}
+            </span>
+            <span className="text-[9px] font-semibold opacity-75">px</span>
+          </div>
+          <p className="text-[10px] text-zinc-500">{COMPARE_IMAGE.ratioLabel} · JPG or WebP</p>
+        </div>
+
+        <ul className="space-y-2 text-sm text-zinc-600">
+          {[
+            <>The <strong>left edge fades to white</strong> behind the headline — keep the products in the right two-thirds.</>,
+            <>With badges on, leave the <strong>middle clear</strong> for the VS badge — one product either side of it reads best.</>,
+            <>Keep the <strong>bottom edge</strong> plain; it fades into the product slots below.</>,
+          ].map((tip, i) => (
+            <li key={i} className="flex gap-2">
+              <span className="mt-[7px] h-1.5 w-1.5 shrink-0 rounded-full bg-primary-500" />
+              <span>{tip}</span>
+            </li>
+          ))}
+        </ul>
+      </div>
+
+      <div className="grid gap-5 sm:grid-cols-[minmax(0,1fr)_180px]">
+        <div className="space-y-1.5 min-w-0">
+          <p className={LABEL}>Desktop · 1440px screen</p>
+          <ComparePreview
+            device="desktop"
+            image={image}
+            badges={settings.showBadges}
+            onMeasure={(w, h) => setNatural({ src: image, w, h })}
+          />
+        </div>
+        <div className="space-y-1.5">
+          <p className={LABEL}>Phone</p>
+          <ComparePreview device="phone" image={image} badges={settings.showBadges} />
+        </div>
+      </div>
+
+      {measured &&
+        (ratio < 1.3 || ratio > 2.2 ? (
+          <Notice tone="warn">
+            This image is {measured.w} × {measured.h} px —{" "}
+            {ratio < 1.3
+              ? "much taller than 16:9, so its top and bottom are cropped"
+              : "much wider than 16:9, so its sides are cropped"}{" "}
+            (see preview). Use{" "}
+            <strong>
+              {COMPARE_IMAGE.width} × {COMPARE_IMAGE.height} px
+            </strong>{" "}
+            for a clean fit.
+          </Notice>
+        ) : measured.w < 1200 ? (
+          <Notice tone="warn">
+            Right shape, but only {measured.w} × {measured.h} px — it will look soft on large
+            screens. {COMPARE_IMAGE.width} × {COMPARE_IMAGE.height} px is recommended.
+          </Notice>
+        ) : (
+          <Notice tone="ok">Good fit — {measured.w} × {measured.h} px.</Notice>
+        ))}
+
+      <div className="flex flex-wrap items-center gap-2">
+        <button
+          type="button"
+          onClick={onPick}
+          disabled={busy}
+          className="inline-flex items-center gap-1.5 border border-zinc-200 hover:border-zinc-400 bg-white text-zinc-800 font-semibold px-4 py-2 rounded-xl text-xs uppercase tracking-wider transition-all disabled:opacity-50"
+        >
+          <ImagePlus size={14} /> {image ? "Change image" : "Choose image"}
+        </button>
+
+        {pending && (
+          <>
+            <button
+              type="button"
+              onClick={onSave}
+              disabled={busy}
+              className="bg-primary-600 hover:bg-primary-700 disabled:opacity-50 text-white font-semibold px-5 py-2 rounded-xl text-xs uppercase tracking-wider transition-all"
+            >
+              {busy ? "Saving..." : "Save photo"}
+            </button>
+            <button
+              type="button"
+              onClick={onDiscard}
+              disabled={busy}
+              className="px-4 py-2 bg-zinc-200 hover:bg-zinc-300 text-zinc-800 font-semibold rounded-xl text-xs uppercase tracking-wider transition-all"
+            >
+              Discard
+            </button>
+          </>
+        )}
+
+        {saved && !pending && (
+          <button
+            type="button"
+            onClick={onRemove}
+            disabled={busy}
+            title="Remove photo"
+            className="ml-auto p-2 hover:bg-zinc-100 text-zinc-500 hover:text-red-600 rounded-lg transition flex items-center gap-1 text-xs font-semibold"
+          >
+            <Trash2 size={14} /> Remove
+          </button>
+        )}
+      </div>
+    </section>
+  );
+}
+
+/**
+ * The compare card's header as the live page draws it: on a 1440px screen the
+ * header is ≈ 862 × 320 with the photo filling its right 56%; on a phone the
+ * photo is a 208px band above the copy, badges reduced to the VS disc.
+ * Mirrors CompareProducts — revisit if its layout changes.
+ */
+function ComparePreview({
+  device,
+  image,
+  badges,
+  onMeasure,
+}: {
+  device: "desktop" | "phone";
+  image: string;
+  badges: boolean;
+  onMeasure?: (width: number, height: number) => void;
+}) {
+  const desktop = device === "desktop";
+
+  const pill = (key: number) => (
+    <span key={key} className="block h-[9%] w-full rounded-full bg-white/95 shadow-sm" />
+  );
+
+  return (
+    <div
+      style={{ aspectRatio: desktop ? "862 / 320" : "366 / 208" }}
+      className="relative w-full overflow-hidden rounded-lg bg-white ring-1 ring-zinc-200"
+    >
+      <div
+        className={`absolute inset-y-0 right-0 ${desktop ? "w-[56%]" : "w-full"} ${
+          image ? "" : "flex items-center justify-center border-2 border-dashed border-zinc-200 bg-zinc-50 text-zinc-400"
+        }`}
+      >
+        {image ? (
+          <>
+            <img
+              src={image}
+              alt=""
+              onLoad={(e) => onMeasure?.(e.currentTarget.naturalWidth, e.currentTarget.naturalHeight)}
+              className="absolute inset-0 h-full w-full object-cover object-center"
+            />
+            {desktop && (
+              <div className="absolute inset-y-0 left-0 w-2/5 bg-gradient-to-r from-white via-white/70 to-transparent" />
+            )}
+            <div className="absolute inset-x-0 bottom-0 h-[22%] bg-gradient-to-t from-white to-transparent" />
+
+            {badges && (
+              <div aria-hidden="true" className="absolute inset-0">
+                <span
+                  className={`absolute left-1/2 top-1/2 flex aspect-square -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full bg-primary-600 font-extrabold text-white ring-2 ring-white/70 ${
+                    desktop ? "h-[17%] text-[9px]" : "h-[23%] text-[8px]"
+                  }`}
+                >
+                  VS
+                </span>
+                {desktop && (
+                  <>
+                    <div className="absolute left-[16%] top-1/2 flex h-full w-[20%] -translate-y-1/2 flex-col justify-center gap-[3%]">
+                      {[0, 1, 2].map(pill)}
+                    </div>
+                    <div className="absolute right-[4%] top-1/2 flex h-full w-[22%] -translate-y-1/2 flex-col justify-center gap-[3%]">
+                      {[0, 1, 2].map(pill)}
+                    </div>
+                  </>
+                )}
+              </div>
+            )}
+          </>
+        ) : (
+          <span className="flex flex-col items-center text-center">
+            <ImagePlus className="w-6 h-6 mb-1" />
+            {desktop && <span className="text-[11px] font-semibold">No photo — text spans the card</span>}
+          </span>
+        )}
+      </div>
+
+      {desktop && (
+        <div aria-hidden="true" className="pointer-events-none absolute inset-y-0 left-0 w-1/2">
+          <div className="absolute left-[7%] top-[11%] h-[3%] w-[26%] rounded-[2px] bg-primary-300" />
+          <div className="absolute left-[7%] top-[18%] h-[9%] w-[72%] rounded-[2px] bg-zinc-800/85" />
+          <div className="absolute left-[7%] top-[30%] h-[9%] w-[54%] rounded-[2px] bg-zinc-800/85" />
+          <div className="absolute left-[7%] top-[44%] h-[3%] w-[78%] rounded-[2px] bg-zinc-300" />
+          <div className="absolute left-[7%] top-[50%] h-[3%] w-[60%] rounded-[2px] bg-zinc-300" />
+          {["7%", "45%"].flatMap((left) =>
+            ["62%", "78%"].map((top) => (
+              <div key={left + top} style={{ left, top }} className="absolute flex h-[10%] w-[34%] items-center gap-[6%]">
+                <span className="aspect-square h-full rounded-full bg-primary-100" />
+                <span className="h-[35%] flex-1 rounded-[2px] bg-zinc-300" />
+              </div>
+            ))
+          )}
+        </div>
+      )}
     </div>
   );
 }

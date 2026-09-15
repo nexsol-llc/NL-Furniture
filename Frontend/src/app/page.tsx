@@ -14,10 +14,16 @@ import InspirationRail, { type InspirationItem } from './components/home/Inspira
 import ComparisonCta from './components/home/ComparisonCta';
 import TestimonialsSection from './components/home/TestimonialsSection';
 import TrustStrip from './components/home/TrustStrip';
+import HomeTextSection from './components/home/HomeTextSection';
 import { RoomsCard, WhyCompareCard } from './components/home/PromoCards';
 import { SponsorAdCarousel } from './components/home/SponsorAd';
 import FAQSection, { FAQItem } from './components/FAQSection';
 import { fetchCatalogList } from '@/lib/categoryCatalog';
+import {
+  DEFAULT_COMPARE_SECTION,
+  normalizeCompareSection,
+  type CompareSectionSettings,
+} from '@/lib/compareSection';
 import { shopLink } from '@/lib/productFormat';
 import {
   EMPTY_SPONSOR_ADS,
@@ -47,6 +53,8 @@ export default function HomePage() {
   const [sponsoredPicks, setSponsoredPicks] = useState<RailProduct[]>([]);
   const [inspiration, setInspiration] = useState<InspirationItem[]>([]);
   const [roomsImage, setRoomsImage] = useState<string | null>(null);
+  const [compareSection, setCompareSection] =
+    useState<CompareSectionSettings>(DEFAULT_COMPARE_SECTION);
   const [homeSeo, setHomeSeo] = useState<any>(null);
   const [loading, setLoading] = useState(true);
 
@@ -159,6 +167,12 @@ export default function HomePage() {
       })
       .catch((err) => console.error('Error fetching home influencer look:', err));
 
+    // Compare section photo + badges — Admin → Home Page Settings.
+    fetch('/api/section-settings')
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => setCompareSection(normalizeCompareSection(data)))
+      .catch((err) => console.error('Error fetching compare section settings:', err));
+
     fetch(`/api/page-seo-settings/official-home?t=${Date.now()}`, { cache: 'no-store' })
       .then((res) => (res.ok ? res.json() : null))
       .then((data) => setHomeSeo(data || null))
@@ -211,13 +225,20 @@ export default function HomePage() {
           <HomeSidebar />
 
           <div className="min-w-0 flex-1 space-y-4">
-            <div className="relative w-full min-w-0">
+            {/* flow-root contains the floated rail below, so a rail taller than the
+                main column pushes the full-width content down instead of overlapping it. */}
+            <div className="relative w-full min-w-0 flow-root">
               <CompareHero slides={heroSlides} onActiveChange={setHeroActiveId} />
 
-              <aside className="mt-4 mr-2 w-full min-w-0 xl:absolute xl:right-0 xl:top-[286px] xl:z-30 xl:mt-0 xl:w-[310px]">
+              {/* From xl the rail floats right, pulled 104px up over the 390px-tall
+                  hero so it starts 286px from the hero's top. */}
+              <aside className="relative mt-4 mr-2 w-full min-w-0 xl:float-right xl:z-30 xl:-mt-[104px] xl:w-[310px]">
                 <HeroSideCards
                   topAd={sponsorAds.sidebar_1}
                   bottomAd={sponsorAds.sidebar_2}
+                  thirdAd={sponsorAds.sidebar_3}
+                  fourthAd={sponsorAds.sidebar_4}
+                  lastAd={sponsorAds.sidebar_5}
                   deals={railDeals}
                 />
               </aside>
@@ -242,8 +263,10 @@ export default function HomePage() {
                 {brands.length > 0 && <BrandStrip brands={brands} />}
 
                 <div className="py-1">
-                  <CompareProducts />
+                  <CompareProducts settings={compareSection} />
                 </div>
+
+                <SponsorAdCarousel ads={sponsorAds.compare_below} />
 
                 {sponsoredPicks.length > 0 && (
                   <ProductRail
@@ -268,15 +291,8 @@ export default function HomePage() {
             {/* ── Full-width below the fold ─────────────────────────────────── */}
 
 
-            {/* Admin-managed SEO body — Settings → Furniture SEO Content. */}
-            {homeSeo?.longContent?.trim() && (
-              <section className="rounded-2xl border border-gray-200/80 bg-white p-5 shadow-soft-sm md:p-7">
-                <div
-                  className="prose prose-sm max-w-none text-sm leading-relaxed text-gray-600 [&_ol]:list-decimal [&_ol]:pl-6 [&_ul]:list-disc [&_ul]:pl-6"
-                  dangerouslySetInnerHTML={{ __html: homeSeo.longContent }}
-                />
-              </section>
-            )}
+            {/* Home page text — Admin → Home Page Settings (page-SEO longContent). */}
+            {homeSeo?.longContent?.trim() && <HomeTextSection html={homeSeo.longContent} />}
 
             {faqs.length > 0 && (
               <FAQSection

@@ -425,3 +425,171 @@ h10, .h10 {
 .rich-content em, .rich-content i { font-style: italic; }
 .rich-content u { text-decoration: underline; }
 .rich-content blockquote { border-left: 3px solid #e5e7eb; padding-left: 1rem; color: #4b5563; margin: 0.75em 0; }
+
+/* ── Home page text ────────────────────────────────────────────────────────────
+   The text block before the home FAQs (Admin → Home Page Settings), rendered by
+   components/home/HomeTextSection. It styles plain editor HTML — headings,
+   paragraphs, lists, links — so admins paste clean markup and the look follows
+   the theme colour. Two balanced columns from lg up; an h1/h2 spans both. */
+.home-text {
+  color: #4b5563;
+  font-size: 0.9375rem;
+  line-height: 1.75;
+}
+@media (min-width: 1024px) {
+  .home-text { column-count: 2; column-gap: 3.5rem; }
+}
+.home-text > *:first-child { margin-top: 0; }
+.home-text > *:last-child { margin-bottom: 0; }
+
+.home-text h1,
+.home-text h2 {
+  column-span: all;
+  max-width: 44rem;
+  margin: 2rem 0 1.5rem;
+  font-size: 1.625rem;
+  font-weight: 800;
+  line-height: 1.12;
+  letter-spacing: -0.03em;
+  color: #111827;
+}
+@media (min-width: 640px) {
+  .home-text h1,
+  .home-text h2 { font-size: 2rem; }
+}
+/* Short theme-coloured rule under the main heading. */
+.home-text h1::after,
+.home-text h2::after {
+  content: "";
+  display: block;
+  width: 3rem;
+  height: 4px;
+  margin-top: 0.875rem;
+  border-radius: 9999px;
+  background: linear-gradient(90deg, var(--primary-600), var(--primary-300));
+}
+
+.home-text h3 {
+  display: flex;
+  align-items: center;
+  gap: 0.625rem;
+  margin: 1.75rem 0 0.625rem;
+  font-size: 1.0625rem;
+  font-weight: 700;
+  line-height: 1.35;
+  color: #111827;
+  break-after: avoid;
+}
+.home-text h3::before {
+  content: "";
+  flex-shrink: 0;
+  width: 0.5rem;
+  height: 0.5rem;
+  border-radius: 9999px;
+  background: var(--primary-500);
+  box-shadow: 0 0 0 4px rgb(var(--primary-500-rgb) / 0.15);
+}
+.home-text h4,
+.home-text h5,
+.home-text h6 {
+  margin: 1.25rem 0 0.5rem;
+  font-size: 1rem;
+  font-weight: 700;
+  color: #1f2937;
+  break-after: avoid;
+}
+
+/* The editor can emit <div> lines instead of <p>; space both alike. */
+.home-text p,
+.home-text > div {
+  margin: 0 0 1rem;
+  orphans: 3;
+  widows: 3;
+}
+.home-text strong,
+.home-text b { font-weight: 600; color: #111827; }
+.home-text em,
+.home-text i { font-style: italic; }
+
+.home-text a {
+  font-weight: 600;
+  color: var(--primary-600);
+  text-decoration: underline;
+  text-decoration-color: rgb(var(--primary-600-rgb) / 0.35);
+  text-decoration-thickness: 1.5px;
+  text-underline-offset: 3px;
+  transition: color 0.2s, text-decoration-color 0.2s;
+}
+.home-text a:hover {
+  color: var(--primary-700);
+  text-decoration-color: currentColor;
+}
+
+/* Bullets become theme-tinted check marks. */
+.home-text ul {
+  display: grid;
+  gap: 0.625rem;
+  margin: 0 0 1.25rem;
+  padding: 0;
+  list-style: none;
+  break-inside: avoid;
+}
+.home-text ul > li {
+  position: relative;
+  padding-left: 1.875rem;
+}
+.home-text ul > li::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 0.2em;
+  width: 1.25rem;
+  height: 1.25rem;
+  border-radius: 9999px;
+  background: rgb(var(--primary-500-rgb) / 0.12);
+}
+.home-text ul > li::after {
+  content: "";
+  position: absolute;
+  left: 0.47rem;
+  top: calc(0.2em + 0.28rem);
+  width: 0.3rem;
+  height: 0.55rem;
+  border: solid var(--primary-600);
+  border-width: 0 2px 2px 0;
+  transform: rotate(45deg);
+}
+
+.home-text ol {
+  margin: 0 0 1.25rem;
+  padding-left: 1.25rem;
+  list-style: decimal;
+  break-inside: avoid;
+}
+.home-text ol > li + li { margin-top: 0.375rem; }
+.home-text ol > li::marker { font-weight: 700; color: var(--primary-600); }
+
+.home-text blockquote {
+  margin: 0 0 1.25rem;
+  padding: 0.875rem 1.125rem;
+  border-left: 3px solid var(--primary-400);
+  border-radius: 0 0.75rem 0.75rem 0;
+  background: rgb(var(--primary-500-rgb) / 0.06);
+  color: #374151;
+  font-style: italic;
+  break-inside: avoid;
+}
+.home-text img {
+  display: block;
+  max-width: 100%;
+  height: auto;
+  margin: 0 0 1.25rem;
+  border-radius: 1rem;
+  break-inside: avoid;
+}
+.home-text hr {
+  column-span: all;
+  margin: 1.75rem 0;
+  border: 0;
+  border-top: 1px solid #e5e7eb;
+}

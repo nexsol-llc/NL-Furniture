@@ -5,6 +5,8 @@ import RichDescriptionEditor from "@/app/components/RichDescriptionEditor";
 import { useEffect, useState } from "react";
 import { Plus, Save, Trash2, Settings, Globe, Share2 } from "lucide-react";
 import RichTextEditor from "@/app/components/RichTextEditor";
+import Link from "next/link";
+import { HOME_PAGE_SEO_KEY } from "@/lib/homeText";
 import toast, { Toaster } from "react-hot-toast";
 
 const PAGES = [
@@ -186,7 +188,10 @@ export default function SettingsPage() {
         body: JSON.stringify({
           pageTitle: seoForm.pageTitle,
           pageSubtitle: seoForm.pageSubtitle,
-          longContent: seoForm.longContent,
+          // The home page text is owned by Admin → Home Page Settings. Leaving the
+          // key out lets the endpoint's merge keep it, instead of overwriting it
+          // with whatever this form loaded.
+          ...(pageKey === HOME_PAGE_SEO_KEY ? {} : { longContent: seoForm.longContent }),
           seoTitle: seoForm.seoTitle,
           seoDescription: seoForm.seoDescription,
           seoKeywords: seoForm.seoKeywords,
@@ -389,11 +394,21 @@ export default function SettingsPage() {
                 <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">
                   Long Content
                 </label>
-                <RichTextEditor
-                  value={seoForm.longContent || ""}
-                  onChange={(val) => setSeoForm({ ...seoForm, longContent: val })}
-                  placeholder="Geben Sie hier einen langen Beschreibungstext ein..."
-                />
+                {pageKey === HOME_PAGE_SEO_KEY ? (
+                  <p className="rounded-xl border border-dashed border-gray-200 bg-gray-50 px-4 py-3 text-sm text-gray-600">
+                    The home page text is edited under{" "}
+                    <Link href="/admin/hero" className="font-semibold text-primary-600 hover:underline">
+                      Home Page Settings
+                    </Link>
+                    . Saving here leaves it unchanged.
+                  </p>
+                ) : (
+                  <RichTextEditor
+                    value={seoForm.longContent || ""}
+                    onChange={(val) => setSeoForm({ ...seoForm, longContent: val })}
+                    placeholder="Geben Sie hier einen langen Beschreibungstext ein..."
+                  />
+                )}
               </div>
 
               <div className="space-y-3">
